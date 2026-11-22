@@ -1,0 +1,3886 @@
+{
+ "card": "PREREG_V8F_ROLLHIST.md sha256 781eea87 + Amendment 1 sha256 87928487 + Amendment 2 sha256 15004dc9",
+ "tier": "T1-kin/hb0.2 (executor of record); G-T0 at T0",
+ "evidence_class": "MEASURED (ours; zero training on the dev box; checkpoints from the pod chain)",
+ "estimator": "paired episode-cluster bootstrap B 2,000 seed 0 (taniteval/ci.py via the frozen readers); answers 'another draw of EPISODES' only; the second seed answers 'another TRAINING run'; inference is deterministic",
+ "seeds": [
+  0,
+  1
+ ],
+ "one_seed": false,
+ "beside_UE_B": "NOT-COMPUTABLE (STAGEB not run: UE_s0.B / UE_s1.B do not exist; RH - UE.B and UE.B's term in F_c are not printed)",
+ "pairs": {
+  "P1": {
+   "A": "RL_R0C10XHb20",
+   "B": "B0_R0C10XHb20",
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "BETTER",
+    "TACTICAL": "BETTER",
+    "STRATEGIC": "BETTER"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": -0.25401672999590763,
+     "interval": [
+      -0.380919151033511,
+      -0.13975454418866912
+     ],
+     "per_seed": [
+      -0.18953243949069906,
+      -0.3185010205011162
+     ],
+     "F": 0.12553954534420342,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": -0.21482017527187192,
+     "interval": [
+      -0.3901560915715937,
+      -0.05635614530852608
+     ],
+     "per_seed": [
+      -0.12218460081860746,
+      -0.3074557497251364
+     ],
+     "F": 0.12155768260232724,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": 0.022241992882562275,
+     "interval": [
+      0.0069848824632016615,
+      0.039394782459875516
+     ],
+     "per_seed": [
+      0.01601423487544484,
+      0.028469750889679714
+     ],
+     "F": 0.023131672597864767,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "WORSE",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": -0.9290773253968232,
+     "interval": [
+      -1.144847686419186,
+      -0.7496121836378865
+     ],
+     "per_seed": [
+      -0.8619351562746062,
+      -0.9962194945190402
+     ],
+     "F": 0.6992612738205333,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": -5.313061423660308,
+     "interval": [
+      -6.945586155950016,
+      -3.909666994943056
+     ],
+     "per_seed": [
+      -4.6249606590005365,
+      -6.00116218832008
+     ],
+     "F": 3.0609105549848117,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": -0.36799689106658706,
+     "interval": [
+      -0.6286162157342877,
+      -0.12914958630397982
+     ],
+     "per_seed": [
+      -0.2230761033038628,
+      -0.5129176788293113
+     ],
+     "F": 0.1639566389134095,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": -1.8042862783515927,
+      "interval": [
+       -2.2644021771907825,
+       -1.3905608776523914
+      ],
+      "per_seed": [
+       -2.0020518984357154,
+       -1.606606160048743
+      ],
+      "F": 0.714688190911346,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": -3.504488665348401,
+      "interval": [
+       -4.404814418469084,
+       -2.709089015809909
+      ],
+      "per_seed": [
+       -4.047293464448489,
+       -2.9616838662483134
+      ],
+      "F": 1.7723276430671593,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": -5.292011337581636,
+      "interval": [
+       -6.755892883853228,
+       -3.918263170493088
+      ],
+      "per_seed": [
+       -5.947333982824185,
+       -4.636688692339088
+      ],
+      "F": 2.4747170939669054,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.03986060148477778,
+     "A_lo": -0.06658466154720495,
+     "A_hi": -0.01652710151681932,
+     "d_s": [
+      -0.025757584747262696,
+      -0.05396361822229286
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": -0.0934400086389525,
+     "A_lo": -0.12317297401140309,
+     "A_hi": -0.07021727367391198,
+     "d_s": [
+      -0.08699114311183931,
+      -0.09988887416606569
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": -0.0744060025010421,
+     "A_lo": -0.1081350126459073,
+     "A_hi": -0.04502819886726503,
+     "d_s": [
+      -0.05752396832013339,
+      -0.09128803668195082
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": -0.04814506044185077,
+     "A_lo": -0.062322362644977175,
+     "A_hi": -0.03545507610595744,
+     "d_s": [
+      -0.054189245518966235,
+      -0.04210087536473531
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": -0.08691121300541893,
+     "A_lo": -0.11942531656747442,
+     "A_hi": -0.058328260845105964,
+     "d_s": [
+      -0.07086285952480201,
+      -0.10295956648603585
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": 0.017133956386292833,
+     "A_lo": 0.004386923914074634,
+     "A_hi": 0.03147259919222585,
+     "d_s": [
+      0.021806853582554516,
+      0.012461059190031152
+     ]
+    },
+    "F": {
+     "D": -0.06386292834890965,
+     "A_lo": -0.10116008922295279,
+     "A_hi": -0.036305773841338485,
+     "d_s": [
+      -0.07165109034267912,
+      -0.056074766355140186
+     ]
+    }
+   }
+  },
+  "P2_ACC_RH": {
+   "A": "RL_R0C10XHb20",
+   "B": "RL_R0KHb20",
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "WORSE",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "NOT-SEPARATED"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.23059983621040947,
+     "interval": [
+      0.18405639219137832,
+      0.27688657204319
+     ],
+     "per_seed": [
+      0.21595451440121133,
+      0.24524515801960758
+     ],
+     "F": 0.032719679284609615,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.3162511195982167,
+     "interval": [
+      0.2536945274480109,
+      0.3845354346847904
+     ],
+     "per_seed": [
+      0.31281771660784574,
+      0.31968452258858765
+     ],
+     "F": 0.07058027228494335,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": -0.04359430604982206,
+     "interval": [
+      -0.06641117400374878,
+      -0.02183817387081108
+     ],
+     "per_seed": [
+      -0.04092526690391459,
+      -0.046263345195729534
+     ],
+     "F": 0.010676156583629894,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": 1.010541529595206,
+     "interval": [
+      0.5295512188537109,
+      1.5958144316883767
+     ],
+     "per_seed": [
+      0.6328412058950715,
+      1.3882418532953404
+     ],
+     "F": 0.4538062278956332,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 9.746588043698804,
+     "interval": [
+      7.92018294920202,
+      11.877560948494887
+     ],
+     "per_seed": [
+      9.032558672520777,
+      10.460617414876832
+     ],
+     "F": 1.0671720053825986,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.42961955308612754,
+     "interval": [
+      0.3395889293193079,
+      0.5264489066928696
+     ],
+     "per_seed": [
+      0.4186275263543479,
+      0.4406115798179071
+     ],
+     "F": 0.14786899007559784,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": 0.0827949629451919,
+      "interval": [
+       -0.03493992889804968,
+       0.2032303132337631
+      ],
+      "per_seed": [
+       0.07133316598729264,
+       0.0942518045217864
+      ],
+      "F": 0.34216109105886794,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": 0.28084162266094503,
+      "interval": [
+       0.04467640361567225,
+       0.5374394911330274
+      ],
+      "per_seed": [
+       0.3683121770262139,
+       0.1934091155137558
+      ],
+      "F": 0.6867180448669856,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": true,
+      "straddle_sign_verdict": "WORSE",
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": 0.7740900216482661,
+      "interval": [
+       0.24760212243738514,
+       1.3094566845568618
+      ],
+      "per_seed": [
+       0.9556053160680197,
+       0.5925747272285126
+      ],
+      "F": 1.1640718034818125,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": true,
+      "straddle_sign_verdict": "WORSE",
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": 0.0017194662141416263,
+     "A_lo": -0.009039348802307206,
+     "A_hi": 0.01300823840042123,
+     "d_s": [
+      0.0002326889522086621,
+      0.0032062434760745905
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": 0.0972279104036943,
+     "A_lo": 0.07455735269276334,
+     "A_hi": 0.12295267119457703,
+     "d_s": [
+      0.09354695815228392,
+      0.10090886265510468
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.1425593997498958,
+     "A_lo": 0.09893597976968868,
+     "A_hi": 0.19170011610186022,
+     "d_s": [
+      0.11796581909128803,
+      0.16715298040850354
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": 0.029178824510212586,
+     "A_lo": 0.01312805481843778,
+     "A_hi": 0.04606161289996468,
+     "d_s": [
+      0.02042517715714881,
+      0.03793247186327636
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.1390162567736557,
+     "A_lo": 0.09151452293321875,
+     "A_hi": 0.19050113189226453,
+     "d_s": [
+      0.11046269278866194,
+      0.16756982075864943
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": -0.024922118380062305,
+     "A_lo": -0.041786962702855875,
+     "A_hi": -0.011571087737455544,
+     "d_s": [
+      -0.021806853582554516,
+      -0.028037383177570093
+     ]
+    },
+    "F": {
+     "D": 0.10747663551401869,
+     "A_lo": 0.07414602901473397,
+     "A_hi": 0.14781919809691307,
+     "d_s": [
+      0.09034267912772585,
+      0.12461059190031153
+     ]
+    }
+   }
+  },
+  "P2_D1_RH": {
+   "A": "RL_R0G50Hb20",
+   "B": "RL_R0G0Hb20",
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "MIXED",
+    "TACTICAL": "NOT-SEPARATED",
+    "STRATEGIC": "NOT-SEPARATED"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.09479881248121971,
+     "interval": [
+      0.06476877886913607,
+      0.12202634775481944
+     ],
+     "per_seed": [
+      0.09955290535890857,
+      0.09004471960353087
+     ],
+     "F": 0.03439303216800149,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.12903839415949425,
+     "interval": [
+      0.08622298637448632,
+      0.17004874741111964
+     ],
+     "per_seed": [
+      0.1397330411993463,
+      0.11834374711964221
+     ],
+     "F": 0.09595913404341672,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": -0.02313167259786477,
+     "interval": [
+      -0.045336895576578336,
+      -0.006971373672010802
+     ],
+     "per_seed": [
+      -0.014234875444839857,
+      -0.03202846975088968
+     ],
+     "F": 0.01779359430604982,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": 0.2427200692835944,
+     "interval": [
+      0.09355521019138319,
+      0.4538248119132786
+     ],
+     "per_seed": [
+      0.16004504195904856,
+      0.32539509660814026
+     ],
+     "F": 0.38283520781053504,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "WORSE",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 5.2401416429575605,
+     "interval": [
+      3.891527955793835,
+      6.931276870176259
+     ],
+     "per_seed": [
+      4.35861274755418,
+      6.121670538360941
+     ],
+     "F": 1.5781472536546701,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.11441048289413505,
+     "interval": [
+      0.04121357403335633,
+      0.1826150229439613
+     ],
+     "per_seed": [
+      0.1503609881031321,
+      0.07845997768513803
+     ],
+     "F": 0.15666903782385377,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "WORSE",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": -0.053177758827258295,
+      "interval": [
+       -0.13408694213025718,
+       0.04146712307528198
+      ],
+      "per_seed": [
+       -0.024850811549666098,
+       -0.08149245926210186
+      ],
+      "F": 0.07325486143127513,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": -0.02632829402391815,
+      "interval": [
+       -0.18246539118704072,
+       0.15974741532224293
+      ],
+      "per_seed": [
+       0.059145379999691244,
+       -0.11176478941593829
+      ],
+      "F": 0.17696081075311731,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": 0.12463590139038302,
+      "interval": [
+       -0.19275137277479787,
+       0.47618231257261606
+      ],
+      "per_seed": [
+       0.34686885207746976,
+       -0.09759704929670376
+      ],
+      "F": 0.24501087920363496,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.04704393477537544,
+     "A_lo": -0.07767557987210368,
+     "A_hi": -0.020299578819477124,
+     "d_s": [
+      -0.027768648435510843,
+      -0.06631922111524004
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": 0.05072573409624717,
+     "A_lo": 0.03467413813147434,
+     "A_hi": 0.07184777525276495,
+     "d_s": [
+      0.04002898090568786,
+      0.06142248728680649
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.0846185910796165,
+     "A_lo": 0.05225203705439252,
+     "A_hi": 0.12023644944963954,
+     "d_s": [
+      0.06669445602334306,
+      0.10254272613588995
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": -0.045018757815756566,
+     "A_lo": -0.07583177678092513,
+     "A_hi": -0.019789830134080776,
+     "d_s": [
+      -0.02626094205919133,
+      -0.0637765735723218
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.025218841183826595,
+     "A_lo": 0.005416437957980012,
+     "A_hi": 0.04457583725300517,
+     "d_s": [
+      0.027928303459774907,
+      0.022509378907878283
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": -0.016355140186915886,
+     "A_lo": -0.028238182078510386,
+     "A_hi": -0.0066876257128690685,
+     "d_s": [
+      -0.014018691588785047,
+      -0.018691588785046728
+     ]
+    },
+    "F": {
+     "D": 0.062305295950155756,
+     "A_lo": 0.04135592728648302,
+     "A_hi": 0.08345720772283273,
+     "d_s": [
+      0.06074766355140187,
+      0.06386292834890965
+     ]
+    }
+   }
+  },
+  "P2_D2_RH": {
+   "A": "RL_R0C10Hb20",
+   "B": "RL_R0G50Hb20",
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "MIXED",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "MIXED"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.12103428779476534,
+     "interval": [
+      0.08565628592212741,
+      0.15896046363036387
+     ],
+     "per_seed": [
+      0.09740835504909756,
+      0.14466022054043312
+     ],
+     "F": 0.03439303216800149,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.14920361296324286,
+     "interval": [
+      0.11500343634056251,
+      0.18522584694478683
+     ],
+     "per_seed": [
+      0.1309676424643408,
+      0.16743958346214494
+     ],
+     "F": 0.09595913404341672,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": -0.011565836298932385,
+     "interval": [
+      -0.02204712106041017,
+      -0.0020194977665097228
+     ],
+     "per_seed": [
+      -0.0071174377224199285,
+      -0.01601423487544484
+     ],
+     "F": 0.02669039145907473,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "BETTER",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": 0.675191712717313,
+     "interval": [
+      0.3956371716816328,
+      0.9686081850267337
+     ],
+     "per_seed": [
+      0.5113887551878168,
+      0.8389946702468094
+     ],
+     "F": 0.7639574904936639,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "WORSE",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 7.599479673332069,
+     "interval": [
+      5.825252883090688,
+      9.664594306699735
+     ],
+     "per_seed": [
+      6.461669316256508,
+      8.73729003040763
+     ],
+     "F": 3.768728842835454,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.20811148670452717,
+     "interval": [
+      0.17037793389066896,
+      0.25131378545908617
+     ],
+     "per_seed": [
+      0.19689165426778849,
+      0.21933131914126583
+     ],
+     "F": 0.15666903782385377,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": 0.08681027311538991,
+      "interval": [
+       -0.014357607839023472,
+       0.18087629838134647
+      ],
+      "per_seed": [
+       0.11122629251704397,
+       0.062404809710018466
+      ],
+      "F": 0.03137299683832229,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": 0.24910984356899515,
+      "interval": [
+       0.04897150619465045,
+       0.4466038254476762
+      ],
+      "per_seed": [
+       0.3425705958787076,
+       0.15564909125928267
+      ],
+      "F": 0.2049221925500948,
+      "verdict": "WORSE",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": 0.6151230325865247,
+      "interval": [
+       0.19724214510812801,
+       1.0250110368689356
+      ],
+      "per_seed": [
+       0.7757117917320173,
+       0.45453427344103187
+      ],
+      "F": 0.5661883974946189,
+      "verdict": "WORSE",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": 0.00936385323177288,
+     "A_lo": -0.01187939672027389,
+     "A_hi": 0.030374813266984792,
+     "d_s": [
+      0.021019329226231998,
+      -0.002291622762686238
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": 0.04734671973746182,
+     "A_lo": 0.03299921043293398,
+     "A_hi": 0.06330489896072207,
+     "d_s": [
+      0.0433305154080784,
+      0.05136292406684525
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.05773238849520633,
+     "A_lo": 0.027084768550612384,
+     "A_hi": 0.094230024458554,
+     "d_s": [
+      0.03751563151313047,
+      0.0779491454772822
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": -0.006461025427261359,
+     "A_lo": -0.03169835341962109,
+     "A_hi": 0.013543342957044022,
+     "d_s": [
+      0.007503126302626094,
+      -0.02042517715714881
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.05502292621925803,
+     "A_lo": 0.025843865030901463,
+     "A_hi": 0.08912684670876607,
+     "d_s": [
+      0.03626511046269279,
+      0.07378074197582327
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": -0.003894080996884735,
+     "A_lo": -0.011675823510023654,
+     "A_hi": 0.0031715128134603907,
+     "d_s": [
+      -0.001557632398753894,
+      -0.006230529595015576
+     ]
+    },
+    "F": {
+     "D": 0.040498442367601244,
+     "A_lo": 0.017700853655476943,
+     "A_hi": 0.07045158639535518,
+     "d_s": [
+      0.02336448598130841,
+      0.05763239875389408
+     ]
+    }
+   }
+  },
+  "P2_ACC_B0": {
+   "A": "B0_R0C10XHb20",
+   "B": "B0_R0KHb20",
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "WORSE",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "WORSE"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.5017865938278949,
+     "interval": [
+      0.36327163167686,
+      0.6524599624544234
+     ],
+     "per_seed": [
+      0.42530814472376577,
+      0.5782650429320242
+     ],
+     "F": 0.12553954534420342,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.5963231887884388,
+     "interval": [
+      0.42939477849561397,
+      0.7851206482400052
+     ],
+     "per_seed": [
+      0.5147535740603421,
+      0.6778928035165356
+     ],
+     "F": 0.12155768260232724,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": -0.06316725978647686,
+     "interval": [
+      -0.09768890077873256,
+      -0.030772427039472847
+     ],
+     "per_seed": [
+      -0.051601423487544484,
+      -0.07473309608540925
+     ],
+     "F": 0.023131672597864767,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": 1.714272357555967,
+     "interval": [
+      1.1486911835908011,
+      2.385513422067602
+     ],
+     "per_seed": [
+      1.298350557598991,
+      2.130194157512943
+     ],
+     "F": 0.6992612738205333,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 14.296556807337943,
+     "interval": [
+      11.478866560237478,
+      17.588419038780366
+     ],
+     "per_seed": [
+      12.830592499786459,
+      15.762521114889429
+     ],
+     "F": 3.0609105549848117,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.8467734293845446,
+     "interval": [
+      0.5887651957818908,
+      1.1356998739505713
+     ],
+     "per_seed": [
+      0.7136741636488422,
+      0.979872695120247
+     ],
+     "F": 0.1639566389134095,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": 1.3991880937594534,
+      "interval": [
+       0.9912256632112424,
+       1.8678159999759802
+      ],
+      "per_seed": [
+       1.3694560883855535,
+       1.4289072448292572
+      ],
+      "F": 0.7741393473550513,
+      "verdict": "WORSE",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": 2.9759488427696543,
+      "interval": [
+       2.1277123615205036,
+       3.946555671273269
+      ],
+      "per_seed": [
+       3.1676822609201345,
+       2.7842988232351593
+      ],
+      "F": 1.7723276430671593,
+      "verdict": "WORSE",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": 4.877010082084688,
+      "interval": [
+       3.2290641590444715,
+       6.687236504127197
+      ],
+      "per_seed": [
+       5.070246342859088,
+       4.683773821310288
+      ],
+      "F": 2.4747170939669054,
+      "verdict": "WORSE",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": 0.01508998119332537,
+     "A_lo": -0.0063949073918688395,
+     "A_hi": 0.039236013723859514,
+     "d_s": [
+      0.002095263346316641,
+      0.0280846990403341
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": 0.17380688811604078,
+     "A_lo": 0.13956718563115,
+     "A_hi": 0.21332791638604492,
+     "d_s": [
+      0.16321609501130752,
+      0.18439768122077407
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.21383909962484365,
+     "A_lo": 0.15117768702471807,
+     "A_hi": 0.28115325425331866,
+     "d_s": [
+      0.17340558566069195,
+      0.2542726135889954
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": 0.06419341392246769,
+     "A_lo": 0.05002970966546679,
+     "A_hi": 0.07940845402424973,
+     "d_s": [
+      0.06461025427261359,
+      0.0637765735723218
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.2184243434764485,
+     "A_lo": 0.15610694997426064,
+     "A_hi": 0.28262539124250435,
+     "d_s": [
+      0.17882451021258858,
+      0.2580241767403085
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": -0.03894080996884735,
+     "A_lo": -0.06138552858470467,
+     "A_hi": -0.019443076937646128,
+     "d_s": [
+      -0.040498442367601244,
+      -0.037383177570093455
+     ]
+    },
+    "F": {
+     "D": 0.16510903426791276,
+     "A_lo": 0.12153983874431978,
+     "A_hi": 0.2138993981173259,
+     "d_s": [
+      0.15109034267912771,
+      0.1791277258566978
+     ]
+    }
+   }
+  },
+  "P2_D1_B0": {
+   "A": "B0_R0G50Hb20",
+   "B": "B0_R0G0Hb20",
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "MIXED",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "NOT-SEPARATED"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.15654036809000008,
+     "interval": [
+      0.10870235978297463,
+      0.20982112027132774
+     ],
+     "per_seed": [
+      0.1390336850424441,
+      0.17404705113755606
+     ],
+     "F": 0.01965435323018594,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.20164586635420992,
+     "interval": [
+      0.13913689104743332,
+      0.2667604138760951
+     ],
+     "per_seed": [
+      0.1801476873425438,
+      0.22314404536587604
+     ],
+     "F": 0.034456434701373384,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": -0.033807829181494664,
+     "interval": [
+      -0.053993423861538936,
+      -0.014884191378533373
+     ],
+     "per_seed": [
+      -0.028469750889679714,
+      -0.03914590747330961
+     ],
+     "F": 0.01423487544483986,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": 0.5651783781100093,
+     "interval": [
+      0.21225068357081803,
+      0.9892328402029669
+     ],
+     "per_seed": [
+      0.2941398320597619,
+      0.8362169241602565
+     ],
+     "F": 0.5975725865488517,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "WORSE",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 6.872737768088573,
+     "interval": [
+      5.183320245890222,
+      9.109174815919774
+     ],
+     "per_seed": [
+      5.757876834832951,
+      7.9875987013441945
+     ],
+     "F": 1.6746592744381026,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.17906927984794224,
+     "interval": [
+      0.11157498977867711,
+      0.2525021382579036
+     ],
+     "per_seed": [
+      0.15739965901196346,
+      0.200738900683921
+     ],
+     "F": 0.041827109466742396,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": 0.31704848240675576,
+      "interval": [
+       0.10387198816678476,
+       0.5391529422777387
+      ],
+      "per_seed": [
+       0.3483053253528074,
+       0.2858051530114807
+      ],
+      "F": 0.4188018320138971,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": true,
+      "straddle_sign_verdict": "WORSE",
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": 0.6838911953763093,
+      "interval": [
+       0.28192865015659463,
+       1.132860658884411
+      ],
+      "per_seed": [
+       0.8014481752842756,
+       0.5663342154683428
+      ],
+      "F": 0.9236616139336373,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": true,
+      "straddle_sign_verdict": "WORSE",
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": 1.2102647876021453,
+      "interval": [
+       0.46279548231108775,
+       2.0216442055083306
+      ],
+      "per_seed": [
+       1.393954263088393,
+       1.0265753121158976
+      ],
+      "F": 1.3304442446127887,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": true,
+      "straddle_sign_verdict": "WORSE",
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.05939482305379486,
+     "A_lo": -0.08325352927318255,
+     "A_hi": -0.039674522195316905,
+     "d_s": [
+      -0.05399995414121845,
+      -0.06478969196637126
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": 0.07828166531582284,
+     "A_lo": 0.05940552094388495,
+     "A_hi": 0.10211042855869414,
+     "d_s": [
+      0.06822039675414958,
+      0.08834293387749612
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.11150479366402669,
+     "A_lo": 0.05938811857103141,
+     "A_hi": 0.1675523013262138,
+     "d_s": [
+      0.07669862442684452,
+      0.14631096290120885
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": -0.01208837015423093,
+     "A_lo": -0.023126913838711332,
+     "A_hi": -0.0016553646439622165,
+     "d_s": [
+      -0.011254689453939141,
+      -0.012922050854522717
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.057107127969987494,
+     "A_lo": 0.030420216585326593,
+     "A_hi": 0.08689791207079312,
+     "d_s": [
+      0.042934556065027094,
+      0.0712796998749479
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": -0.020249221183800622,
+     "A_lo": -0.035188784834756924,
+     "A_hi": -0.008230483857343597,
+     "d_s": [
+      -0.020249221183800622,
+      -0.020249221183800622
+     ]
+    },
+    "F": {
+     "D": 0.07242990654205607,
+     "A_lo": 0.04414806751022418,
+     "A_hi": 0.10924317317799008,
+     "d_s": [
+      0.056074766355140186,
+      0.08878504672897196
+     ]
+    }
+   }
+  },
+  "P2_D2_B0": {
+   "A": "B0_R0C10Hb20",
+   "B": "B0_R0G50Hb20",
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "WORSE",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "WORSE"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.3672255840239324,
+     "interval": [
+      0.2558358578315447,
+      0.48425265101938575
+     ],
+     "per_seed": [
+      0.2918507502685959,
+      0.4426004177792689
+     ],
+     "F": 0.16610868037559912,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.4240720611762334,
+     "interval": [
+      0.29832852450734204,
+      0.560414222395766
+     ],
+     "per_seed": [
+      0.34513491791756296,
+      0.5030092044349038
+     ],
+     "F": 0.16641420983929933,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": -0.027580071174377226,
+     "interval": [
+      -0.04399759346214762,
+      -0.013237225376627446
+     ],
+     "per_seed": [
+      -0.02491103202846975,
+      -0.030249110320284697
+     ],
+     "F": 0.019572953736654807,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": 1.4933488854455284,
+     "interval": [
+      1.2106341855555864,
+      1.8094482064301662
+     ],
+     "per_seed": [
+      1.4152559958076079,
+      1.5714417750834488
+     ],
+     "F": 0.9250667082557689,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 12.628472226622751,
+     "interval": [
+      10.010847006264736,
+      15.6291035210504
+     ],
+     "per_seed": [
+      11.214591742550349,
+      14.042352710695155
+     ],
+     "F": 5.399176608109677,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.5321742239525893,
+     "interval": [
+      0.3648245889491366,
+      0.7076799178253145
+     ],
+     "per_seed": [
+      0.4299244496582472,
+      0.6344239982469314
+     ],
+     "F": 0.20601168079389964,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": 1.159092853363588,
+      "interval": [
+       0.8512140008511426,
+       1.4987229807385944
+      ],
+      "per_seed": [
+       1.2086070171617074,
+       1.1096000964672403
+      ],
+      "F": 0.5273041185202976,
+      "verdict": "WORSE",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": 2.4558407238577784,
+      "interval": [
+       1.7989249271449528,
+       3.170813650270994
+      ],
+      "per_seed": [
+       2.7301320073472146,
+       2.1815494403683418
+      ],
+      "F": 1.4722441809125115,
+      "verdict": "WORSE",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": 3.859552399990618,
+      "interval": [
+       2.68912705714308,
+       5.15191340622765
+      ],
+      "per_seed": [
+       4.158466321132014,
+       3.560638478849223
+      ],
+      "F": 1.928272086895575,
+      "verdict": "WORSE",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.012813582849447306,
+     "A_lo": -0.03320246988642042,
+     "A_hi": 0.0071635505669301845,
+     "d_s": [
+      -0.007959382288862334,
+      -0.01766778341003228
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": 0.11313793345412192,
+     "A_lo": 0.08946183306322938,
+     "A_hi": 0.14169602977288503,
+     "d_s": [
+      0.1058251227359171,
+      0.12045074417232673
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.10233430596081701,
+     "A_lo": 0.07628528966188998,
+     "A_hi": 0.13007064168752608,
+     "d_s": [
+      0.09420591913297208,
+      0.11046269278866194
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": 0.04668611921634014,
+     "A_lo": 0.031070528747865336,
+     "A_hi": 0.06276069717346452,
+     "d_s": [
+      0.05377240516882034,
+      0.03959983326385994
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.09608170070862859,
+     "A_lo": 0.06504981476950399,
+     "A_hi": 0.13115411469090768,
+     "d_s": [
+      0.07628178407669862,
+      0.11588161734055856
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": -0.019470404984423675,
+     "A_lo": -0.03335616514531228,
+     "A_hi": -0.007718811481111629,
+     "d_s": [
+      -0.021806853582554516,
+      -0.017133956386292833
+     ]
+    },
+    "F": {
+     "D": 0.09813084112149532,
+     "A_lo": 0.0698030795634514,
+     "A_hi": 0.12933079379481718,
+     "d_s": [
+      0.09501557632398754,
+      0.10124610591900311
+     ]
+    }
+   }
+  },
+  "P4": {
+   "A": "RL_R0C10XHb20",
+   "B": "B0_R0KHb20",
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "WORSE",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "NOT-SEPARATED"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.24776986383198735,
+     "interval": [
+      0.20205325151097028,
+      0.29528533628869164
+     ],
+     "per_seed": [
+      0.23577570523306673,
+      0.25976402243090796
+     ],
+     "F": 0.027417352864054778,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.381503013516567,
+     "interval": [
+      0.3094778245729092,
+      0.4517545670793417
+     ],
+     "per_seed": [
+      0.3925689732417347,
+      0.37043705379139935
+     ],
+     "F": 0.06371346630420138,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": -0.04092526690391459,
+     "interval": [
+      -0.0627462688897215,
+      -0.020976205543911577
+     ],
+     "per_seed": [
+      -0.03558718861209965,
+      -0.046263345195729534
+     ],
+     "F": 0.010676156583629894,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": 0.7588056542249808,
+     "interval": [
+      0.31944730682763256,
+      1.2897177521226244
+     ],
+     "per_seed": [
+      0.42764739188144435,
+      1.0899639165685173
+     ],
+     "F": 0.4538062278956332,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 8.990727119313448,
+     "interval": [
+      7.207835672081935,
+      11.069129136492839
+     ],
+     "per_seed": [
+      8.255594056844018,
+      9.725860181782878
+     ],
+     "F": 1.0671720053825986,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.47877653831795763,
+     "interval": [
+      0.37708925976306085,
+      0.5814439736451044
+     ],
+     "per_seed": [
+      0.49059806034497944,
+      0.4669550162909359
+     ],
+     "F": 0.1258849366120387,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": -0.4050981845921393,
+      "interval": [
+       -0.6191809608429082,
+       -0.20448920340081062
+      ],
+      "per_seed": [
+       -0.6325958100501619,
+       -0.17769891521948566
+      ],
+      "F": 0.7741393473550513,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": true,
+      "straddle_sign_verdict": "BETTER",
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": -0.5289220148792426,
+      "interval": [
+       -0.9436338734374853,
+       -0.15618272120161025
+      ],
+      "per_seed": [
+       -0.8806119619289108,
+       -0.17738504301315422
+      ],
+      "F": 1.3679879399733306,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": true,
+      "straddle_sign_verdict": "BETTER",
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": -0.41500125549694844,
+      "interval": [
+       -1.1291881093603935,
+       0.2785579107948228
+      ],
+      "per_seed": [
+       -0.8770876399650962,
+       0.047085128971199396
+      ],
+      "F": 2.088244572418107,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.02477062029145241,
+     "A_lo": -0.04478907092948204,
+     "A_hi": -0.006293881690153267,
+     "d_s": [
+      -0.023662321400946054,
+      -0.025878919181958768
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": 0.08162780935882208,
+     "A_lo": 0.06061395618263122,
+     "A_hi": 0.1062648254405132,
+     "d_s": [
+      0.07807892885188072,
+      0.08517668986576345
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.13943309712380159,
+     "A_lo": 0.0956606584790666,
+     "A_hi": 0.18840439888093166,
+     "d_s": [
+      0.11588161734055856,
+      0.1629845769070446
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": 0.016048353480616923,
+     "A_lo": 0.0027023682246046575,
+     "A_hi": 0.03003113703487397,
+     "d_s": [
+      0.010421008753647354,
+      0.021675698207586493
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.1315131304710296,
+     "A_lo": 0.08734787875253369,
+     "A_hi": 0.17973415693344233,
+     "d_s": [
+      0.10796165068778658,
+      0.15506461025427262
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": -0.021806853582554516,
+     "A_lo": -0.038742528605673794,
+     "A_hi": -0.00824499502230836,
+     "d_s": [
+      -0.018691588785046728,
+      -0.024922118380062305
+     ]
+    },
+    "F": {
+     "D": 0.10124610591900311,
+     "A_lo": 0.06425939434196065,
+     "A_hi": 0.14694101422355485,
+     "d_s": [
+      0.0794392523364486,
+      0.12305295950155763
+     ]
+    }
+   }
+  },
+  "BESIDE_RH_minus_B0_R0Hb20": {
+   "A": "RL_R0Hb20",
+   "B": "B0_R0Hb20",
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "BETTER",
+    "TACTICAL": "NOT-SEPARATED",
+    "STRATEGIC": "BETTER"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": -0.05381802972044709,
+     "interval": [
+      -0.09560221574652861,
+      -0.01618097338708363
+     ],
+     "per_seed": [
+      -0.04168110812378123,
+      -0.06595495131711294
+     ],
+     "F": 0.08058845636745393,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "BETTER",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": -0.013715232957491892,
+     "interval": [
+      -0.08426068090678257,
+      0.056930643776966945
+     ],
+     "per_seed": [
+      0.025529209872830638,
+      -0.05295967578781442
+     ],
+     "F": 0.07023312236132306,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": 0.02402135231316726,
+     "interval": [
+      0.009011107886865113,
+      0.040814962940314115
+     ],
+     "per_seed": [
+      0.023131672597864767,
+      0.02491103202846975
+     ],
+     "F": 0.01957295373665481,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": -1.0541070747575585,
+     "interval": [
+      -1.2970138957550152,
+      -0.8409698764070194
+     ],
+     "per_seed": [
+      -0.9638163614569941,
+      -1.144397788058123
+     ],
+     "F": 0.7530063235028219,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": -3.893260959938698,
+     "interval": [
+      -4.813617942850468,
+      -3.0526956489753627
+     ],
+     "per_seed": [
+      -4.047731073714053,
+      -3.7387908461633423
+     ],
+     "F": 2.5751108540128165,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": -0.042409212397697134,
+     "interval": [
+      -0.13993766434551302,
+      0.05632419590524699
+     ],
+     "per_seed": [
+      0.018031740070940595,
+      -0.10285016486633486
+     ],
+     "F": 0.11724147761383419,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": -1.246549546435053,
+      "interval": [
+       -1.5357680518374057,
+       -0.9754848229012274
+      ],
+      "per_seed": [
+       -1.425392855551362,
+       -1.0677835582478905
+      ],
+      "F": 0.29394444576854983,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": -2.2511125645231767,
+      "interval": [
+       -2.8052757929293475,
+       -1.7513968793429235
+      ],
+      "per_seed": [
+       -2.5453062089329306,
+       -1.9569189201134232
+      ],
+      "F": 0.7152092186698695,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": -3.4838674597658223,
+      "interval": [
+       -4.429679852226234,
+       -2.6272405733441753
+      ],
+      "per_seed": [
+       -3.600735531563746,
+       -3.366999387967899
+      ],
+      "F": 0.8462945908353028,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.015089735380172702,
+     "A_lo": -0.03866779168002792,
+     "A_hi": 0.009137534909594526,
+     "d_s": [
+      -0.009721769359376615,
+      -0.02045770140096879
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": -0.0646721868156902,
+     "A_lo": -0.07934288003976941,
+     "A_hi": -0.05145512324587414,
+     "d_s": [
+      -0.06494650413072806,
+      -0.06439786950065234
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": -0.05168820341809087,
+     "A_lo": -0.07733898846162271,
+     "A_hi": -0.0260455828345082,
+     "d_s": [
+      -0.04126719466444352,
+      -0.062109212171738225
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": -0.05648186744476865,
+     "A_lo": -0.07666494506051207,
+     "A_hi": -0.03252710592160134,
+     "d_s": [
+      -0.04877032096706961,
+      -0.06419341392246769
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": -0.06127553147144644,
+     "A_lo": -0.08939320497646192,
+     "A_hi": -0.03562363682702031,
+     "d_s": [
+      -0.04585243851604835,
+      -0.07669862442684452
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": 0.019470404984423675,
+     "A_lo": 0.005618269650750488,
+     "A_hi": 0.03841863385352425,
+     "d_s": [
+      0.024922118380062305,
+      0.014018691588785047
+     ]
+    },
+    "F": {
+     "D": -0.028816199376947037,
+     "A_lo": -0.04757294787369014,
+     "A_hi": -0.01291051089984713,
+     "d_s": [
+      -0.024922118380062305,
+      -0.03271028037383177
+     ]
+    }
+   }
+  },
+  "BESIDE_RH_minus_B0_R0C10Hb20": {
+   "A": "RL_R0C10Hb20",
+   "B": "B0_R0C10Hb20",
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "BETTER",
+    "TACTICAL": "BETTER",
+    "STRATEGIC": "BETTER"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": -0.28948889010586915,
+     "interval": [
+      -0.42406849118867496,
+      -0.16193901092234328
+     ],
+     "per_seed": [
+      -0.21286396657973686,
+      -0.36611381363200146
+     ],
+     "F": 0.16610868037559912,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": -0.2948141613211199,
+     "interval": [
+      -0.4842842573169057,
+      -0.1097383700181482
+     ],
+     "per_seed": [
+      -0.18186345987866367,
+      -0.4077648627635762
+     ],
+     "F": 0.16641420983929933,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": 0.028469750889679714,
+     "interval": [
+      0.010173770108535138,
+      0.05256175898641963
+     ],
+     "per_seed": [
+      0.03202846975088968,
+      0.02491103202846975
+     ],
+     "F": 0.02669039145907473,
+     "verdict": "WORSE",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": -1.4664000570940847,
+     "interval": [
+      -1.7436704287353746,
+      -1.2308747206260386
+     ],
+     "per_seed": [
+      -1.4376161628195196,
+      -1.4951839513686498
+     ],
+     "F": 0.9250667082557689,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": -7.324154831500248,
+     "interval": [
+      -9.107102565250106,
+      -5.7575753933592395
+     ],
+     "per_seed": [
+      -6.799437583776632,
+      -7.848872079223864
+     ],
+     "F": 5.399176608109677,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": -0.3619010480877916,
+     "interval": [
+      -0.6297426665354989,
+      -0.12004235512719953
+     ],
+     "per_seed": [
+      -0.1917805212156539,
+      -0.5320215749599293
+     ],
+     "F": 0.20601168079389964,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": -2.0832620821717684,
+      "interval": [
+       -2.5515749401477894,
+       -1.6455173106596475
+      ],
+      "per_seed": [
+       -2.331227643012757,
+       -1.8352965213307808
+      ],
+      "F": 0.5273041185202976,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": -3.998911733290727,
+      "interval": [
+       -4.918080315957298,
+       -3.1317626779417163
+      ],
+      "per_seed": [
+       -4.632572727471937,
+       -3.365250739109518
+      ],
+      "F": 1.4722441809125115,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": -5.994721317565043,
+      "interval": [
+       -7.490668485706267,
+       -4.610947949160614
+      ],
+      "per_seed": [
+       -6.67576316226552,
+       -5.313679472864566
+      ],
+      "F": 1.928272086895575,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.00044757918712701704,
+     "A_lo": -0.033599333677735946,
+     "A_hi": 0.036264241116400274,
+     "d_s": [
+      0.01583007445920559,
+      -0.016725232833459624
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": -0.1063858660086621,
+     "A_lo": -0.13488924492922724,
+     "A_hi": -0.0825242783451532,
+     "d_s": [
+      -0.10196479077848145,
+      -0.11080694123884276
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": -0.07357232180075031,
+     "A_lo": -0.09713011126706375,
+     "A_hi": -0.04940101608130844,
+     "d_s": [
+      -0.06627761567319716,
+      -0.08086702792830346
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": -0.1204668611921634,
+     "A_lo": -0.1548620973013254,
+     "A_hi": -0.09232822505313314,
+     "d_s": [
+      -0.106294289287203,
+      -0.1346394330971238
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": -0.08607753230512713,
+     "A_lo": -0.12028524158205862,
+     "A_hi": -0.05336034095319988,
+     "d_s": [
+      -0.06544393497290538,
+      -0.1067111296373489
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": 0.024143302180685357,
+     "A_lo": 0.009144013887352921,
+     "A_hi": 0.042387401835719755,
+     "d_s": [
+      0.029595015576323987,
+      0.018691588785046728
+     ]
+    },
+    "F": {
+     "D": -0.0763239875389408,
+     "A_lo": -0.11219568995398306,
+     "A_hi": -0.04737631613403826,
+     "d_s": [
+      -0.08099688473520249,
+      -0.07165109034267912
+     ]
+    }
+   }
+  },
+  "BESIDE_RH_minus_B0_R0G50Hb20": {
+   "A": "RL_R0G50Hb20",
+   "B": "B0_R0G50Hb20",
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "BETTER",
+    "TACTICAL": "NOT-SEPARATED",
+    "STRATEGIC": "BETTER"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": -0.043297593876702026,
+     "interval": [
+      -0.08710334014193408,
+      -0.0010651053302400408
+     ],
+     "per_seed": [
+      -0.018421571360238434,
+      -0.06817361639316562
+     ],
+     "F": 0.03439303216800149,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": -0.019945713108129447,
+     "interval": [
+      -0.10073021432200198,
+      0.05879723515269844
+     ],
+     "per_seed": [
+      0.03230381557455847,
+      -0.07219524179081736
+     ],
+     "F": 0.09595913404341672,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": 0.012455516014234875,
+     "interval": [
+      0.0015416775000718498,
+      0.025841393038398688
+     ],
+     "per_seed": [
+      0.014234875444839857,
+      0.010676156583629894
+     ],
+     "F": 0.01779359430604982,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "WORSE",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": -0.6477517924951876,
+     "interval": [
+      -0.8704612999265025,
+      -0.4534045596470296
+     ],
+     "per_seed": [
+      -0.5345797433981337,
+      -0.7609238415922414
+     ],
+     "F": 0.5975725865488517,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": -2.1810449963344416,
+     "interval": [
+      -2.926735704487707,
+      -1.5916259385418936
+     ],
+     "per_seed": [
+      -1.9746316546365523,
+      -2.3874583380323307
+     ],
+     "F": 1.6746592744381026,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": -0.0378383108397293,
+     "interval": [
+      -0.15231536286806094,
+      0.0745922392907963
+     ],
+     "per_seed": [
+      0.04125227417480494,
+      -0.11692889585426354
+     ],
+     "F": 0.15666903782385377,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": -1.0057616855430909,
+      "interval": [
+       -1.2813865241767417,
+       -0.7535331540348771
+      ],
+      "per_seed": [
+       -1.2235162803062951,
+       -0.7881012345735585
+      ],
+      "F": 0.4188018320138971,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": -1.7921808530019447,
+      "interval": [
+       -2.285011448231001,
+       -1.3235430440876594
+      ],
+      "per_seed": [
+       -2.24501131600343,
+       -1.339350390000459
+      ],
+      "F": 0.9236616139336373,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": -2.750291950160949,
+      "interval": [
+       -3.5596951532887986,
+       -2.001720970427649
+      ],
+      "per_seed": [
+       -3.293008632865524,
+       -2.2075752674563747
+      ],
+      "F": 1.3304442446127887,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.022625015268347204,
+     "A_lo": -0.04655169439913987,
+     "A_hi": 0.0030969699376070543,
+     "d_s": [
+      -0.013148637055888753,
+      -0.03210139348080566
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": -0.03640758928569695,
+     "A_lo": -0.04782197403985217,
+     "A_hi": -0.026627961653825753,
+     "d_s": [
+      -0.03583938530540429,
+      -0.03697579326598961
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": -0.028970404335139643,
+     "A_lo": -0.06002533805467421,
+     "A_hi": -0.0006255968959007922,
+     "d_s": [
+      -0.009587328053355566,
+      -0.04835348061692372
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": -0.0673197165485619,
+     "A_lo": -0.0890105704142086,
+     "A_hi": -0.04897229050685631,
+     "d_s": [
+      -0.06002501042100875,
+      -0.07461442267611505
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": -0.045018757815756566,
+     "A_lo": -0.07423294151376147,
+     "A_hi": -0.015632024773025638,
+     "d_s": [
+      -0.02542726135889954,
+      -0.06461025427261359
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": 0.008566978193146417,
+     "A_lo": 0.002098169417411177,
+     "A_hi": 0.016875408331678752,
+     "d_s": [
+      0.009345794392523364,
+      0.00778816199376947
+     ]
+    },
+    "F": {
+     "D": -0.018691588785046728,
+     "A_lo": -0.04003574960875421,
+     "A_hi": -0.0006640930937811468,
+     "d_s": [
+      -0.009345794392523364,
+      -0.028037383177570093
+     ]
+    }
+   }
+  },
+  "BESIDE_RH_minus_B0_R0G0Hb20": {
+   "A": "RL_R0G0Hb20",
+   "B": "B0_R0G0Hb20",
+   "families": {
+    "LONGITUDINAL": "NOT-SEPARATED",
+    "LATERAL": "BETTER",
+    "TACTICAL": "NOT-SEPARATED",
+    "STRATEGIC": "BETTER"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.018443961732078337,
+     "interval": [
+      0.007378088193507301,
+      0.02858274896551269
+     ],
+     "per_seed": [
+      0.021059208323297097,
+      0.015828715140859574
+     ],
+     "F": 0.02488484641262345,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "WORSE",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.05266175908658623,
+     "interval": [
+      0.016154840461517665,
+      0.08757309639755886
+     ],
+     "per_seed": [
+      0.07271846171775598,
+      0.032605056455416476
+     ],
+     "F": 0.07456983996371269,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "WORSE",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": 0.0017793594306049821,
+     "interval": [
+      -0.004730761295646792,
+      0.010808673827707477
+     ],
+     "per_seed": [
+      0.0,
+      0.0035587188612099642
+     ],
+     "F": 0.003558718861209967,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": -0.33327826958791484,
+     "interval": [
+      -0.5048724780429231,
+      -0.20258565113829982
+     ],
+     "per_seed": [
+      -0.4107400108440651,
+      -0.25581652833176455
+     ],
+     "F": 0.19479656504771192,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": -0.6292175521802825,
+     "interval": [
+      -0.928822002488942,
+      -0.38816890296208634
+     ],
+     "per_seed": [
+      -0.6712710922872936,
+      -0.5871640120732714
+     ],
+     "F": 0.2833849874954879,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.026820486114077852,
+     "interval": [
+      -0.02016837152419293,
+      0.07488427098967
+     ],
+     "per_seed": [
+      0.048290945083636294,
+      0.00535002714451941
+     ],
+     "F": 0.0847680274058602,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": -0.6355354443090769,
+      "interval": [
+       -0.8543136892628075,
+       -0.45152967878630307
+      ],
+      "per_seed": [
+       -0.8503601434038217,
+       -0.4208036222999761
+      ],
+      "F": 0.3563016596725701,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": -1.0842457483874555,
+      "interval": [
+       -1.4932640478678245,
+       -0.7513438230575316
+      ],
+      "per_seed": [
+       -1.5052513895495963,
+       -0.6632401072253146
+      ],
+      "F": 0.6739887961928321,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": -1.664663063949187,
+      "interval": [
+       -2.337484641931549,
+       -1.1209043992283485
+      ],
+      "per_seed": [
+       -2.245923221854601,
+       -1.0834029060437735
+      ],
+      "F": 0.963065293640291,
+      "verdict": "BETTER",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.034975903546766614,
+     "A_lo": -0.055573714349362445,
+     "A_hi": -0.015257874681528873,
+     "d_s": [
+      -0.03937994276159637,
+      -0.030571864331936857
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": -0.011554516923008375,
+     "A_lo": -0.017964352766792768,
+     "A_hi": -0.006196897235867347,
+     "d_s": [
+      -0.011126883490164262,
+      -0.011982150355852487
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": -0.0020842017507294707,
+     "A_lo": -0.01208856999170669,
+     "A_hi": 0.008339651589612118,
+     "d_s": [
+      0.00041684035014589413,
+      -0.004585243851604835
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": -0.03438932888703627,
+     "A_lo": -0.052325279924461156,
+     "A_hi": -0.01730286133124548,
+     "d_s": [
+      -0.045018757815756566,
+      -0.023759899958315966
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": -0.013130471029595664,
+     "A_lo": -0.023760240310933482,
+     "A_hi": -0.002928916449204002,
+     "d_s": [
+      -0.010421008753647354,
+      -0.015839933305543976
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": 0.004672897196261682,
+     "A_lo": 0.0,
+     "A_hi": 0.010497816329453171,
+     "d_s": [
+      0.003115264797507788,
+      0.006230529595015576
+     ]
+    },
+    "F": {
+     "D": -0.008566978193146417,
+     "A_lo": -0.02282562560779498,
+     "A_hi": 0.0034677551973285093,
+     "d_s": [
+      -0.014018691588785047,
+      -0.003115264797507788
+     ]
+    }
+   }
+  },
+  "BESIDE_RH_minus_B0_R0KHb20": {
+   "A": "RL_R0KHb20",
+   "B": "B0_R0KHb20",
+   "families": {
+    "LONGITUDINAL": "NOT-SEPARATED",
+    "LATERAL": "MIXED",
+    "TACTICAL": "NOT-SEPARATED",
+    "STRATEGIC": "NOT-SEPARATED"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.017170027621577856,
+     "interval": [
+      0.007016792626329288,
+      0.027211289034681473
+     ],
+     "per_seed": [
+      0.019821190831855368,
+      0.014518864411300344
+     ],
+     "F": 0.032719679284609615,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "WORSE",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.06525189391835032,
+     "interval": [
+      0.03334434580775404,
+      0.09671003804118013
+     ],
+     "per_seed": [
+      0.07975125663388895,
+      0.05075253120281168
+     ],
+     "F": 0.07058027228494335,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "WORSE",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": 0.0026690391459074734,
+     "interval": [
+      -0.002685475719205617,
+      0.009626561832011465
+     ],
+     "per_seed": [
+      0.005338078291814947,
+      0.0
+     ],
+     "F": 0.005338078291814957,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": -0.25282069761509596,
+     "interval": [
+      -0.3587080200451977,
+      -0.13695880839123376
+     ],
+     "per_seed": [
+      -0.20950435469502227,
+      -0.29613704053516965
+     ],
+     "F": 0.3361228870037367,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "BETTER",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": -0.708693316102217,
+     "interval": [
+      -1.0466181447694998,
+      -0.42950277804710607
+     ],
+     "per_seed": [
+      -0.6989773155623861,
+      -0.7184093166420479
+     ],
+     "F": 0.4210685170731878,
+     "verdict": "BETTER",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.04915698523183014,
+     "interval": [
+      -0.000612379520440148,
+      0.09708787988780573
+     ],
+     "per_seed": [
+      0.07197053399063162,
+      0.026343436473028652
+     ],
+     "F": 0.14786899007559784,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": -0.48789314753733126,
+      "interval": [
+       -0.6589380956708201,
+       -0.3275003163582288
+      ],
+      "per_seed": [
+       -0.7039289760374545,
+       -0.2719507197412721
+      ],
+      "F": 0.7741393473550513,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": true,
+      "straddle_sign_verdict": "BETTER",
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": -0.8097636375401877,
+      "interval": [
+       -1.1370972728339517,
+       -0.5175898228006699
+      ],
+      "per_seed": [
+       -1.2489241389551249,
+       -0.37079415852691006
+      ],
+      "F": 1.3679879399733306,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": true,
+      "straddle_sign_verdict": "BETTER",
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": -1.1890912771452142,
+      "interval": [
+       -1.7504574247778366,
+       -0.7217098313126369
+      ],
+      "per_seed": [
+       -1.8326929560331158,
+       -0.545489598257313
+      ],
+      "F": 2.088244572418107,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": true,
+      "straddle_sign_verdict": "BETTER",
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.02649008650559404,
+     "A_lo": -0.04439244178388453,
+     "A_hi": -0.011786134737790359,
+     "d_s": [
+      -0.02389501035315472,
+      -0.029085162658033358
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": -0.014297367844071502,
+     "A_lo": -0.021656055199633283,
+     "A_hi": -0.00810368989121403,
+     "d_s": [
+      -0.01437318298646959,
+      -0.014221552701673412
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": -0.003126302626094206,
+     "A_lo": -0.01188490408673895,
+     "A_hi": 0.006250598272618528,
+     "d_s": [
+      -0.0020842017507294707,
+      -0.004168403501458941
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": -0.013130471029595664,
+     "A_lo": -0.020216756982075867,
+     "A_hi": -0.00603649634971552,
+     "d_s": [
+      -0.010004168403501459,
+      -0.01625677365568987
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": -0.007503126302626095,
+     "A_lo": -0.016871292056565106,
+     "A_hi": 0.00312631569039596,
+     "d_s": [
+      -0.0025010421008753647,
+      -0.012505210504376824
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": 0.003115264797507788,
+     "A_lo": -0.00043017018654722386,
+     "A_hi": 0.007123307325015466,
+     "d_s": [
+      0.003115264797507788,
+      0.003115264797507788
+     ]
+    },
+    "F": {
+     "D": -0.006230529595015576,
+     "A_lo": -0.018773380928763427,
+     "A_hi": 0.0046185586973945085,
+     "d_s": [
+      -0.010903426791277258,
+      -0.001557632398753894
+     ]
+    }
+   }
+  },
+  "BESIDE_RL_minus_RH_R0Hb20": {
+   "A": "RL_R0Hb20",
+   "B": "RH_R0Hb20",
+   "families": {
+    "LONGITUDINAL": "NOT-SEPARATED",
+    "LATERAL": "NOT-SEPARATED",
+    "TACTICAL": "NOT-SEPARATED",
+    "STRATEGIC": "NOT-SEPARATED"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.01085514584991316,
+     "interval": [
+      -0.012914136966593917,
+      0.034674192315653024
+     ],
+     "per_seed": [
+      -0.004557636079280953,
+      0.026267927779107275
+     ],
+     "F": 0.05631461317412212,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.01385196987206614,
+     "interval": [
+      -0.011753194099750647,
+      0.03823670013919627
+     ],
+     "per_seed": [
+      0.0021348166230478814,
+      0.0255691231210844
+     ],
+     "F": 0.03169006979735878,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": 0.0035587188612099642,
+     "interval": [
+      -0.005542808260661217,
+      0.012553651104548286
+     ],
+     "per_seed": [
+      0.0017793594306049821,
+      0.005338078291814947
+     ],
+     "F": 0.021352313167259773,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": -0.019236178981099375,
+     "interval": [
+      -0.10486444009191406,
+      0.059609277277334984
+     ],
+     "per_seed": [
+      -0.006190290455075442,
+      -0.032282067507123306
+     ],
+     "F": 0.6100678086868223,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 0.4522396766097174,
+     "interval": [
+      -0.07746471401638805,
+      1.0957262784868795
+     ],
+     "per_seed": [
+      0.10805050305593142,
+      0.7964288501635034
+     ],
+     "F": 2.5751108540128165,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.012154258780237456,
+     "interval": [
+      -0.01976412946650435,
+      0.04337357038844721
+     ],
+     "per_seed": [
+      0.010108483656672726,
+      0.014200033903802185
+     ],
+     "F": 0.007731977570572202,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": -0.0082952628068784,
+      "interval": [
+       -0.10152003380203736,
+       0.08846718887671394
+      ],
+      "per_seed": [
+       0.059869343518083956,
+       -0.07643039891726014
+      ],
+      "F": 0.19996459397026545,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": 0.0002102779548070174,
+      "interval": [
+       -0.16477894742312857,
+       0.1629624484583481
+      ],
+      "per_seed": [
+       0.1883285185570719,
+       -0.18790796264745785
+      ],
+      "F": 0.24941455135416923,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": 0.019954854544222907,
+      "interval": [
+       -0.26591037305857085,
+       0.3084879473522767
+      ],
+      "per_seed": [
+       0.41226011338686297,
+       -0.3723504042984171
+      ],
+      "F": 0.6125584472394525,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.006788683084030196,
+     "A_lo": -0.029894305644899328,
+     "A_hi": 0.0166705585077106,
+     "d_s": [
+      0.00709690946250401,
+      -0.0206742756305644
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": -0.000518793765596369,
+     "A_lo": -0.005860350545276019,
+     "A_hi": 0.005195322293015187,
+     "d_s": [
+      -0.002147140258648418,
+      0.0011095527274556799
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.008128386827844936,
+     "A_lo": 0.0001983207824194985,
+     "A_hi": 0.016464791328779815,
+     "d_s": [
+      0.00917048770320967,
+      0.0070862859524802
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": -0.0016673614005835767,
+     "A_lo": -0.013336181742392664,
+     "A_hi": 0.012307503462668271,
+     "d_s": [
+      0.0029178824510212586,
+      -0.006252605252188412
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.0106294289287203,
+     "A_lo": -0.00020757415702071273,
+     "A_hi": 0.02169289938447584,
+     "d_s": [
+      0.010004168403501459,
+      0.011254689453939141
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": 0.003894080996884735,
+     "A_lo": -0.0026962629443942365,
+     "A_hi": 0.013857111040838355,
+     "d_s": [
+      0.00778816199376947,
+      0.0
+     ]
+    },
+    "F": {
+     "D": 0.010903426791277258,
+     "A_lo": 0.0008727447224224832,
+     "A_hi": 0.022155569952055913,
+     "d_s": [
+      0.009345794392523364,
+      0.012461059190031152
+     ]
+    }
+   }
+  },
+  "BESIDE_RL_minus_RH_R0C10XHb20": {
+   "A": "RL_R0C10XHb20",
+   "B": "RH_R0C10XHb20",
+   "families": {
+    "LONGITUDINAL": "NOT-SEPARATED",
+    "LATERAL": "NOT-SEPARATED",
+    "TACTICAL": "NOT-SEPARATED",
+    "STRATEGIC": "NOT-SEPARATED"
+   },
+   "cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.010317459079815641,
+     "interval": [
+      -0.0005372871775828709,
+      0.021714055069369822
+     ],
+     "per_seed": [
+      0.006472934086841191,
+      0.01416198407279009
+     ],
+     "F": 0.011118085652162657,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.009604896917543642,
+     "interval": [
+      -0.011629592124195539,
+      0.03204630644300292
+     ],
+     "per_seed": [
+      0.0006466359241011275,
+      0.018563157910986155
+     ],
+     "F": 0.08162998829108625,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "HEADWAY:U": {
+     "D": 0.004448398576512456,
+     "interval": [
+      -0.006473962027260025,
+      0.015497746936794782
+     ],
+     "per_seed": [
+      -0.0017793594306049821,
+      0.010676156583629894
+     ],
+     "F": 0.023131672597864764,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": -0.11855911216248383,
+     "interval": [
+      -0.22423299859590715,
+      -0.03421053462930622
+     ],
+     "per_seed": [
+      -0.080508552066531,
+      -0.15660967225843667
+     ],
+     "F": 0.5070724315861703,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": true,
+     "straddle_sign_verdict": "BETTER",
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 0.15127458865562554,
+     "interval": [
+      -0.5459961693917686,
+      0.7826323771140896
+     ],
+     "per_seed": [
+      0.5646035247291327,
+      -0.2620543474178816
+     ],
+     "F": 1.868400777627091,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": -0.005340353759605178,
+     "interval": [
+      -0.03580703584719211,
+      0.027056349217835823
+     ],
+     "per_seed": [
+      -0.017483643086483033,
+      0.006802935567272675
+     ],
+     "F": 0.1501715152657952,
+     "verdict": "NOT-SEPARATED",
+     "straddles_floor": false,
+     "straddle_sign_verdict": null,
+     "seeds_opposite_beyond_floor": false,
+     "floor_source": "two-seed F_c"
+    },
+    "STRATEGIC:pos_tick2": [
+     {
+      "D": -0.1923151723223893,
+      "interval": [
+       -0.294664613559317,
+       -0.09378937358723881
+      ],
+      "per_seed": [
+       0.018637662862143002,
+       -0.40326800750692154
+      ],
+      "F": 0.3182980712067529,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 30.0
+     },
+     {
+      "D": -0.269500402056615,
+      "interval": [
+       -0.4610502338424908,
+       -0.07888875933401851
+      ],
+      "per_seed": [
+       0.22844900297009652,
+       -0.7674498070833266
+      ],
+      "F": 0.6867180448669856,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 50.0
+     },
+     {
+      "D": -0.2720764975190551,
+      "interval": [
+       -0.6097205318821555,
+       0.05972156070384567
+      ],
+      "per_seed": [
+       0.5950434962241244,
+       -1.1391964912622348
+      ],
+      "F": 1.1640718034818125,
+      "verdict": "NOT-SEPARATED",
+      "straddles_floor": false,
+      "straddle_sign_verdict": null,
+      "seeds_opposite_beyond_floor": false,
+      "arc_m": 80.0
+     }
+    ]
+   },
+   "beside": {
+    "LATERAL:cross_mae_m": {
+     "D": -0.018103975584798315,
+     "A_lo": -0.028660753535766026,
+     "A_hi": -0.0077123121021325436,
+     "d_s": [
+      -0.014964756426195549,
+      -0.02124319474340108
+     ]
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": -0.002102671583672163,
+     "A_lo": -0.01319996323680975,
+     "A_hi": 0.007452975820642278,
+     "d_s": [
+      0.003143525287891282,
+      -0.0073488684552356085
+     ]
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.008753647353063776,
+     "A_lo": -0.0010415902564379353,
+     "A_hi": 0.018770518539154672,
+     "d_s": [
+      0.00917048770320967,
+      0.008336807002917883
+     ]
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": 0.0012505210504376823,
+     "A_lo": -0.006461562350664136,
+     "A_hi": 0.00896034460862267,
+     "d_s": [
+      0.0020842017507294707,
+      0.00041684035014589413
+     ]
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.008753647353063776,
+     "A_lo": -0.0014617397875201082,
+     "A_hi": 0.019575437388343195,
+     "d_s": [
+      0.006252605252188412,
+      0.011254689453939141
+     ]
+    }
+   },
+   "headway_beside": {
+    "C": {
+     "D": 0.002336448598130841,
+     "A_lo": -0.001642239347087418,
+     "A_hi": 0.007153408720832752,
+     "d_s": [
+      0.004672897196261682,
+      0.0
+     ]
+    },
+    "F": {
+     "D": 0.0023364485981308414,
+     "A_lo": -0.011202352560056918,
+     "A_hi": 0.016243682233036304,
+     "d_s": [
+      -0.003115264797507788,
+      0.00778816199376947
+     ]
+    }
+   }
+  }
+ },
+ "P": {
+  "P1": {
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "BETTER",
+    "TACTICAL": "BETTER",
+    "STRATEGIC": "BETTER"
+   },
+   "better": [
+    "LATERAL",
+    "TACTICAL",
+    "STRATEGIC"
+   ],
+   "worse": [],
+   "not_computable": []
+  },
+  "P2": {
+   "RH_not_worse_on_every_family": {
+    "P2_ACC_RH": false,
+    "P2_D1_RH": true,
+    "P2_D2_RH": false
+   },
+   "attribution_B0_ACC_worse_on_at_least_two_of_three": true,
+   "B0_ACC_worse_families": [
+    "LATERAL",
+    "TACTICAL"
+   ],
+   "pass": false,
+   "note": "Amendment 2 item 4: P2 holds only if RH reads NOT WORSE on every family AND the B0 attribution control holds; if the control fails, P2 fails"
+  },
+  "P3": {
+   "RH_R0Hb20": "DEGRADES",
+   "RH_R0C10XHb20": "DEGRADES",
+   "B0_R0Hb20_must_read_DEGRADES": "DEGRADES",
+   "pass": false
+  },
+  "P4": {
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "WORSE",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "NOT-SEPARATED"
+   },
+   "pass": false
+  },
+  "G_T0": {
+   "holds": false,
+   "fails_at_all_seeds": false,
+   "per_seed": {
+    "0": "FAILS",
+    "1": "HOLDS"
+   },
+   "fails_at_exactly_one_seed": true
+  },
+  "seed_disagree_cells": [],
+  "straddling_cells_by_pair": {
+   "P1": [
+    "HEADWAY:U"
+   ],
+   "P2_ACC_RH": [
+    "STRATEGIC:pos50",
+    "STRATEGIC:pos80"
+   ],
+   "P2_D1_RH": [
+    "LATERAL:heading_mae_deg",
+    "TACTICAL:ade_tac_m"
+   ],
+   "P2_D2_RH": [
+    "HEADWAY:U",
+    "LATERAL:heading_mae_deg"
+   ],
+   "P2_D1_B0": [
+    "LATERAL:heading_mae_deg",
+    "STRATEGIC:pos30",
+    "STRATEGIC:pos50",
+    "STRATEGIC:pos80"
+   ],
+   "P4": [
+    "STRATEGIC:pos30",
+    "STRATEGIC:pos50"
+   ],
+   "BESIDE_RH_minus_B0_R0Hb20": [
+    "LONGITUDINAL:speed_mae_mps"
+   ],
+   "BESIDE_RH_minus_B0_R0G50Hb20": [
+    "HEADWAY:U"
+   ],
+   "BESIDE_RH_minus_B0_R0G0Hb20": [
+    "LONGITUDINAL:speed_mae_mps",
+    "LONGITUDINAL:along_mae_m"
+   ],
+   "BESIDE_RH_minus_B0_R0KHb20": [
+    "LONGITUDINAL:speed_mae_mps",
+    "LONGITUDINAL:along_mae_m",
+    "LATERAL:heading_mae_deg",
+    "STRATEGIC:pos30",
+    "STRATEGIC:pos50",
+    "STRATEGIC:pos80"
+   ],
+   "BESIDE_RL_minus_RH_R0C10XHb20": [
+    "LATERAL:heading_mae_deg"
+   ]
+  },
+  "straddle_floor_cells": [
+   "HEADWAY:U"
+  ]
+ },
+ "G_T0": {
+  "instrument": "T0 E0 eval (--project --families) `ade6` per window, the DSCALE instrument",
+  "tier": "T0",
+  "F_T0_m": 0.0705,
+  "evidence_F": "abs(UE_s1.A - UE_s0.A) = abs(2.0376 - 1.9671), FACTS E3, INHERITED; one seed pair, a weak floor",
+  "estimator": "taniteval.ci.paired_episode_cluster_bootstrap B 2,000 seed 0",
+  "per_seed": {
+   "0": {
+    "status": "FAILS",
+    "point_m": 0.0479,
+    "lo": 0.009,
+    "hi": 0.0897,
+    "mean_ade6_RH": 2.1380310929898108,
+    "mean_ade6_B0": 2.090147974244027,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "1": {
+    "status": "HOLDS",
+    "point_m": 0.0061,
+    "lo": -0.0312,
+    "hi": 0.047,
+    "mean_ade6_RH": 2.0550957840159683,
+    "mean_ade6_B0": 2.0489765552816035,
+    "n_windows": 2399,
+    "n_episodes": 141
+   }
+  },
+  "holds_at": [],
+  "holds": false,
+  "fails_at_all_seeds": false
+ },
+ "blocked": {
+  "blocked": false
+ },
+ "provenance": {
+  "ok": true,
+  "problems": [],
+  "checkpoint_sha256": {
+   "RL_s0": "df14a4240b5a8f32642476192441781689d4e75e97cd75d66c77c9d974fa99cd",
+   "RL_s1": "8c12eaa04fdeb95b6e579f1975593f5441cc91205151c9a03e04649fd6cb5411",
+   "B0_s0": "bd0d87fec0f38d01e5872ef07986dfead777cd495b79402162d34385d3a8194a",
+   "B0_s1": "922488d3ffb0765252dfb8ce0682486f2dc624b96e32682e49df030503916066",
+   "RH_s0": "351bb5f26ed0e1566ac9a3dd1c94f5d8b7b5dde5888654a09b859044e56348d5",
+   "RH_s1": "c387f4ce363ebb8cc534424cbd1934f5b8ab8191ce97f97caf62d10ec5ac9fd9"
+  }
+ },
+ "name_as_read": "ROLLHIST-PARTIAL",
+ "name_straddles_by_sign": "ROLLHIST-PARTIAL",
+ "P_straddles_by_sign": {
+  "P1": {
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "BETTER",
+    "TACTICAL": "BETTER",
+    "STRATEGIC": "BETTER"
+   },
+   "better": [
+    "LATERAL",
+    "TACTICAL",
+    "STRATEGIC"
+   ],
+   "worse": [],
+   "not_computable": []
+  },
+  "P2": {
+   "RH_not_worse_on_every_family": {
+    "P2_ACC_RH": false,
+    "P2_D1_RH": false,
+    "P2_D2_RH": false
+   },
+   "attribution_B0_ACC_worse_on_at_least_two_of_three": true,
+   "B0_ACC_worse_families": [
+    "LATERAL",
+    "TACTICAL"
+   ],
+   "pass": false,
+   "note": "Amendment 2 item 4: P2 holds only if RH reads NOT WORSE on every family AND the B0 attribution control holds; if the control fails, P2 fails"
+  },
+  "P3": {
+   "RH_R0Hb20": "DEGRADES",
+   "RH_R0C10XHb20": "DEGRADES",
+   "B0_R0Hb20_must_read_DEGRADES": "DEGRADES",
+   "pass": false
+  },
+  "P4": {
+   "families": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "WORSE",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "MIXED"
+   },
+   "pass": false
+  },
+  "G_T0": {
+   "holds": false,
+   "fails_at_all_seeds": false,
+   "per_seed": {
+    "0": "FAILS",
+    "1": "HOLDS"
+   },
+   "fails_at_exactly_one_seed": true
+  }
+ },
+ "P2_reference_UE_A": {
+  "from": "our stage-A rollouts under the form of record, MEASURED; the card expects WORSE; beside, decides no name",
+  "pairs": {
+   "D1": {
+    "pair": "I10UEA_R0G50Hb20_minus_I10UEA_R0G0Hb20",
+    "cells": {
+     "LONGITUDINAL:speed_mae_mps": {
+      "D": 0.4855392610007274,
+      "interval": [
+       0.3405854107653097,
+       0.6326466886695423
+      ]
+     },
+     "LONGITUDINAL:along_mae_m": {
+      "D": 0.5340906063023926,
+      "interval": [
+       0.36751730317137277,
+       0.7040272460354314
+      ]
+     },
+     "LATERAL:heading_mae_deg": {
+      "D": 1.970865585744627,
+      "interval": [
+       1.6367691843756618,
+       2.3449899912138763
+      ]
+     },
+     "LATERAL:yaw_rate_mae_degps": {
+      "D": 18.6439520461833,
+      "interval": [
+       15.89349723241711,
+       21.848516481522292
+      ]
+     },
+     "TACTICAL:ade_tac_m": {
+      "D": 0.623837362142447,
+      "interval": [
+       0.4076447422941353,
+       0.8372560042173989
+      ]
+     },
+     "HEADWAY:U": {
+      "D": -0.051601423487544484,
+      "interval": [
+       -0.07542930918120402,
+       -0.03036966615689173
+      ]
+     }
+    }
+   },
+   "D2": {
+    "pair": "I10UEA_R0C10Hb20_minus_I10UEA_R0G50Hb20",
+    "cells": {
+     "LONGITUDINAL:speed_mae_mps": {
+      "D": 0.9085903611784776,
+      "interval": [
+       0.7618417373009259,
+       1.0713123306408958
+      ]
+     },
+     "LONGITUDINAL:along_mae_m": {
+      "D": 0.7829715794562309,
+      "interval": [
+       0.6526671862604773,
+       0.9287854352106274
+      ]
+     },
+     "LATERAL:heading_mae_deg": {
+      "D": 2.8716402455703185,
+      "interval": [
+       2.4645047812279666,
+       3.3195622807096994
+      ]
+     },
+     "LATERAL:yaw_rate_mae_degps": {
+      "D": 26.45083385100873,
+      "interval": [
+       23.03408200220483,
+       30.303089296072788
+      ]
+     },
+     "TACTICAL:ade_tac_m": {
+      "D": 1.0726841254572579,
+      "interval": [
+       0.8677085068215968,
+       1.2976956527559798
+      ]
+     },
+     "HEADWAY:U": {
+      "D": 0.04448398576512455,
+      "interval": [
+       0.01641103358078338,
+       0.07600736246553029
+      ]
+     }
+    }
+   },
+   "ACC": {
+    "pair": "I10UEA_R0C10XHb20_minus_I10R0KHb20",
+    "cells": {
+     "LONGITUDINAL:speed_mae_mps": {
+      "D": 1.2576432208698445,
+      "interval": [
+       1.0871738535631839,
+       1.4390246905642752
+      ]
+     },
+     "LONGITUDINAL:along_mae_m": {
+      "D": 1.2412502365900058,
+      "interval": [
+       0.9829603848355524,
+       1.5018836416294175
+      ]
+     },
+     "LATERAL:heading_mae_deg": {
+      "D": 4.475802418866585,
+      "interval": [
+       3.7574495937982,
+       5.247554009066901
+      ]
+     },
+     "LATERAL:yaw_rate_mae_degps": {
+      "D": 38.42836251620636,
+      "interval": [
+       33.99364965623645,
+       43.54039294902514
+      ]
+     },
+     "TACTICAL:ade_tac_m": {
+      "D": 1.9169264929624346,
+      "interval": [
+       1.5302544486397405,
+       2.303984124928887
+      ]
+     },
+     "HEADWAY:U": {
+      "D": -0.03469750889679715,
+      "interval": [
+       -0.06281275839837823,
+       -0.00792417994595105
+      ]
+     }
+    }
+   }
+  }
+ },
+ "outcome": "ROLLHIST-PARTIAL",
+ "outcome_reason": "",
+ "next_lever": "the speed label is spent at p = 0.1 and the card names no lever after it: the MM pre-registers one before any run (candidates, post hoc until frozen: the label at p = 0.3; DAgger iteration 2 from RL's own states)",
+ "treated_arm": "RL",
+ "rl_answer": "speed label repairs NEITHER P2 nor P3 and G-T0 FAILS at one seed: RL P2 False, P3 False (outcome ROLLHIST-PARTIAL); RH on the same bank with the human label (the PARTIAL read): P2 False, P3 False, G-T0 per seed {'0': 'FAILS', '1': 'HOLDS'}"
+}
