@@ -42,6 +42,7 @@ for p in (os.path.join(REPO, "stack"), os.path.join(REPO, "taniteval")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
+from tanitad.data import v8f_recovery as DR  # noqa: E402      PREREG_V8F_ROLLHIST: the speed-consistent label (`--dagger-label speed_v1`; reuses V1's rate-limited speed profile and feasibility checker)
 from tanitad.data import v8f_dagger as DG  # noqa: E402      PREREG_V8F_DAGGER: the own-state bank + the swap (the DATA library; `--dagger-p 0` = no bank is read and no row is swapped)
 from tanitad.data import v8f_mini_data as D  # noqa: E402
 from tanitad.data import v8f_wm_windows as WW  # noqa: E402      PREREG_V8F_LADDER: the world-model-only window sampler + the pooled path's data half (`--wm-windows train` = it is never called)
@@ -97,6 +98,9 @@ FLAG_CHECKS = {
     # PREREG_V8F_ROLLHIST N4: the declaration of WHAT the bank's own history is (the bank sha256 binds the bank, the argv must also NAME it). `dagger:<k>` = equals the LOADED bank header's generator record as read by
     # DaggerSwap.built_levers(): argv -> make_dagger -> the swap -> declared_vs_built (bad_dagger: declared != the header's -> REFUSED; non-default at --dagger-p 0 -> REFUSED).
     "dagger_bank_readout": "dagger:dagger_bank_readout", "dagger_bank_kappa": "dagger:dagger_bank_kappa",
+    # PREREG_V8F_ROLLHIST (label lever RL): `dagger:dagger_label` = equals the BUILT bank's label kind (DaggerSwap.built_levers()["dagger_label"]: "speed_v1" iff the speed-consistent labels are attached to the loaded
+    # bank). argv -> make_dagger -> load_dagger_bank (label_bank at bank load) -> DaggerBank.attach_recovery -> DaggerSwap.apply -> swap_rows (gt, s_h installed) -> model.loss (ade / fde / acc / LEAD / consistency). Refused when non-default at --dagger-p 0.
+    "dagger_label": "dagger:dagger_label",
     # AMEND1 (DAG-ORC re-based on DAG-OACC) section 1: the two levers above composed in ONE arm. `compose:<k>` = equals the BUILT stage's lever (EgoDaggerCompose.built_levers(), the object the loop calls `.apply` on):
     # argv -> make_compose -> the stage -> declared_vs_built (bad_ego_dagger; bad_dagger lifts the exclusivity ONLY for an argv that names it) -> G-LIVE on a COMPOSED batch (ego_dagger_compose_probe: both levers reach the
     # loss gradient, the p = 0 controls read EXACTLY 0.0) -> `b = comp.apply(b, step)` in the loop. Off (the default): the stage is never called and the loop runs its two original lines.
@@ -236,6 +240,11 @@ def build_parser():
     ap.add_argument("--dagger-bank-kappa", dest="dagger_bank_kappa", choices=("none", "0.2"), default="none",
                     help="PREREG_V8F_ROLLHIST N4: the heading bound the bank's own history was generated under (v8f_dagger_bank.py --kappa-max). Must equal the LOADED bank header's generator.kappa_max (a bank without the field "
                          "reads none) or the launch gate refuses; refused when non-default at --dagger-p 0. Default none = every earlier bank")
+    ap.add_argument("--dagger-label", dest="dagger_label", choices=DR.DAGGER_LABELS, default="human",
+                    help="PREREG_V8F_ROLLHIST (arm RL): the label a swapped own state carries. human (default) = today's swap bit for bit: the human's GT at the matched route point r'. speed_v1 = the SPEED-consistent label "
+                         "(v8f_recovery.speed_label, labelled once at bank load, matcher-ok records only): the human polyline from r' sampled at the human arc plus the integrated speed deficit of V1's rate-limited speed profile "
+                         "started from the OWN speed; gt and s_h of the swapped rows come from it; a record the labeller refuses keeps the human label; the eligible index is unchanged. Must equal the built bank's label kind or "
+                         "the launch gate refuses; refused when non-default at --dagger-p 0")
     ap.add_argument("--ego-perturb-with-dagger", dest="ego_perturb_with_dagger", action="store_true", default=False,
                     help="AMEND1 section 1: lift the exclusivity of --dagger-p and --ego-perturb-p for THIS arm and compose them. The DAgger swap is drawn first; the ego perturbation is then drawn (its own p, its own seeded "
                          "generator) ONLY on the samples the swap did not replace, so no sample is both swapped and perturbed (the run record carries ego_dagger_overlap_n, exactly 0). REFUSED unless --dagger-p > 0 AND "
@@ -567,7 +576,7 @@ def dagger_eval_clips(a, header) -> tuple:
     return sorted(set().union(*map(set, src.values()))), {k: len(v) for k, v in src.items()}
 
 
-def load_dagger_bank(a, J, wins, clips, info) -> tuple:
+def load_dagger_bank(a, J, wins, clips, info, store=None) -> tuple:
     """``--dagger-bank`` -> (the bank re-indexed to this trainer's join, the controls record). The PREREG's controls, each refusing with its own message (``DG.BankRefused``):
 
       load      every shard re-hashed against the manifest (``DaggerBank.load``); a bare shard / unmerged bank is refused
@@ -588,21 +597,33 @@ def load_dagger_bank(a, J, wins, clips, info) -> tuple:
         raise DG.BankRefused("K-B2: --dagger-bank needs --init-ckpt (the bank's generating checkpoint is compared with the file this run starts from)")
     kb2 = bank0.check_on_policy(init["sha256"])
     bank = DG.DaggerBank(bank0.a, bank0.header, clip_names=J["clip"], manifest=bank0.manifest, sha256=bank0.sha256, path=bank0.path)
+    rl_ctl = None
+    if a.dagger_label == "speed_v1":                                                             # --dagger-label speed_v1: the speed-consistent labeller, once, at load (the logged grid and speed of each clip from the trainer's own store)
+        if store is None:
+            raise DG.BankRefused("--dagger-label speed_v1 needs the trainer's clip store (the logged grid and speed of each bank clip)")
+        t_rl = time.time()
+        n_el0 = int(len(bank._ok_idx))
+        res = DR.label_bank(bank.a, bank.ci, J["clip"], getattr(store, "get_kin", None) or store.get, log=print)
+        bank.attach_recovery(res["slot"], res["label"], res["status_counts"])                     # the line that attaches the labels (the eligible index is unchanged)
+        rl_ctl = {"labeller_module": "tanitad/data/v8f_recovery.py", "label": "speed_v1", "status_counts": res["status_counts"], "n_labelled": res["n_labelled"], "n_emitted": int(len(res["label"])),
+                  "n_eligible": n_el0, "n_eligible_after": int(len(bank._ok_idx)), "census": res["census"], "wall_s": round(time.time() - t_rl, 1)}
     cov = bank.coverage(wins)
     if cov["blocked"]:
         raise DG.BankRefused(f"COVERAGE {cov['fraction']:.4f} < {cov['min']} ({cov['n_eligible']} of {cov['n_windows']} TRAIN windows have an eligible own state): the arm does not launch (outcome BLOCKED, PREREG_V8F_DAGGER section 7)")
     ctl = {"bank_path": bank.path, "bank_sha256": bank.sha256, "n_records": bank.n, "reason_counts": bank.reason_counts(), "coverage": cov,
            "kb2": {**kb2, "init_ckpt_sha256": init["sha256"]}, "kb3": {**kb3, "window_list_sha256": wsha, "eval_sources": eval_src, "n_eval_clips_checked": len(eval_clips)}}
+    if rl_ctl is not None:
+        ctl["speed_label"] = rl_ctl
     return bank, ctl
 
 
-def make_dagger(a, J, wins, clips, info):
+def make_dagger(a, J, wins, clips, info, store=None):
     """argv -> the swap the training loop calls ``.apply`` on (PREREG_V8F_DAGGER). The ONE place the three flags become an object; ``bad_dagger`` compares it back to the argv. With ``--dagger-p 0`` no bank is
     read (a ``--dagger-bank`` declared at p = 0 builds nothing and is refused by the gate: a lever that is declared and does nothing). A refused bank stops the launch before the gate."""
     bank = None
     if a.dagger_bank and a.dagger_p > 0:
         try:
-            bank, ctl = load_dagger_bank(a, J, wins, clips, info)
+            bank, ctl = load_dagger_bank(a, J, wins, clips, info, store)
         except DG.BankRefused as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ dagger-bank {a.dagger_bank}: {e}")
         except Exception as e:                                       # noqa: BLE001  a missing / foreign / corrupt bank is a REFUSAL, not a crash
@@ -615,7 +636,7 @@ def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
     """The DAgger half of the launch gate (G-DVB). Empty = pass. Every flag is read back from the BUILT swap (``dag``); with no swap built every one must be at its default (a flag that builds nothing is
     refused, not ignored). Beyond the flags: the bank's path and sha256 against the declaration (the file on disk is re-hashed), K-B2 / K-B3 / COVERAGE were read (the record exists and says so), the bank's
     generating configuration equals PREREG section 1's and this model's, the exclusivity with --ego-perturb-p, and a lever declared without an effect (DAG-only flags at p = 0) is refused."""
-    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed", "dagger_bank_readout", "dagger_bank_kappa")}
+    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed", "dagger_bank_readout", "dagger_bank_kappa", "dagger_label")}
     declared = {k: getattr(a, k) for k in dfl}
     if dag is None:
         moved = sorted(k for k in dfl if declared[k] != dfl[k])
@@ -625,7 +646,7 @@ def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
     for k in ("dagger_p", "dagger_seed"):
         if lv.get(k) != declared[k]:
             bad.append(f"lever {k}: declared {declared[k]!r} but built {lv.get(k)!r}")
-    for k in ("dagger_bank_readout", "dagger_bank_kappa"):                                       # PREREG_V8F_ROLLHIST N4: the declaration against the LOADED bank header (built_levers reads it)
+    for k in ("dagger_bank_readout", "dagger_bank_kappa", "dagger_label"):                       # PREREG_V8F_ROLLHIST N4 (+ the label lever): the declaration against the LOADED bank header (built_levers reads it)
         if lv.get(k) != declared[k]:
             bad.append(f"lever {k}: declared {declared[k]!r} but the loaded bank's header says {lv.get(k)!r} (a header without the field reads {dfl[k]!r})")
         if a.dagger_p <= 0 and declared[k] != dfl[k]:
@@ -2753,7 +2774,7 @@ def dagger_probe(model, batch, cfg, dag) -> dict:
     rec = dag.bank.gather(idx)
     sel_rows = sel.nonzero(as_tuple=True)[0]
     if not (np.array_equal(rec["r"].astype(np.int64), batch["t"][sel_rows].numpy()) and np.array_equal(dag.bank.ci[idx], batch["ci"][sel_rows].numpy())
-            and bool((dag.bank.reason[idx] == DG.OK).all())):
+            and bool(dag.bank.eligible_mask[idx].all())):
         raise AssertionError("dagger probe: a selected row was swapped for a record that is not its window's own matched, uncut state (clip, r' = t, reason ok)")
     if not bool((pert["kin3"][sel_rows] == torch.from_numpy(rec["kin3"]).to(batch["kin3"].dtype)).all()):
         raise AssertionError("dagger probe: the swapped kin3 of a selected row is not the bank record's own kin3: the swap does not write the bank's state into the batch")
@@ -2768,7 +2789,15 @@ def dagger_probe(model, batch, cfg, dag) -> dict:
         req = need & ~base_rest if k == "base" else need
         if not bool(ch[k][req].all()):
             raise AssertionError(f"dagger probe: {k} is unchanged on {int((~ch[k][req]).sum())} of {int(req.sum())} selected rows: the swap did not reach it")
-    kept_moved = sorted(k for k in batch if k not in DG.REBUILT and k != "lab_s" and pert[k] is not batch[k])
+    rl_keys = ("gt", "s_h") if dag.bank.label_kind == "speed_v1" else ()                          # speed_v1: the two waypoint-derived labels are the ONLY targets the swap may replace
+    kept_moved = sorted(k for k in batch if k not in DG.REBUILT and k != "lab_s" and k not in rl_keys and pert[k] is not batch[k])
+    if rl_keys:
+        for k in rl_keys:
+            if bool(changed(pert[k], batch[k])[~sel].any()):
+                raise AssertionError(f"dagger probe: {k} changed on a row the swap did not select")
+        res["rl_label_rows_changed"] = int(changed(pert["gt"], batch["gt"]).sum())
+        if not (dag.last.get("n_label_replaced", 0) > 0 and res["rl_label_rows_changed"] > 0):
+            raise AssertionError(f"dagger probe: --dagger-label speed_v1 replaced {dag.last.get('n_label_replaced')} labels and gt changed on {res['rl_label_rows_changed']} rows: the speed-consistent label does not reach the batch")
     if kept_moved:
         raise AssertionError(f"dagger probe: {kept_moved} are not the same objects after the swap: targets, labels and kept inputs must not be touched")
     ls0, ls1 = batch["lab_s"], pert["lab_s"]
@@ -3323,7 +3352,7 @@ def main(argv=None):
         freeze_groups(model, a.freeze)                               # PREREG_V8F_OTBAND (`--freeze`): BEFORE the optimiser below; bad_oband reads the frozen set back from the BUILT model
     if a.wm_only:
         freeze_all_but_wm(model)                                     # PREREG_V8F_MRATE: BEFORE the optimiser below (its decay / nodecay lists filter on requires_grad); bad_wm_only reads the frozen set back
-    dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
+    dag = make_dagger(a, J, wins, clips, info, store)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
     rcv = make_recover(a, J, wins, store, clips, info)               # PREREG_RECOVER_FT: off by default (--recover-p 0: no bank read, no table built); with the empirical law: bank load + K-B3 + the deviation table from THIS trainer's TRAIN store here, a refusal stops the launch before the gate
     t2b = make_t2bank(a, info)                                       # PREREG_T2_DAGGER: off by default (--t2-bank-p 0: no bank read); with a bank: load + sha256 here, a refusal stops the launch before the gate
     comp = make_compose(a, ego, dag)                                 # AMEND1 section 1: off by default; with --ego-perturb-with-dagger the loop calls THIS (swap first, then the perturbation on the samples the swap left)
@@ -3610,6 +3639,8 @@ def main(argv=None):
                     c_["eligible"] += dag.last["n_eligible"]
                     c_["n"] += dag.last["n_selected"]
                     c_["nav_kept"] += dag.last["dagger_nav_kept"]
+                    if dag.bank is not None and dag.bank.label_kind == "speed_v1":               # --dagger-label speed_v1 only: rows whose gt / s_h came from the speed-consistent label (a human run keeps today's key set)
+                        c_["label_replaced"] = c_.get("label_replaced", 0) + dag.last["n_label_replaced"]
                 if launch_on:                                          # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["launch"]
                     b["launch"] = lmask
                     for c_ in (launch_int, launch_tot):                # the control counts: rows seen, GT-valid rows (the along-track label exists), GT-launch rows
@@ -3663,7 +3694,9 @@ def main(argv=None):
                 ego_int.update(rows=0, eligible=0, n=0, nav_kept=0)
                 if dag.active:
                     rec["dagger_n"], rec["dagger_eligible"], rec["dagger_rows"], rec["dagger_nav_kept"] = dag_int["n"], dag_int["eligible"], dag_int["rows"], dag_int["nav_kept"]          # per log interval
-                dag_int.update(rows=0, eligible=0, n=0, nav_kept=0)
+                if "label_replaced" in dag_int:
+                    rec["dagger_label_replaced"] = dag_int["label_replaced"]
+                dag_int.update(rows=0, eligible=0, n=0, nav_kept=0, **({"label_replaced": 0} if "label_replaced" in dag_int else {}))
                 if comp.on:
                     rec["ego_dagger_overlap_n"] = ov_int["n"]               # AMEND1 section 1: per log interval (exactly 0)
                 ov_int.update(n=0)
@@ -3698,7 +3731,7 @@ def main(argv=None):
                "seconds": time.time() - t0, "argv_sha": argv_sha(argv), "levers": levers,
                "selfcheck": "selfcheck.json",
                "ego_perturb_n": ego_tot["n"], "ego_perturb_eligible": ego_tot["eligible"], "ego_perturb_rows": ego_tot["rows"], "ego_perturb_nav_kept": ego_tot["nav_kept"],
-               "dagger_n": dag_tot["n"], "dagger_eligible": dag_tot["eligible"], "dagger_rows": dag_tot["rows"], "dagger_nav_kept": dag_tot["nav_kept"]}      # PREREG_V8F_DAGGER run totals: exactly 0 swapped at p = 0; swapped == eligible at p = 1      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
+               "dagger_n": dag_tot["n"], "dagger_eligible": dag_tot["eligible"], "dagger_rows": dag_tot["rows"], "dagger_nav_kept": dag_tot["nav_kept"], **({"dagger_label_replaced": dag_tot["label_replaced"]} if "label_replaced" in dag_tot else {})}      # PREREG_V8F_DAGGER run totals: exactly 0 swapped at p = 0; swapped == eligible at p = 1      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
     summary["recover_p"], summary["recover_n"], summary["recover_eligible"], summary["recover_rows"], summary["recover_changed"] = rcv.p, rec_tot["n"], rec_tot["eligible"], rec_tot["rows"], rec_tot["changed"]
     summary["t2_bank_p"], summary["t2_bank_n"], summary["t2_bank_rows"] = t2b.p, t2_tot["n"], t2_tot["rows"]
     summary["recover_share"] = (rec_tot["n"] / rec_tot["eligible"]) if rec_tot["eligible"] else None        # PREREG_RECOVER_FT: the card's KR1 reads n_selected / n_eligible: [0.25, 0.35] for R, exactly 0 (n) for C0 / C0rep

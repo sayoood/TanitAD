@@ -269,11 +269,33 @@ class DaggerBank:
                 lut[k] = idx[v]
             self.ci = lut[self.ci]
         self.reason = np.asarray(arrays["reason"])
-        ok = np.nonzero(self.reason == OK)[0]
+        self.rl = None                                                                 # the speed-consistent labels (``attach_recovery``); None = the human label everywhere (today's bank, bit for bit)
+        self._index(self.reason == OK)
+
+    def _index(self, eligible):
+        """The sorted lookup ``(ci, r') -> eligible records``. ``eligible`` [N] bool: ``reason == OK`` (today) or, unchanged by a speed-consistent label attached with ``attach_recovery``."""
+        arrays = self.a
+        ok = np.nonzero(eligible)[0]
+        self.eligible_mask = np.asarray(eligible, bool)
         key = self.ci[ok] * (1 << 24) + np.asarray(arrays["r"], np.int64)[ok]
         order = np.argsort(key, kind="stable")                                         # stable: ties keep the bank's record order
         self._ok_idx, self._ok_key = ok[order], key[order]
         self._uniq, self._start, self._count = np.unique(self._ok_key, return_index=True, return_counts=True)
+
+    def attach_recovery(self, slot, label, status_counts=None):
+        """``--dagger-label speed_v1`` (``v8f_recovery.label_bank``): ``slot`` [N] int32 (-1 = no speed-consistent label: refused, or not an ok record) indexes ``label`` [n, 30, 2] float64 (the sample's ego frame = the
+        human's frame at r'). ELIGIBILITY IS NOT TOUCHED: the eligible index is ``reason == ok`` under both label kinds; only ok records can carry a label."""
+        slot = np.asarray(slot, np.int32)
+        if slot.shape != self.reason.shape:
+            raise ValueError(f"speed labels' slots {slot.shape} != the bank's records {self.reason.shape}")
+        has = slot >= 0
+        if bool((has & (self.reason != OK)).any()):
+            raise ValueError("a speed-consistent label on a record the matcher did not pass (reason != ok)")
+        self.rl = {"slot": slot, "label": np.asarray(label, np.float64), "has": has, "status_counts": dict(status_counts or {})}
+
+    @property
+    def label_kind(self) -> str:
+        return "human" if self.rl is None else "speed_v1"
 
     # -- header facts ---------------------------------------------------------------------------------------------
     @property
@@ -308,7 +330,14 @@ class DaggerBank:
 
     def gather(self, idx):
         idx = np.asarray(idx, np.int64)
-        return {k: np.asarray(self.a[k])[idx] for k in RECORD_FIELDS}
+        rec = {k: np.asarray(self.a[k])[idx] for k in RECORD_FIELDS}
+        if self.rl is not None:                                                        # speed_v1 only: the key set of a human bank's record is today's
+            sl = self.rl["slot"][idx]
+            has = sl >= 0
+            lab = np.zeros((len(idx), 30, 2), np.float64)
+            lab[has] = self.rl["label"][sl[has]]
+            rec["rl_has"], rec["rl_label"] = has, lab
+        return rec
 
     def coverage(self, wins) -> dict:
         """COVERAGE (section 6): the fraction of TRAIN windows (ci, t) that have at least one own state with r' == t that passed every cut."""
@@ -579,6 +608,16 @@ def swap_rows(batch: dict, rows, rec: dict) -> dict:
     rc = ls["rc"].clone()
     rc[rows] = rc_frame_change(ls["rc"][rows], ls["rc_ok"][rows], batch["pose_s"][rows], new["pose_s"][rows])
     new["lab_s"] = {**ls, "rc": rc}
+    if "rl_has" in rec and bool(np.asarray(rec["rl_has"]).any()):                                       # --dagger-label speed_v1: the waypoint-derived labels (gt, s_h) of the swapped rows come from the speed-consistent label (the human's polyline at the arc the own speed would have covered), in the sample's frame = the logged frame at r'
+        from tanitad.data import v8f_recovery as RV
+        has = np.asarray(rec["rl_has"], bool)
+        hm = torch.from_numpy(has).to(dev)
+        lab = np.ascontiguousarray(rec["rl_label"][has])
+        gt, sh = batch["gt"].clone(), batch["s_h"].clone()
+        gt[rows[hm]] = torch.from_numpy(lab).to(dev).to(gt.dtype)                                      # the ONE line that installs the speed-consistent label as the plan target (delete it: the human's label stays)
+        sh[rows[hm]] = torch.from_numpy(RV.arc_from_label(lab)).to(dev).to(sh.dtype)                   # s_h re-derived from the same waypoints
+        new["gt"], new["s_h"] = gt, sh
+        new["_rl_n"] = int(has.sum())
     new["_nav_kept"] = int(nav_boundary.sum() + (nav_same & ~own_ok).sum())                              # real frames left as logged: across a manoeuvre boundary (ORC's count), or with no own row
     return new
 
@@ -593,6 +632,9 @@ def swap_item(it: dict, rec1: dict) -> dict:
     for k in REBUILT:
         out[k] = upd[k][0].numpy()
     out["lab_s"] = {**it["lab_s"], "rc": upd["lab_s"]["rc"][0].numpy()}
+    for k in ("gt", "s_h"):                                                              # speed_v1 only
+        if k in upd:
+            out[k] = upd[k][0].numpy()
     return out
 
 
@@ -652,7 +694,7 @@ class DaggerSwap:
         (written by ``v8f_dagger_bank.py``); a header without it (every bank made before the field existed) reads ``pinned`` / ``none``, and so does no bank."""
         gen = ({} if self.bank is None else (getattr(self.bank, "header", None) or {}).get("generator")) or {}
         return {"dagger_bank_readout": readout_token(gen.get("readout", "pinned"), gen.get("acc_gain"), bool(gen.get("path_exec", False))), "dagger_bank_kappa": str(gen.get("kappa_max", "none")),
-                "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
+                "dagger_label": "human" if self.bank is None else self.bank.label_kind, "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
                 "bank_hmax": None if self.bank is None else self.bank.hmax, "rebuilt": list(REBUILT), "kept": list(KEPT), "record": list(RECORD), "labels_re_expressed": list(LABELS_RE_EXPRESSED),
                 "nav_rebuild_invalid": NAV_REBUILD_INVALID, "constants_sha256": constants_sha256()}
 
@@ -695,7 +737,7 @@ class DaggerSwap:
         p = self.p if p is None else float(p)
         elig = self.eligible(batch)
         if not p > 0.0:
-            self.last = {"step": int(step), "p": 0.0, "n_rows": int(elig.numel()), "n_eligible": int(elig.sum()), "n_selected": 0, "dagger_nav_kept": 0}
+            self.last = {"step": int(step), "p": 0.0, "n_rows": int(elig.numel()), "n_eligible": int(elig.sum()), "n_selected": 0, "dagger_nav_kept": 0, "n_label_replaced": 0}
             return batch
         bad = self.law_problems()
         if self.kin_mode != "yaw":
@@ -709,13 +751,14 @@ class DaggerSwap:
         u = torch.rand(2, B, generator=g, dtype=torch.float64)                       # selection, which of the window's own states
         sel = (u[0] < p).to(dev) & elig
         rows = sel.nonzero(as_tuple=True)[0]
-        self.last = {"step": int(step), "p": p, "n_rows": B, "n_eligible": int(elig.sum()), "n_selected": int(rows.numel()), "dagger_nav_kept": 0, "sel": sel.detach().cpu().clone()}
+        self.last = {"step": int(step), "p": p, "n_rows": B, "n_eligible": int(elig.sum()), "n_selected": int(rows.numel()), "dagger_nav_kept": 0, "n_label_replaced": 0, "sel": sel.detach().cpu().clone()}
         out = dict(batch)
         if rows.numel():
             r = rows.cpu()
             idx = self.bank.pick(batch["ci"][r].cpu().numpy(), batch["t"][r].cpu().numpy(), u[1][r].numpy())
             upd = swap_rows(batch, rows, self.bank.gather(idx))
             self.last["dagger_nav_kept"] = upd.pop("_nav_kept")
+            self.last["n_label_replaced"] = upd.pop("_rl_n", 0)                       # rows whose gt / s_h came from the speed_v1 label (exactly 0 under --dagger-label human)
             self.last["record_idx"] = idx
             out.update(upd)                                                           # the ONE line that applies the swap: delete it and `out` is `batch`
         return out

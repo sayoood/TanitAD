@@ -1009,7 +1009,7 @@ def test_the_single_applying_lines_exist_exactly_once():
     """`raw/2026-10-26-dagger-train/mutate_dagger_train.py` deletes these; an anchor that is not found exactly once would make a mutation test vacuous."""
     s = TRAIN_P.read_text(encoding="utf-8")
     assert s.count("            b = dag.apply(b, step) ") == 1
-    assert s.count("    dag = make_dagger(a, J, wins, clips, info) ") == 1
+    assert s.count("    dag = make_dagger(a, J, wins, clips, info, store) ") == 1
     assert s.count("        dagp = dagger_probe(model, probe, cfg, dag) ") == 1
     assert s.count("    bad += bad_dagger(a, dag, model.cfg, data_info) ") == 1
     assert s.count("DAGGER_EVAL_GRID") >= 2
