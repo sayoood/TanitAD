@@ -12,6 +12,8 @@
 #   (c) the read tree is the K2DC02s1 launch tree itself, no overlay (the K2DC02 argument: e77c39d4 55f14ef2 3624402e 2ab7f995 b25de778 are ancestors of every later commit);
 #   (f) TWO NEW config.json guards after the bounds guard: `--seed` appears exactly once AND as the pair `--seed`,`1` (counted on the whitespace-stripped config.json, the form the share-target
 #       case guards match), and `--r9-hist-supervise-geom` IS present (the replicate keeps K2DC02's levers; a config without it is K2DC02nh's, not this arm's). Source: r9e2_K2DC02s1.argv.json.
+#   (g) MM 4a3d05, 2026-11-22: the seed guard counts INSIDE the `argv` array (and inside `argv_effective` when that key exists), not over the whole file. The
+#       1f14f8d8 trainer writes the argv twice, so the whole-file count read flag x2 / pair x2 on the real K2DC02s1 config and REFUSED a valid read.
 #   Every other guard is unchanged. Neither arm has a PI approval: this launcher is a candidate kit and starts nothing until its training exists.
 set -u
 C=${1:?train commit (12 chars)}; ENV_BLOB=${2:?landed env blob sha1}
@@ -33,7 +35,7 @@ grep -q -- '"--map-hires-share-target"' $K2/config.json || die "K2DC02s1 config.
 CFG1=$(tr -d '[:space:]' < $K2/config.json)
 case "$CFG1" in *'"--map-hires-share-target","0.02"'*) ;; *) die "K2DC02s1 config.json does not carry --map-hires-share-target 0.02";; esac
 case "$CFG1" in *'"--map-hires-w-bounds","0.1,25"'*) ;; *) die "K2DC02s1 config.json does not carry --map-hires-w-bounds 0.1,25";; esac
-NS=$(printf '%s' "$CFG1" | grep -o '"--seed"' | wc -l); NV=$(printf '%s' "$CFG1" | grep -o '"--seed","1"' | wc -l); [ "$NS" = 1 ] && [ "$NV" = 1 ] || die "K2DC02s1 config.json must carry --seed 1 exactly once (flag x$NS, pair x$NV): not the replicate argv"
+NS=$(printf '%s' "$CFG1" | grep -o '"argv":\[[^]]*\]' | grep -o '"--seed"' | wc -l); NV=$(printf '%s' "$CFG1" | grep -o '"argv":\[[^]]*\]' | grep -o '"--seed","1"' | wc -l); NEK=$(printf '%s' "$CFG1" | grep -o '"argv_effective":' | wc -l); NES=$(printf '%s' "$CFG1" | grep -o '"argv_effective":\[[^]]*\]' | grep -o '"--seed"' | wc -l); NEV=$(printf '%s' "$CFG1" | grep -o '"argv_effective":\[[^]]*\]' | grep -o '"--seed","1"' | wc -l); [ "$NS" = 1 ] && [ "$NV" = 1 ] && [ "$NEK" -le 1 ] && [ "$NES" = "$NEK" ] && [ "$NEV" = "$NEK" ] || die "K2DC02s1 config.json must carry --seed 1 exactly once in argv, and once in argv_effective when that key exists (argv: flag x$NS, pair x$NV; argv_effective: key x$NEK, flag x$NES, pair x$NEV): not the replicate argv"
 case "$CFG1" in *'"--r9-hist-supervise-geom"'*) ;; *) die "K2DC02s1 config.json lacks --r9-hist-supervise-geom: the replicate keeps K2DC02's levers (a config without it is K2DC02nh)";; esac
 p=$(cat $K2/train.pid 2>/dev/null); [ -n "$p" ] && kill -0 "$p" 2>/dev/null && die "K2DC02s1 trainer pid $p is still alive"
 [ "$(b $ENVF)" = "$ENV_BLOB" ] || die "env $ENVF blob != $ENV_BLOB"

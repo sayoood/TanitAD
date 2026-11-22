@@ -7,6 +7,10 @@
     --r9-hist-supervise-geom, a K2SG-like config (no controller) and a missing K0 seed directory are refused;
   * DELIBERATE REGRESSION: a copy without the seed guard lets the K2DC02 (seed 0) config through, so the refusal check goes RED on it;
   * the launcher's literals equal the tokens of stack/ops/runs.d/r9e2_K2DC02s1.argv.json (the single source).
+  * THE TRAINER'S REAL LAYOUT (MM 4a3d05, 2026-11-22): the 1f14f8d8 trainer writes the argv TWICE in config.json (`argv` and `argv_effective`). The first
+    seed guard counted over the whole file, read flag x2 / pair x2 on the real runs/r9e2-K2DC02s1/config.json and REFUSED a valid read (14:18Z); every
+    fixture here had written `{"argv": ...}` only, so no test could see it. The guard now counts inside each array: the two-key layout passes, a
+    disagreeing / seedless / doubled `argv_effective` is refused, and the old whole-file line is kept as a literal that must refuse the real layout.
 """
 import difflib
 import hashlib
@@ -115,10 +119,11 @@ def _guard_lines(text):
     return keep
 
 
-def _run_guards(text, tmp_path, cfg_tokens, make_seed=True, lines=None):
+def _run_guards(text, tmp_path, cfg_tokens, make_seed=True, lines=None, effective=None):
     k2 = tmp_path / "k2"
     k2.mkdir(exist_ok=True)
-    (k2 / "config.json").write_text(json.dumps({"argv": cfg_tokens}, indent=1), encoding="utf-8")
+    cfg = {"argv": cfg_tokens} if effective is None else {"arm": ARM, "seed": 1, "argv": cfg_tokens, "argv_effective": effective}
+    (k2 / "config.json").write_text(json.dumps(cfg, indent=1), encoding="utf-8")
     old = tmp_path / "seed_src"
     if make_seed:
         for d in ("E2_K0_pf", "E2_K0_mapsel", "read/dump_K0"):
@@ -174,3 +179,37 @@ def test_deliberate_regression_without_the_seed_guard_is_caught(tmp_path):
     assert rc == 0 and "GUARDS-PASSED" in out, out            # the mutant is blind to a seed-0 config; the pristine guard refuses it (previous test)
     rc, out = _run_guards(t, _case(tmp_path, "p"), _argv("K2DC02"))
     assert rc == 3, out
+
+
+# the guard line as landed in 34bb48d2 (whole-file count): kept verbatim so the regression it caused stays on record
+OLD_SEED_GUARD = ("NS=$(printf '%s' \"$CFG1\" | grep -o '\"--seed\"' | wc -l); NV=$(printf '%s' \"$CFG1\" | grep -o '\"--seed\",\"1\"' | wc -l); "
+                  "[ \"$NS\" = 1 ] && [ \"$NV\" = 1 ] || die \"K2DC02s1 config.json must carry --seed 1 exactly once (flag x$NS, pair x$NV): not the replicate argv\"")
+
+
+def test_guards_read_the_trainers_real_layout_argv_and_argv_effective(tmp_path):
+    t = _text(NEW)
+    s1, s0 = _argv(ARM), _argv("K2DC02")
+    rc, out = _run_guards(t, _case(tmp_path, "r1"), s1, effective=list(s1))                      # the real 1f14f8d8 layout: both arrays, seed 1 once each
+    assert rc == 0 and "GUARDS-PASSED" in out, out
+    rc, out = _run_guards(t, _case(tmp_path, "r2"), s1, effective=_with_seed(s1, "0"))           # argv_effective disagrees
+    assert rc == 3 and "--seed 1 exactly once" in out and "argv_effective" in out, out
+    rc, out = _run_guards(t, _case(tmp_path, "r3"), s1, effective=[x for x in s1 if x != "--seed"])   # argv_effective without a --seed flag
+    assert rc == 3 and "--seed 1 exactly once" in out, out
+    rc, out = _run_guards(t, _case(tmp_path, "r4"), s1, effective=s1 + ["--seed", "1"])         # argv_effective with the seed twice
+    assert rc == 3 and "--seed 1 exactly once" in out, out
+    rc, out = _run_guards(t, _case(tmp_path, "r5"), s0, effective=list(s1))                      # argv seed 0 (K2DC02), argv_effective seed 1
+    assert rc == 3 and "--seed 1 exactly once" in out, out
+    rc, out = _run_guards(t, _case(tmp_path, "r6"), s0, effective=list(s0))                      # K2DC02's own real layout: seed 0 twice over
+    assert rc == 3 and "--seed 1 exactly once" in out, out
+
+
+def test_the_old_whole_file_seed_guard_refuses_the_real_layout(tmp_path):
+    t = _text(NEW)
+    assert OLD_SEED_GUARD not in t
+    keep = [OLD_SEED_GUARD if ln.startswith("NS=$(") else ln for ln in _guard_lines(t)]
+    assert keep != _guard_lines(t)
+    s1 = _argv(ARM)
+    rc, out = _run_guards(t, _case(tmp_path, "o1"), s1, lines=keep)                              # one array: the old line passed (why the fixture missed it)
+    assert rc == 0 and "GUARDS-PASSED" in out, out
+    rc, out = _run_guards(t, _case(tmp_path, "o2"), s1, lines=keep, effective=list(s1))          # the real layout: the old line REFUSES a valid read
+    assert rc == 3 and "flag x2, pair x2" in out, out
