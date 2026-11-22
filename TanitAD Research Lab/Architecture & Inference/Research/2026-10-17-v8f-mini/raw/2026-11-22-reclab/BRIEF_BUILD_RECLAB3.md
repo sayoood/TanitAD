@@ -1,0 +1,21 @@
+# Brief 3: RECLAB, make the speed label internally consistent (pre-freeze construction fix), then re-prove. Build and dry-check only
+
+You are a TanitAD build agent working for the Master Mind (MM). Rules exactly as `F:/TanitAD-scratch/reclab/BRIEF_BUILD_RECLAB2.md` (read it, then `HANDOFF_RECLAB2.md`, `FACTS_RECLAB_2.md`, `REAL_SHARD_CENSUS.json`, `REFUSAL_DIAG.json`). Work in `tree97/` (base 97fe0a56). Stage, commit and push nothing; no GPU; pod read-only; one python process at a time, gated on commit >= 5.5 GB; never wait more than about 4 minutes in one call; a fresh `--basetemp` per pytest run, deleted right after its log is written; folder under 1.5 GB apart from one pulled shard; F: free stays >= 15 GB.
+
+## Why (MM diagnosis of the census, MEASURED on bank/s0 shard 0)
+`speed_v1` refuses 28.5 % of ok records (tick 1: 15.1 %, tick 2: 54.8 %), and 10,689 of the 11,378 refusals in the 40,000-record diagnosis are acceleration violations. The construction mixes two speed sources: `v_h` is the store's logged SPEED COLUMN, while the label's positions sit on the human POSE polyline and the checker measures speed from chords. So the label's step speed is v_l plus (pose chord speed - speed column), and while v_l runs at 0.99 A_MAX that difference's noise pushes the label over the 1 % margin. Tick 2 has larger own-speed offsets, so longer rate-limited phases and more refusals. This is a defect of the construction, not of the data; the fix comes before the card is frozen and before any RL number.
+
+## The fixed construction (`speed_v1`, replaces the brief-2 form; same flag, same ok-only scope, eligible index equal)
+* Human step speeds from the polyline itself: u_h[k] = (s[k] - s[k-1]) / 0.2 for k = 1..K, where s is the cumulative arc of the human polyline P (rows r', r'+1, ... in the human's ego frame at r'; P[1..30] is exactly the human label).
+* Label step speeds: u_l[0] = v_own (`p10f[:, -1, 0]`, the speed the model reads); for k >= 1, u_l[k] = u_h[k] if u_l[k-1] == u_h[k] (exactly, or once merged: from the first k at which |u_h[k] - u_l[k-1]| <= A * 0.2 the label follows u_h unconditionally), else u_l[k-1] + clip(u_h[k] - u_l[k-1], -A * 0.2, +A * 0.2), with **A = 3.0 m/s2** (0.75 of A_MAX 4.0, leaving margin for the chord-against-arc difference on curves; fixed here by principle, not from data).
+* Label arc L[k] = sum of u_l[1..k] * 0.2; label point k = P at arc L[k] (`_at_arc`). After the merge, L[k] - s[k] is constant, so the label is the human's path shifted along itself.
+* Refuse (keep today's human label) if L runs past the clip's logged path, if L is not non-decreasing, or if V1's checker (`violations`, own speed as predecessor) finds a violation. Identity: if u_l[k] == u_h[k] for every k, return the human label itself (`np.array_equal`).
+* `s_h` re-derived from the label as now. The census fields stay, plus: the refusal breakdown by checker term (accel / curv / fric), per tick, and p50 / p95 of |L[30] - s[30]|.
+
+## Priority order
+1. Implement it; update tests (identity; gold under `human`; reachability; eligible index equal) and re-run the 11 mutants (all must go RED), plus one new mutant: A = 4.0 * 1.0 with no margin must raise the refusal share on the planted curved-path case. Whole files, dagger-first order. The compose test that fails identically on unmodified 97fe0a56 stays as it is; report it as pre-existing.
+2. Update the old pod-suite test that pins the arm set so it includes RL (in `pod/test/`, not in the old checkers), and re-run that suite.
+3. Real shard again: pull `bank/s0` shard 0 (sha256 aefbb46c... as before) and the inputs `REAL_SHARD_CENSUS.json` lists, sha256-verify them, write `REAL_SHARD_CENSUS_2.json` and `REFUSAL_DIAG_2.json`, then delete the pulled files by literal path and log them.
+4. `FACTS_RECLAB_3.md` (what changed; the file:line of every hop: argparse -> namespace -> swap -> `gt` / `s_h` -> loss), `CHANGED_FILES.txt` refreshed with sha256, `HANDOFF_RECLAB3.md` (at most 600 tokens).
+
+Hand back in at most 200 words with a deliverable manifest, saying plainly which checks PASSED and which did not run, and quoting the new census: relabelled share of ok records overall and per tick, the refusal breakdown, and p50 / p95 of |v_own - u_h[1]| and |L[30] - s[30]|.

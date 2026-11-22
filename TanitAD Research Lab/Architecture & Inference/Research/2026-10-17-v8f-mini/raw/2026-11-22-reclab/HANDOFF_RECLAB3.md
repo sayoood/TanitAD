@@ -1,0 +1,6 @@
+# HANDOFF_RECLAB3 (build agent; nothing staged/committed/pushed; no GPU; pod read-only)
+DONE: `speed_v1` rebuilt in tree97 (base 97fe0a56) on ONE speed source (polyline chords; A_LABEL 3.0; label arc L; refusals unchanged in kind). Tests: 3 recovery files 47 passed; dagger-first full run 233 passed + the compose test failing (PRE-EXISTING on 97fe0a56) + 1 own test case fixed afterwards (full order not repeated). Mutants 12/12 RED (new M12: A = 4.0). Pod suite with RL arm set 125 passed. Real shard census redone (REAL_SHARD_CENSUS_2.json, REFUSAL_DIAG_2.json).
+NUMBERS (bank/s0 shard 0): relabelled 54.2 % of ok (tick1 38.8 %, tick2 73.7 %), identity 43.1 %, refused 2.7 % (tick1 2.0, tick2 3.7; was 28.5); refusals by term mostly curvature, then path end; |v_own-u_h[1]| p50 0.77 / p95 6.22; |L30-s30| p50 0.035 / p95 6.33.
+FOR THE MM: (1) 2.7 % refusal looks acceptable; decide before the card. (2) 43 % of ok records are identity (own speed within 0.6 m/s): the lever touches 54 %. (3) RL still needs a new commit + pins + G-SUITE + selfcheck on GPU (DRY_MINT_PLAN 0, B). (4) A_LABEL 3.0 is fixed by principle: do not tune it on this data.
+Docs: FACTS_RECLAB_3.md, CHANGED_FILES.txt (sha256). Backups of build 2 files: tmp/*.brief2.
+DELETED (DELETIONS.log): pulled shard/tracks/join, pt3/pt4/ptm/ptpod basetemps, mutants/tree. Folder ~170 MB; F: free 17.4 GB.
