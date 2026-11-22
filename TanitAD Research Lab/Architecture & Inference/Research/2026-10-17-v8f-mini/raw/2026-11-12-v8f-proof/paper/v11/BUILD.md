@@ -120,3 +120,7 @@ Fragment added: `frag_row169.tex` (two counts on banked rollouts: where the form
 ## Update after row 170 (2026-11-22)
 
 Fragment added: `frag_row170.tex` (a T0 diagnostic: the head reads far leads too short; a filter over frames and the mean of fits ruled out). Status sentence of the fork replaced (now "Open on this fork after row 170"). Build: `patch_tex_v11.py` (ok edits 11), Tectonic 0.17.0, 50 pages; number check over the rows 100 to 170: 3,436 tokens checked, 0 not in the rows. PDF copy: `tanitad_4b_paper_r170.pdf` sha256 begins 3a73a833c534f9ec; the paragraph of row 170 is on page 42, the status sentence ends on page 49. Figure beside the paper, not inside the PDF: `figs/fig_gapbins.png` and `.pdf` from `figs/make_fig_gapbins.py`.
+
+## Update after row 171 (2026-11-22)
+
+Fragment added: `frag_row171.tex` (two T0 diagnostics: the bound arm with windows on the lead has about half the gap error; the fixed windows lose the lead when it is more than 8 degrees off the axis; card ADD107 frozen). Status sentence of the fork replaced (now "Open on this fork after row 171"). Build: `patch_tex_v11.py` (ok edits 11), Tectonic 0.17.0, 50 pages; number check over the rows 100 to 171: 3,503 tokens checked, 0 not in the rows. PDF copy: `tanitad_4b_paper_r171.pdf` sha256 begins 9e2703358700f1bb; the paragraph of row 171 is on page 42 and runs on to page 43, the status sentence ends on page 49. Figure beside the paper, not inside the PDF: `figs/fig_offcentre.png` and `.pdf` from `figs/make_fig_offcentre.py`.

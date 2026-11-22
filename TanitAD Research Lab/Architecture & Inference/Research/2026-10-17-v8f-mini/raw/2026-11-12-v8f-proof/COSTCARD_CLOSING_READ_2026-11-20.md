@@ -152,3 +152,11 @@ No statement on driving in a re-perception tier (T2 is not provisioned). LATERAL
 * The head reads far leads too short: 6.35 m below the label on average for labelled gaps of 40 to 60 m, more than 5 m short in 0.52 of the frames; +0.04 m and 0.00 below 10 m. The mean of five fits reads the same (-6.23 m, 0.47).
 * Ruled out with no rollout: a filter over frames (the error rises from 4.112 m to 4.246, 4.417, 4.766 m) and the mean of fits (same reading). A monotone map of the output has 1 to 2 m to gain (label minus fed +0.50 to +1.85 m by bin of the fed gap).
 * What this means for the decision of this card: the price of the form with no label is tied to how well the camera reads a far lead. More fit data is measured by card ADD106 under the PI's go of 2026-11-21. More resolution on a far lead would be a new encode and is the PI's call; nothing of it is started.
+
+## 17. Where the head looks (row 171, card ADD107 frozen, 2026-11-22)
+
+* Tier T0 (recorded frames, no rollout; a diagnostic of the head, not driving performance). Cost: seconds on the CPU of the fork pod, on banked data of the pilot.
+* With the two windows placed on the lead by the label (the bound arm of the pilot) the same head has about half the gap error: 2.137 and 1.910 m against 3.960 and 3.913 m. At 40 to 60 m it reads 2.99 and 2.18 m short against 5.90 and 6.50 m.
+* In 486 of 3,841 frames the lead is more than 8 degrees off the camera axis, outside the fixed narrow window. There the fixed windows have an error of 11.34 m (bound 3.73 m); those frames carry 0.36 of the summed absolute error.
+* The bound is not admissible at inference. Card ADD107 (frozen) asks the admissible question at T0 with no new encode: can a head on the tokens of the fixed windows find the direction of the lead. ESTIMATED four fits of about 13 minutes on the fork pod, stop rule 1.5 pod-hours.
+* A decision that will come to the PI if that card reads that the head locates the lead: the encode of two windows at the predicted direction on the 641 pilot clips (ESTIMATED by the pilot's own figures 0.35 to 1.46 GPU-hours and about 17 GB), then the gap head on those tokens and the lead rule at T1-kin. Nothing of it is started.
