@@ -1,0 +1,68 @@
+PASS 1 sentinel DONE
+PASS 1 order: prep, UE_s2, UE_s3
+PASS 1 pair + verify before each arm
+PASS 1 two markers written by the banker
+PASS 1 hub holds the two checkpoints
+PASS 1 ARM_A_DONE and ARM_DONE of both
+PASS 1 checkpoints at step 61568
+PASS 1 post.json read the 252 / 252 zero-grad gate
+PASS 1 the lock line is logged
+PASS 1 lock free after the chain
+PASS 1 the chain created no marker
+PASS 2 rerun DONE
+PASS 2 skip UE_s2
+PASS 2 skip UE_s3
+PASS 2 no second trainer run
+PASS 3 prep fail
+FAIL 3 nothing trained: got [] want [0]
+PASS 3 lock handed back at once
+PASS 4 DONE without prep
+PASS 4 no prep call
+PASS 5 disk guard
+PASS 5 refused before the lock line
+PASS 6 STOP before anything
+PASS 6 refused before the lock line
+PASS 7 failed UE_s2
+PASS 7 UE_s3 never ran
+PASS 7 lock handed back at once
+PASS 8 failed UE_s3
+PASS 8 UE_s2 banked before
+FAIL 9 killed run ends the chain: [UE_s2 stage A rc=9] not in [ZZ DSCALE10K REPS2 FAIL ZZ UE_s2 stage A: summary: /root/dscale10k/dry_reps2/fake_root/runs/UE_s2/A has no summary.json / ckpt_last.pt]
+PASS 9 partial checkpoint at step 500, no summary
+PASS 9 relaunch DONE
+PASS 9 the relaunch says RESUME at step 500
+PASS 9 the trainer started at step 500 on the relaunch
+PASS 9 UE_s2 trained twice (kill + resume), UE_s3 once
+PASS 9 no prep on the relaunch
+PASS 10 DONE
+PASS 10 post gates only
+PASS 10 no trainer call
+PASS 10 ARM_A_DONE rewritten
+PASS 11 pair refusal
+PASS 11 nothing trained
+PASS 12 verify refusal
+PASS 12 UE_s3 never trained
+PASS 12 UE_s2 done
+FAIL 13 while the lock is held: no lock line, nothing trained: got [0 ] want [0 0]
+PASS 13 chain finished after the release
+PASS 14 marker set by the watcher
+PASS 14 marker still set while the chain waits for the lock
+PASS 14 watcher exit 0 after the lock line
+PASS 14 marker removed
+PASS 14 watcher log
+PASS 15 watcher exit 1 (chain ended before the lock line)
+PASS 15 marker removed
+PASS 16 chain cleared its own marker on the refusal
+PASS 17 foreign marker kept
+PASS 18 bash -n blockreps2.sh
+PASS 18 bash -n blockreps2_prep.sh
+PASS 18 bash -n chk_arm_reps2.sh
+PASS 18 bash -n reps2_marker_watch.sh
+PASS 18 bash -n fake_leaf_reps2.sh
+PASS 18 bash -n dryrun_reps2.sh
+PASS 18 the chain takes fd 9 on the lock
+PASS 18 the chain sets no marker
+PASS 18 the real lock and marker are only defaults
+PASS 18 the runner is the reps2 wrapper
+scenarios PASS 63 FAIL 3
+ZZ DRYRUN-REPS2 DONE ZZ
