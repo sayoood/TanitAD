@@ -145,3 +145,10 @@ No statement on driving in a re-perception tier (T2 is not provisioned). LATERAL
 * Ranked candidate: the fed gap lying more than 5 m below the label gap (37 of 193 cut looks, against 109 of 2,030 where neither falls behind and 0 of 106 where only the label gap form falls behind). The extra cut steps are in the pre-roll (+1.09 on average against the label gap form); inside the window there are fewer (-2.06).
 * The first of the two counts ranked no lever, by a threshold the lead had set for a log with a row per step; it is reported as written in row 169.
 * What this means for the decision of this card: no new item. The candidate is the gap error of the head, which card ADD106 (the head fit on 1,679 clips, under the PI's go of 2026-11-21) measures in its scale name for falling behind. The counts prove no cause; they carry no interval.
+
+## 16. Where the gap error sits (row 170, 2026-11-22)
+
+* Tier T0 (recorded frames, no rollout; a diagnostic of the head, not driving performance). Cost: seconds on the CPU of the fork pod, on banked gap files, while the rollouts of card ADD106 used the GPU.
+* The head reads far leads too short: 6.35 m below the label on average for labelled gaps of 40 to 60 m, more than 5 m short in 0.52 of the frames; +0.04 m and 0.00 below 10 m. The mean of five fits reads the same (-6.23 m, 0.47).
+* Ruled out with no rollout: a filter over frames (the error rises from 4.112 m to 4.246, 4.417, 4.766 m) and the mean of fits (same reading). A monotone map of the output has 1 to 2 m to gain (label minus fed +0.50 to +1.85 m by bin of the fed gap).
+* What this means for the decision of this card: the price of the form with no label is tied to how well the camera reads a far lead. More fit data is measured by card ADD106 under the PI's go of 2026-11-21. More resolution on a far lead would be a new encode and is the PI's call; nothing of it is started.
