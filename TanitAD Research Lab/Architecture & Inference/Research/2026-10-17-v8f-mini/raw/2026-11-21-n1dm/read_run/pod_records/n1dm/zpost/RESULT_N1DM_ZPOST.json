@@ -1,0 +1,140 @@
+{
+ "tool": "n1dm_zpost.py",
+ "card": "PREREG_V8F_N1DM.md sha256 N1DM-DRAFT section 4 Z-POST; code of record the-N1DM-commit",
+ "profile": "ho",
+ "tier": "T0 (tick 0 of the T1-kin/hb0.2 rollout, limit causal)",
+ "evidence_class": "MEASURED (ours; checkpoint forward, zero training)",
+ "bars": {
+  "logistic": 0.685,
+  "CEIL": 0.73
+ },
+ "estimator": "taniteval.ci.episode_cluster_bootstrap B 2000 seed 0; 'another draw of EPISODES' only",
+ "max_windows": 0,
+ "mutant": false,
+ "arms": {
+  "N1DM_s0": {
+   "K-ALIGN": {
+    "n_recorded": 5736,
+    "n_dump": 5736,
+    "pass_": true,
+    "order": "resolved by plan bytes",
+    "max_abs": 0.0
+   },
+   "n_windows": 5736,
+   "n_episodes": 497,
+   "route_head_acc_T0": {
+    "point": 0.683228730822873,
+    "lo": 0.6637,
+    "hi": 0.7028
+   },
+   "decoded_plan_acc_T0": {
+    "point": 0.6082635983263598,
+    "lo": 0.5868,
+    "hi": 0.6292
+   },
+   "head_minus_decoded": {
+    "status": "OK",
+    "delta": 0.07496513249651326,
+    "lo": 0.062,
+    "hi": 0.0885,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "vs_logistic_0.685": -0.0017712691771269995,
+   "vs_CEIL_0.73": -0.04677126917712693,
+   "argmax_class_counts": {
+    "lane_keep": 2254,
+    "turn_left": 1936,
+    "turn_right": 1546
+   },
+   "gt_class_share": {
+    "lane_keep": 0.33716875871687585,
+    "turn_left": 0.32461645746164575,
+    "turn_right": 0.3382147838214784
+   },
+   "mean_max_posterior": 0.8149458991123956,
+   "K-PERM": {
+    "permuted_label_acc": 0.3355997210599721,
+    "chance_expected": 0.3332140689647123,
+    "abs_diff": 0.002385652095259816,
+    "pass": true,
+    "note": "deliberate regression: a head scored against shuffled labels must read the chance level (tolerance 0.03 on n windows)"
+   },
+   "K-CONST": {
+    "majority_share": 0.3382147838214784,
+    "must_read": 0.338215,
+    "pass": true
+   },
+   "K-OL-REAL": {
+    "real_dump": "/root/strat1/n1dm/out/hb0.2/t1/dump_N1DM-HO-N1DM_s0_m10_causal_heads",
+    "ol_equal": true,
+    "pass": true
+   },
+   "status": "OK"
+  },
+  "N1DM_s1": {
+   "K-ALIGN": {
+    "n_recorded": 5736,
+    "n_dump": 5736,
+    "pass_": true,
+    "order": "resolved by plan bytes",
+    "max_abs": 0.0
+   },
+   "n_windows": 5736,
+   "n_episodes": 497,
+   "route_head_acc_T0": {
+    "point": 0.7109483960948396,
+    "lo": 0.6919,
+    "hi": 0.7284
+   },
+   "decoded_plan_acc_T0": {
+    "point": 0.6361576011157601,
+    "lo": 0.6162,
+    "hi": 0.6553
+   },
+   "head_minus_decoded": {
+    "status": "OK",
+    "delta": 0.07479079497907948,
+    "lo": 0.0608,
+    "hi": 0.0882,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "vs_logistic_0.685": 0.025948396094839565,
+   "vs_CEIL_0.73": -0.019051603905160364,
+   "argmax_class_counts": {
+    "lane_keep": 1758,
+    "turn_left": 1899,
+    "turn_right": 2079
+   },
+   "gt_class_share": {
+    "lane_keep": 0.33716875871687585,
+    "turn_left": 0.32461645746164575,
+    "turn_right": 0.3382147838214784
+   },
+   "mean_max_posterior": 0.8103549790136317,
+   "K-PERM": {
+    "permuted_label_acc": 0.33542538354253837,
+    "chance_expected": 0.3333922360719642,
+    "abs_diff": 0.002033147470574148,
+    "pass": true,
+    "note": "deliberate regression: a head scored against shuffled labels must read the chance level (tolerance 0.03 on n windows)"
+   },
+   "K-CONST": {
+    "majority_share": 0.3382147838214784,
+    "must_read": 0.338215,
+    "pass": true
+   },
+   "K-OL-REAL": {
+    "real_dump": "/root/strat1/n1dm/out/hb0.2/t1/dump_N1DM-HO-N1DM_s1_m10_causal_heads",
+    "ol_equal": true,
+    "pass": true
+   },
+   "status": "OK"
+  }
+ },
+ "status": "VALID",
+ "wall_s": 886.7
+}
