@@ -707,7 +707,7 @@ def p7field_refusals(prof: dict, argv: list) -> list:
 # PINS THE MM FILLS (None = REFUSE, never launched from): SCORERFT_BASE_SHA256 (C1's final model_final.pt, banked first) and SCORERFT_RANK_W (the output of weight_rule_rank.py, SCORER-FT design 2.5).
 SCORERFT_STEPS = 1000
 SCORERFT_BASE_SHA256 = "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"   # FILLED BY THE MM 2026-11-20: sha256 of C1's final model_final.pt (/workspace/data/refe_runs/p5c_c1/); MEASURED: the pod sha file == the verified HF pull (Sayood/tanitad-refe-p5c) == the s2_c1 read preflight
-SCORERFT_RANK_W = None                       # FILLED BY THE MM: --rank-w of T / Ts = the committed weight rule's output (smallest w with r(w) >= 1.0); the gate may only veto it
+SCORERFT_RANK_W = 0.03125                       # FILLED BY THE MM: --rank-w of T / Ts = the committed weight rule's output (smallest w with r(w) >= 1.0); the gate may only veto it
 SCORERFT_RANK_HEADS = "ep,gate"
 SCORERFT_RANK_EP_GAP = 0.02
 SCORERFT_RANK_GATE_TOPK = 8
