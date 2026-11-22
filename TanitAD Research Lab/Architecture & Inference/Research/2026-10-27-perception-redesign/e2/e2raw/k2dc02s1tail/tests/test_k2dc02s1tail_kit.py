@@ -538,3 +538,76 @@ def test_s6c_step_checks_the_pin_before_pulling_and_the_tail_md5():
     assert s.index("THORPIN") < s.index("pull stageB") and s.index("pull repro") < s.index("PINSHA") < s.index("PINPULLSHA")
     assert "$PIN_SHA" in s and "TAILGUARD-MD5" in s and "tail_md5.txt" in s
     assert "cmp_reroll" not in s and "CMP_STATUS" not in s
+
+
+# ---------------------------------------------------------------------------------------------------------------- #
+# the seed guard counts INSIDE argv / argv_effective (MM 4a3d05, 2026-11-22). The 1f14f8d8 trainer writes the argv twice in config.json
+# (argv + argv_effective, equal), so the old whole-file count read flag x2 / pair x2 and refused the valid K2DC02s1 tail read at
+# 17:12:39Z (ABORT-SEED). Same defect and same form as the EMA read launchers' fix (8b581767).
+# ---------------------------------------------------------------------------------------------------------------- #
+SEED_ARM, SEED_VAL = "K2DC02s1", "1"
+OLD_SEED_GUARD = 'NS=$(printf \'%s\' "$CFG1" | grep -o \'"--seed"\' | wc -l); NV=$(printf \'%s\' "$CFG1" | grep -o \'"--seed","1"\' | wc -l); [ "$NS" = 1 ] && [ "$NV" = 1 ] || die SEED "config.json must carry --seed 1 exactly once (flag x$NS, pair x$NV): not the replicate argv"'
+
+
+def _seed_guard_lines(text):
+    ls = [l for l in text.split("\n") if l.startswith("CFG1=$(tr -d") or l.startswith("NS=$(printf")]
+    assert len(ls) == 2 and ls[0].startswith("CFG1="), ls
+    return ls
+
+
+def _run_seed_guard(tmp_path, cfg, lines=None):
+    lines = lines or _seed_guard_lines(_t("scripts/k2dc02s1tail_build.sh"))
+    run = tmp_path / "run"
+    run.mkdir(exist_ok=True)
+    (run / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+    sh = tmp_path / "seed_guard.sh"
+    body = [SEED_ARM + "=" + run.as_posix(), 'die() { echo "ABORT-$1 ${*:2}"; exit 3; }'] + lines + ["echo GUARD-OK"]
+    sh.write_bytes(("\n".join(body) + "\n").encode("utf-8"))
+    return _run(sh)
+
+
+def _argv(seed=None, extra=()):
+    a = ["--out", "runs/r9e2-" + SEED_ARM, "--seed", seed or SEED_VAL, "--w-map-hires", "25.0", "--map-hires-w-bounds", "0.1,25", *extra]
+    return a
+
+
+def test_seed_guard_accepts_the_trainers_real_layout_argv_and_argv_effective(tmp_path):
+    r = _run_seed_guard(tmp_path, {"arm": SEED_ARM, "seed": int(SEED_VAL), "argv": _argv(), "argv_effective": _argv()})
+    assert r.returncode == 0 and "GUARD-OK" in r.stdout, r.stdout + r.stderr
+
+
+def test_seed_guard_accepts_argv_alone(tmp_path):
+    r = _run_seed_guard(tmp_path, {"arm": SEED_ARM, "argv": _argv()})
+    assert r.returncode == 0 and "GUARD-OK" in r.stdout, r.stdout + r.stderr
+
+
+@pytest.mark.parametrize("cfg_kind", ["argv_wrong_seed", "effective_wrong_seed", "argv_seed_twice", "effective_missing_seed", "two_effective_keys"])
+def test_seed_guard_refuses_every_wrong_config(tmp_path, cfg_kind):
+    other = "1" if SEED_VAL == "0" else "0"
+    good = _argv()
+    cfg = {
+        "argv_wrong_seed": {"argv": _argv(other), "argv_effective": _argv(other)},
+        "effective_wrong_seed": {"argv": good, "argv_effective": _argv(other)},
+        "argv_seed_twice": {"argv": good + ["--seed", SEED_VAL], "argv_effective": good},
+        "effective_missing_seed": {"argv": good, "argv_effective": [t for t in good if t not in ("--seed",)][:2]},
+    }.get(cfg_kind)
+    if cfg is None:      # two argv_effective keys cannot come from json.dumps: write the text by hand
+        run = tmp_path / "run"
+        run.mkdir(exist_ok=True)
+        lst = json.dumps(good)
+        (run / "config.json").write_text('{"argv": %s, "argv_effective": %s, "x": {"argv_effective": %s}}' % (lst, lst, lst), encoding="utf-8")
+        sh = tmp_path / "seed_guard.sh"
+        body = [SEED_ARM + "=" + run.as_posix(), 'die() { echo "ABORT-$1 ${*:2}"; exit 3; }'] + _seed_guard_lines(_t("scripts/k2dc02s1tail_build.sh")) + ["echo GUARD-OK"]
+        sh.write_bytes(("\n".join(body) + "\n").encode("utf-8"))
+        r = _run(sh)
+    else:
+        r = _run_seed_guard(tmp_path, cfg)
+    assert r.returncode == 3 and "ABORT-SEED" in r.stdout and "GUARD-OK" not in r.stdout, (cfg_kind, r.stdout + r.stderr)
+
+
+def test_the_old_whole_file_seed_guard_refuses_the_real_layout(tmp_path):
+    """the deliberate-regression arm: the pre-fix line, run on the trainer's real layout, must reproduce the 17:12:39Z refusal"""
+    cfg_line = _seed_guard_lines(_t("scripts/k2dc02s1tail_build.sh"))[0]
+    r = _run_seed_guard(tmp_path, {"arm": SEED_ARM, "argv": _argv(), "argv_effective": _argv()}, lines=[cfg_line, OLD_SEED_GUARD])
+    assert r.returncode == 3 and "ABORT-SEED" in r.stdout and "flag x2" in r.stdout, r.stdout + r.stderr
+    assert OLD_SEED_GUARD not in _t("scripts/k2dc02s1tail_build.sh")
