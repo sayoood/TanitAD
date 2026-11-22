@@ -1,0 +1,29 @@
+ZZ CHECK-WRAPPER-P-SELFTEST PASS
+PASS T1 source: LF text with the asserted sha256 prefix
+PASS T2 the generator rebuilds the variant byte for byte (12 edits)
+PASS T3 the variant compiles
+PASS T4 the variant holds no carriage return
+PASS S1 flag --vis-pres-file exists, default empty
+PASS S2 flag --vis-pres-mode exists with the choices head and or
+PASS S3 both belong to form RR only (refusal text)
+PASS S4 file and mode come together (two refusals)
+PASS S5 the state is None without the file
+PASS S6 tick level: p2 replaces p before feed() and the logged column is the reader's own
+PASS S7 later look: p2 replaces p before feed(), vis_look and the presence test
+PASS S8 closing run: the earlier frames are replaced too, not counted
+PASS S9 the states are bound for the file as for the gap file
+PASS S10 p_used only with the file, tick and later look
+PASS S11 run record fields only with the file
+PASS S12 the run-line fields are printed at load
+PASS S13 none of the banned words in the text
+PASS T5 the record names the source and the variant hashes and says pass
+PASS T-selftest the helpers on tiny arrays
+PASS I1 flags absent: outputs and log columns are the source's, no p_used column
+PASS I2 mode head, a file without any usable value: the source's values, p_used = the reader's p, every row counted as without value
+PASS I2 mode or, a file without any usable value: the source's values, p_used = the reader's p, every row counted as without value
+PASS I3 mode head: returned p is p2, column p is the reader's own, p_used is p2, gap and history flag are the source's, counts add up (raised 25 lowered 12)
+PASS I4 mode or: returned p is p2, column p is the reader's own, p_used is p2, gap and history flag are the source's, counts add up (raised 25 lowered 0)
+PASS I5 mode head with --vis-gap-file and --vis-closing: gap and closing input equal the source's on the world with p2 as its p column (42 non-zero closing rows)
+PASS I5 mode or with --vis-gap-file and --vis-closing: gap and closing input equal the source's on the world with p2 as its p column (63 non-zero closing rows)
+PASS I6 the new flags are refused outside form RR and one without the other
+ZZ CHECK-WRAPPER-P PASS

@@ -1,0 +1,1473 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD119",
+ "tier": "T1-kin/hb0.2 (kinematic rollout on the model's own actions, executor of record v8f_t1_eval_hb.py with the heading bound 0.2 1/m); K30: readout K, pre-roll of 30 steps (6 s); K60: readout K, pre-roll of 60 steps (12 s)",
+ "controls_file": "/workspace/v8proof/gapmarginage/read/GAPMARGINAGE10K_CONTROLS.json",
+ "controls_sha256": "9be2928a4cb3fce8321643749d9be31cec62ff459c15e4b848e1888aa845ccf3",
+ "names": {
+  "K30_A90_UNSAFE": "GAPMARGINAGE10K-K30-A90-LOWERS-UNSAFE",
+  "K30_A90_CONTACT": "GAPMARGINAGE10K-K30-A90-CONTACT-NOT-SEPARATED",
+  "K30_A90_FALLING-BEHIND": "GAPMARGINAGE10K-K30-A90-FALLING-BEHIND-NOT-SEPARATED",
+  "K30_A90_LABEL": "GAPMARGINAGE10K-K30-A90-UNSAFE-AT-LABEL-FORM",
+  "K30_A80_UNSAFE": "GAPMARGINAGE10K-K30-A80-LOWERS-UNSAFE",
+  "K30_A80_CONTACT": "GAPMARGINAGE10K-K30-A80-CONTACT-NOT-SEPARATED",
+  "K30_A80_FALLING-BEHIND": "GAPMARGINAGE10K-K30-A80-RAISES-FALLING-BEHIND",
+  "K30_A80_LABEL": "GAPMARGINAGE10K-K30-A80-UNSAFE-BELOW-LABEL-FORM",
+  "K30_OVERALL": "GAPMARGINAGE10K-K30-MARGIN-CLOSES-UNSAFE-AT-NO-SEPARATED-PRICE",
+  "K60_A90_UNSAFE": "GAPMARGINAGE10K-K60-A90-UNSAFE-NOT-SEPARATED",
+  "K60_A90_CONTACT": "GAPMARGINAGE10K-K60-A90-CONTACT-NOT-SEPARATED",
+  "K60_A90_FALLING-BEHIND": "GAPMARGINAGE10K-K60-A90-FALLING-BEHIND-NOT-SEPARATED",
+  "K60_A90_LABEL": "GAPMARGINAGE10K-K60-A90-UNSAFE-AT-LABEL-FORM",
+  "K60_A80_UNSAFE": "GAPMARGINAGE10K-K60-A80-LOWERS-UNSAFE",
+  "K60_A80_CONTACT": "GAPMARGINAGE10K-K60-A80-CONTACT-NOT-SEPARATED",
+  "K60_A80_FALLING-BEHIND": "GAPMARGINAGE10K-K60-A80-FALLING-BEHIND-NOT-SEPARATED",
+  "K60_A80_LABEL": "GAPMARGINAGE10K-K60-A80-UNSAFE-AT-LABEL-FORM",
+  "K60_OVERALL": "GAPMARGINAGE10K-K60-MARGIN-CLOSES-UNSAFE-AT-NO-SEPARATED-PRICE"
+ },
+ "values": {
+  "settings": {
+   "K30": {
+    "grid_all_pass": true,
+    "counts": {
+     "n_windows": 1271,
+     "n_episodes": 141,
+     "n_lead_windows": 325,
+     "n_episodes_with_lead": 46,
+     "n_scored_U_windows": {
+      "R0Hb20": 280,
+      "RLcKF5P30Hb20": 280,
+      "RQ50KF5P30Hb20": 280,
+      "RQ50KF5P30Hb20gA80": 280,
+      "RQ50KF5P30Hb20gA90": 280,
+      "RQ50KF5P30Hb20gGEc": 280
+     }
+    },
+    "levels": {
+     "A90": {
+      "C": 0.003076923076923077,
+      "U": 0.05714285714285714,
+      "F": 0.5246153846153846
+     },
+     "A80": {
+      "C": 0.0,
+      "U": 0.03214285714285714,
+      "F": 0.5523076923076923
+     },
+     "GEc": {
+      "C": 0.006153846153846154,
+      "U": 0.08392857142857144,
+      "F": 0.5153846153846153
+     },
+     "RLc": {
+      "C": 0.0,
+      "U": 0.07142857142857142,
+      "F": 0.49076923076923074
+     },
+     "RR": {
+      "C": 0.09538461538461539,
+      "U": 0.13392857142857142,
+      "F": 0.49538461538461537
+     }
+    },
+    "levels_per_seed": {
+     "A90": {
+      "C": [
+       0.003076923076923077,
+       0.003076923076923077
+      ],
+      "U": [
+       0.06428571428571428,
+       0.05
+      ],
+      "F": [
+       0.5046153846153846,
+       0.5446153846153846
+      ]
+     },
+     "A80": {
+      "C": [
+       0.0,
+       0.0
+      ],
+      "U": [
+       0.039285714285714285,
+       0.025
+      ],
+      "F": [
+       0.5384615384615384,
+       0.5661538461538461
+      ]
+     },
+     "GEc": {
+      "C": [
+       0.006153846153846154,
+       0.006153846153846154
+      ],
+      "U": [
+       0.08928571428571429,
+       0.07857142857142857
+      ],
+      "F": [
+       0.5076923076923077,
+       0.5230769230769231
+      ]
+     },
+     "RLc": {
+      "C": [
+       0.0,
+       0.0
+      ],
+      "U": [
+       0.07857142857142857,
+       0.06428571428571428
+      ],
+      "F": [
+       0.47384615384615386,
+       0.5076923076923077
+      ]
+     },
+     "RR": {
+      "C": [
+       0.09230769230769231,
+       0.09846153846153846
+      ],
+      "U": [
+       0.12857142857142856,
+       0.1392857142857143
+      ],
+      "F": [
+       0.5015384615384615,
+       0.48923076923076925
+      ]
+     }
+    },
+    "pairs": {
+     "A90-VS-GEc": {
+      "U": {
+       "per_seed": [
+        -0.025,
+        -0.02857142857142857
+       ],
+       "pooled": -0.026785714285714288,
+       "interval": [
+        -0.04989077990348152,
+        -0.009195116708857972
+       ]
+      },
+      "C": {
+       "per_seed": [
+        -0.003076923076923077,
+        -0.003076923076923077
+       ],
+       "pooled": -0.003076923076923077,
+       "interval": [
+        -0.007518914353402155,
+        0.0
+       ]
+      },
+      "F": {
+       "per_seed": [
+        -0.003076923076923077,
+        0.021538461538461538
+       ],
+       "pooled": 0.00923076923076923,
+       "interval": [
+        -0.010610049790175647,
+        0.03440521337538498
+       ]
+      }
+     },
+     "A80-VS-GEc": {
+      "U": {
+       "per_seed": [
+        -0.05,
+        -0.05357142857142857
+       ],
+       "pooled": -0.05178571428571428,
+       "interval": [
+        -0.09084720547215931,
+        -0.019999980906724363
+       ]
+      },
+      "C": {
+       "per_seed": [
+        -0.006153846153846154,
+        -0.006153846153846154
+       ],
+       "pooled": -0.006153846153846154,
+       "interval": [
+        -0.013778046018159643,
+        0.0
+       ]
+      },
+      "F": {
+       "per_seed": [
+        0.03076923076923077,
+        0.043076923076923075
+       ],
+       "pooled": 0.03692307692307692,
+       "interval": [
+        0.010250507092599368,
+        0.07261079958862154
+       ]
+      }
+     },
+     "A90-VS-RLc": {
+      "U": {
+       "per_seed": [
+        -0.014285714285714285,
+        -0.014285714285714285
+       ],
+       "pooled": -0.014285714285714285,
+       "interval": [
+        -0.0321384877645128,
+        0.0031059613759685284
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.003076923076923077,
+        0.003076923076923077
+       ],
+       "pooled": 0.003076923076923077,
+       "interval": [
+        0.0,
+        0.007718731064167654
+       ]
+      },
+      "F": {
+       "per_seed": [
+        0.03076923076923077,
+        0.036923076923076927
+       ],
+       "pooled": 0.033846153846153845,
+       "interval": [
+        0.013810626922538264,
+        0.06059646400041728
+       ]
+      }
+     },
+     "A80-VS-RLc": {
+      "U": {
+       "per_seed": [
+        -0.039285714285714285,
+        -0.039285714285714285
+       ],
+       "pooled": -0.039285714285714285,
+       "interval": [
+        -0.07734046416933946,
+        -0.00766250368405541
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.0,
+        0.0
+       ],
+       "pooled": 0.0,
+       "interval": [
+        0.0,
+        0.0
+       ]
+      },
+      "F": {
+       "per_seed": [
+        0.06461538461538462,
+        0.05846153846153846
+       ],
+       "pooled": 0.06153846153846154,
+       "interval": [
+        0.02534117529237431,
+        0.10420251697793148
+       ]
+      }
+     },
+     "GEc-VS-RLc": {
+      "U": {
+       "per_seed": [
+        0.010714285714285714,
+        0.014285714285714285
+       ],
+       "pooled": 0.0125,
+       "interval": [
+        -0.0051374276232170595,
+        0.03315668404945844
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.006153846153846154,
+        0.006153846153846154
+       ],
+       "pooled": 0.006153846153846154,
+       "interval": [
+        0.0,
+        0.01377804601815963
+       ]
+      },
+      "F": {
+       "per_seed": [
+        0.033846153846153845,
+        0.015384615384615385
+       ],
+       "pooled": 0.024615384615384615,
+       "interval": [
+        0.0052733531124224435,
+        0.04856583316786077
+       ]
+      }
+     }
+    },
+    "families": {
+     "A90-VS-GEc": {
+      "LONGITUDINAL": "MIXED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "WORSE"
+     },
+     "A80-VS-GEc": {
+      "LONGITUDINAL": "MIXED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "WORSE"
+     },
+     "A90-VS-RLc": {
+      "LONGITUDINAL": "NOT-SEPARATED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     },
+     "A80-VS-RLc": {
+      "LONGITUDINAL": "NOT-SEPARATED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     },
+     "GEc-VS-RLc": {
+      "LONGITUDINAL": "NOT-SEPARATED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     }
+    },
+    "strategic": {
+     "pairs": {
+      "A90-VS-GEc": {
+       "A": "RQ50KF5P30Hb20gA90",
+       "B": "RQ50KF5P30Hb20gGEc",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": 0.03226146152692521,
+         "lo": -0.0912611763636675,
+         "hi": 0.21234611229539477,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          1220,
+          1222
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": 0.06780271512290208,
+         "lo": -0.11361708454951985,
+         "hi": 0.33522168477807995,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          1215,
+          1215
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": 0.15650631726433373,
+         "lo": -0.11753664911487924,
+         "hi": 0.5457248223102091,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          1196,
+          1196
+         ]
+        }
+       ],
+       "reading": "NOT-SEPARATED"
+      },
+      "A80-VS-GEc": {
+       "A": "RQ50KF5P30Hb20gA80",
+       "B": "RQ50KF5P30Hb20gGEc",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": -0.08193988040998693,
+         "lo": -0.2261302742151586,
+         "hi": 0.09566099461201945,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          1220,
+          1222
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": -0.08243056498326978,
+         "lo": -0.2959262605792993,
+         "hi": 0.18691589232171643,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          1215,
+          1215
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -0.08975323505366799,
+         "lo": -0.4042207679618727,
+         "hi": 0.2967879373353661,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          1196,
+          1196
+         ]
+        }
+       ],
+       "reading": "NOT-SEPARATED"
+      },
+      "A90-VS-RLc": {
+       "A": "RQ50KF5P30Hb20gA90",
+       "B": "RLcKF5P30Hb20",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": -0.22859689994823962,
+         "lo": -0.528769003263708,
+         "hi": 0.0569240550940399,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          1220,
+          1222
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": -0.19890856832536902,
+         "lo": -0.5301507091699608,
+         "hi": 0.14590112215763956,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          1215,
+          1215
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -0.13835007990931122,
+         "lo": -0.5508689865239155,
+         "hi": 0.32083940605147976,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          1196,
+          1196
+         ]
+        }
+       ],
+       "reading": "NOT-SEPARATED"
+      },
+      "A80-VS-RLc": {
+       "A": "RQ50KF5P30Hb20gA80",
+       "B": "RLcKF5P30Hb20",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": -0.34279824188515173,
+         "lo": -0.6474122862077679,
+         "hi": -0.05794420652058646,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          1220,
+          1222
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": -0.3491418484315409,
+         "lo": -0.685807872985722,
+         "hi": 0.00488487640249087,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          1215,
+          1215
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -0.384609632227313,
+         "lo": -0.8183159122820824,
+         "hi": 0.09189537028225121,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          1196,
+          1196
+         ]
+        }
+       ],
+       "reading": "MIXED"
+      },
+      "GEc-VS-RLc": {
+       "A": "RQ50KF5P30Hb20gGEc",
+       "B": "RLcKF5P30Hb20",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": -0.26085836147516483,
+         "lo": -0.5076226582867644,
+         "hi": -0.07387489537682108,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          1220,
+          1222
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": -0.2667112834482711,
+         "lo": -0.5080350316144525,
+         "hi": -0.07659330516253465,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          1215,
+          1215
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -0.2948563971736449,
+         "lo": -0.531484962169215,
+         "hi": -0.10195712441218643,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          1196,
+          1196
+         ]
+        }
+       ],
+       "reading": "BETTER"
+      }
+     },
+     "controls": {
+      "s4": {
+       "pass": true,
+       "checks": [
+        {
+         "name": "line: labels at the first logged steps reaching 30/50/80 m",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint on the label -> pos 0, lat 0, head 0",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint 1.5 m sideways -> lat 1.5, pos 1.5, along unchanged",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint 4 m along the track -> along +4, lat 0",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+         "ok": true
+        },
+        {
+         "name": "circle R=100: label positions equal the analytic ones to the step",
+         "ok": true
+        },
+        {
+         "name": "short track: 30 and 50 valid, 80 invalid",
+         "ok": true
+        },
+        {
+         "name": "join label: known pose and label -> analytic world position and heading",
+         "ok": true
+        },
+        {
+         "name": "join label: validity passes through (third arc invalid), a step outside the clip's label rows reads invalid",
+         "ok": true
+        },
+        {
+         "name": "join label: checkpoint on its label -> pos 0, head 0, along 0; invalid arc reads NaN",
+         "ok": true
+        },
+        {
+         "name": "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0",
+         "ok": true
+        }
+       ],
+       "all_checks_hold": true,
+       "planted_fault_fails": true,
+       "planted_fault_checks_failed": [
+        "line: labels at the first logged steps reaching 30/50/80 m",
+        "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+        "circle R=100: label positions equal the analytic ones to the step",
+        "short track: 30 and 50 valid, 80 invalid"
+       ],
+       "planted_fault_2_checks_failed": [
+        "join label: known pose and label -> analytic world position and heading",
+        "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0"
+       ]
+      },
+      "s1": {
+       "max_dxy_m": 6.267449371932798e-05,
+       "max_dpsi_rad": 6.74965782820891e-07,
+       "per_file": {
+        "R0_s0": [
+         5.3405761732960855e-05,
+         6.74965782820891e-07
+        ],
+        "R0_s1": [
+         6.267449371932798e-05,
+         5.175722677108752e-07
+        ],
+        "RLcKF5P30Hb20_s0": [
+         6.186110678640944e-05,
+         3.8743019104003906e-07
+        ],
+        "RLcKF5P30Hb20_s1": [
+         5.939363046536528e-05,
+         4.246830940246582e-07
+        ],
+        "RQ50KF5P30Hb20_s0": [
+         6.186110678640944e-05,
+         4.172325134277344e-07
+        ],
+        "RQ50KF5P30Hb20_s1": [
+         5.939363046536528e-05,
+         4.246830940246582e-07
+        ],
+        "RQ50KF5P30Hb20gA80_s0": [
+         6.186110678640944e-05,
+         3.8743019104003906e-07
+        ],
+        "RQ50KF5P30Hb20gA80_s1": [
+         6.06613857883076e-05,
+         4.246830940246582e-07
+        ],
+        "RQ50KF5P30Hb20gA90_s0": [
+         6.186110678640944e-05,
+         3.8743019104003906e-07
+        ],
+        "RQ50KF5P30Hb20gA90_s1": [
+         5.939363046536528e-05,
+         4.246830940246582e-07
+        ],
+        "RQ50KF5P30Hb20gGEc_s0": [
+         6.186110678640944e-05,
+         3.8743019104003906e-07
+        ],
+        "RQ50KF5P30Hb20gGEc_s1": [
+         5.939363046536528e-05,
+         4.246830940246582e-07
+        ]
+       },
+       "pass": true
+      },
+      "s2": {
+       "max_first_tick_anchor_dist_m": 0.0,
+       "n_rows_anchor_not_t0": 0,
+       "files": [
+        "R0_s0",
+        "R0_s1"
+       ],
+       "pass": true
+      },
+      "s6": {
+       "per_file": {
+        "R0_s0": true,
+        "R0_s1": true,
+        "RLcKF5P30Hb20_s0": true,
+        "RLcKF5P30Hb20_s1": true,
+        "RQ50KF5P30Hb20_s0": true,
+        "RQ50KF5P30Hb20_s1": true,
+        "RQ50KF5P30Hb20gA80_s0": true,
+        "RQ50KF5P30Hb20gA80_s1": true,
+        "RQ50KF5P30Hb20gA90_s0": true,
+        "RQ50KF5P30Hb20gA90_s1": true,
+        "RQ50KF5P30Hb20gGEc_s0": true,
+        "RQ50KF5P30Hb20gGEc_s1": true
+       },
+       "pass": true
+      },
+      "s9": {
+       "pass": true,
+       "n_files": 12,
+       "missing": []
+      },
+      "s5": {
+       "pass": true,
+       "largest_difference": 0.0,
+       "note": "first-tick cells of every run with no pre-roll equal those of R0 at the same model seed (pre-rolled runs excluded by construction)"
+      },
+      "s3": true
+     }
+    },
+    "strategic_a": true,
+    "strategic_b": true,
+    "instrument_bar_met": true
+   },
+   "K60": {
+    "grid_all_pass": true,
+    "counts": {
+     "n_windows": 284,
+     "n_episodes": 141,
+     "n_lead_windows": 73,
+     "n_episodes_with_lead": 37,
+     "n_scored_U_windows": {
+      "R0Hb20": 61,
+      "RLcKF5P60Hb20": 61,
+      "RQ50KF5P60Hb20": 61,
+      "RQ50KF5P60Hb20gA80": 61,
+      "RQ50KF5P60Hb20gA90": 61,
+      "RQ50KF5P60Hb20gGEc": 61
+     }
+    },
+    "levels": {
+     "A90": {
+      "C": 0.0136986301369863,
+      "U": 0.04098360655737705,
+      "F": 0.6643835616438356
+     },
+     "A80": {
+      "C": 0.0136986301369863,
+      "U": 0.04098360655737705,
+      "F": 0.678082191780822
+     },
+     "GEc": {
+      "C": 0.0136986301369863,
+      "U": 0.07377049180327869,
+      "F": 0.6438356164383562
+     },
+     "RLc": {
+      "C": 0.0136986301369863,
+      "U": 0.04098360655737705,
+      "F": 0.6301369863013698
+     },
+     "RR": {
+      "C": 0.1095890410958904,
+      "U": 0.12295081967213115,
+      "F": 0.6575342465753424
+     }
+    },
+    "levels_per_seed": {
+     "A90": {
+      "C": [
+       0.0136986301369863,
+       0.0136986301369863
+      ],
+      "U": [
+       0.03278688524590164,
+       0.04918032786885246
+      ],
+      "F": [
+       0.6438356164383562,
+       0.684931506849315
+      ]
+     },
+     "A80": {
+      "C": [
+       0.0136986301369863,
+       0.0136986301369863
+      ],
+      "U": [
+       0.04918032786885246,
+       0.03278688524590164
+      ],
+      "F": [
+       0.6438356164383562,
+       0.7123287671232876
+      ]
+     },
+     "GEc": {
+      "C": [
+       0.0136986301369863,
+       0.0136986301369863
+      ],
+      "U": [
+       0.08196721311475409,
+       0.06557377049180328
+      ],
+      "F": [
+       0.6164383561643836,
+       0.6712328767123288
+      ]
+     },
+     "RLc": {
+      "C": [
+       0.0136986301369863,
+       0.0136986301369863
+      ],
+      "U": [
+       0.04918032786885246,
+       0.03278688524590164
+      ],
+      "F": [
+       0.6027397260273972,
+       0.6575342465753424
+      ]
+     },
+     "RR": {
+      "C": [
+       0.1095890410958904,
+       0.1095890410958904
+      ],
+      "U": [
+       0.13114754098360656,
+       0.11475409836065574
+      ],
+      "F": [
+       0.6438356164383562,
+       0.6712328767123288
+      ]
+     }
+    },
+    "pairs": {
+     "A90-VS-GEc": {
+      "U": {
+       "per_seed": [
+        -0.04918032786885246,
+        -0.01639344262295082
+       ],
+       "pooled": -0.03278688524590164,
+       "interval": [
+        -0.07676509136518457,
+        0.0
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.0,
+        0.0
+       ],
+       "pooled": 0.0,
+       "interval": [
+        0.0,
+        0.0
+       ]
+      },
+      "F": {
+       "per_seed": [
+        0.0273972602739726,
+        0.0136986301369863
+       ],
+       "pooled": 0.02054794520547945,
+       "interval": [
+        -0.010999575319195572,
+        0.06451723679546259
+       ]
+      }
+     },
+     "A80-VS-GEc": {
+      "U": {
+       "per_seed": [
+        -0.03278688524590164,
+        -0.03278688524590164
+       ],
+       "pooled": -0.03278688524590164,
+       "interval": [
+        -0.06795775103519669,
+        -0.006664473684210539
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.0,
+        0.0
+       ],
+       "pooled": 0.0,
+       "interval": [
+        0.0,
+        0.0
+       ]
+      },
+      "F": {
+       "per_seed": [
+        0.0273972602739726,
+        0.0410958904109589
+       ],
+       "pooled": 0.03424657534246575,
+       "interval": [
+        -0.00699019990590308,
+        0.08222475419526695
+       ]
+      }
+     },
+     "A90-VS-RLc": {
+      "U": {
+       "per_seed": [
+        -0.01639344262295082,
+        0.01639344262295082
+       ],
+       "pooled": 0.0,
+       "interval": [
+        -0.03956374511700444,
+        0.037671683634855964
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.0,
+        0.0
+       ],
+       "pooled": 0.0,
+       "interval": [
+        0.0,
+        0.0
+       ]
+      },
+      "F": {
+       "per_seed": [
+        0.0410958904109589,
+        0.0273972602739726
+       ],
+       "pooled": 0.03424657534246575,
+       "interval": [
+        0.00625,
+        0.07490213929552157
+       ]
+      }
+     },
+     "A80-VS-RLc": {
+      "U": {
+       "per_seed": [
+        0.0,
+        0.0
+       ],
+       "pooled": 0.0,
+       "interval": [
+        -0.02500299043062201,
+        0.028578296703296664
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.0,
+        0.0
+       ],
+       "pooled": 0.0,
+       "interval": [
+        0.0,
+        0.0
+       ]
+      },
+      "F": {
+       "per_seed": [
+        0.0410958904109589,
+        0.0547945205479452
+       ],
+       "pooled": 0.04794520547945205,
+       "interval": [
+        0.007809495192307693,
+        0.09822559643229109
+       ]
+      }
+     },
+     "GEc-VS-RLc": {
+      "U": {
+       "per_seed": [
+        0.03278688524590164,
+        0.03278688524590164
+       ],
+       "pooled": 0.03278688524590164,
+       "interval": [
+        -0.002523883119480291,
+        0.0767655824060898
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.0,
+        0.0
+       ],
+       "pooled": 0.0,
+       "interval": [
+        0.0,
+        0.0
+       ]
+      },
+      "F": {
+       "per_seed": [
+        0.0136986301369863,
+        0.0136986301369863
+       ],
+       "pooled": 0.0136986301369863,
+       "interval": [
+        0.0,
+        0.03573625798767284
+       ]
+      }
+     }
+    },
+    "families": {
+     "A90-VS-GEc": {
+      "LONGITUDINAL": "NOT-SEPARATED",
+      "LATERAL": "MIXED",
+      "TACTICAL": "NOT-SEPARATED"
+     },
+     "A80-VS-GEc": {
+      "LONGITUDINAL": "NOT-SEPARATED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     },
+     "A90-VS-RLc": {
+      "LONGITUDINAL": "NOT-SEPARATED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     },
+     "A80-VS-RLc": {
+      "LONGITUDINAL": "NOT-SEPARATED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     },
+     "GEc-VS-RLc": {
+      "LONGITUDINAL": "NOT-SEPARATED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     }
+    },
+    "strategic": {
+     "pairs": {
+      "A90-VS-GEc": {
+       "A": "RQ50KF5P60Hb20gA90",
+       "B": "RQ50KF5P60Hb20gGEc",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": -0.4534727840051779,
+         "lo": -0.8719916980166741,
+         "hi": -0.16602742418369654,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          270,
+          270
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": -0.47664853275911623,
+         "lo": -0.9158192779077922,
+         "hi": -0.15583711722830149,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          270,
+          270
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -0.42143863834119155,
+         "lo": -0.8936647981134972,
+         "hi": -0.05563518346980322,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          266,
+          266
+         ]
+        }
+       ],
+       "reading": "BETTER"
+      },
+      "A80-VS-GEc": {
+       "A": "RQ50KF5P60Hb20gA80",
+       "B": "RQ50KF5P60Hb20gGEc",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": -0.6356703928774053,
+         "lo": -1.177548539219773,
+         "hi": -0.22914007418536753,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          270,
+          270
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": -0.6089679461359726,
+         "lo": -1.1890204995885547,
+         "hi": -0.1067623072831957,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          270,
+          270
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -0.6475233889469069,
+         "lo": -1.4165653256523074,
+         "hi": 0.04920878147605008,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          266,
+          266
+         ]
+        }
+       ],
+       "reading": "MIXED"
+      },
+      "A90-VS-RLc": {
+       "A": "RQ50KF5P60Hb20gA90",
+       "B": "RLcKF5P60Hb20",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": -1.3420448020027034,
+         "lo": -2.444747217136751,
+         "hi": -0.48196825492459616,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          270,
+          270
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": -1.3898715415458502,
+         "lo": -2.459259285319958,
+         "hi": -0.5202096508994072,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          270,
+          270
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -1.2176623855310496,
+         "lo": -2.276403726740994,
+         "hi": -0.28921337597620334,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          266,
+          266
+         ]
+        }
+       ],
+       "reading": "BETTER"
+      },
+      "A80-VS-RLc": {
+       "A": "RQ50KF5P60Hb20gA80",
+       "B": "RLcKF5P60Hb20",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": -1.5242424108749308,
+         "lo": -2.7118134102361644,
+         "hi": -0.5771800809444886,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          270,
+          270
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": -1.5221909549227066,
+         "lo": -2.691953329847642,
+         "hi": -0.5565351057789478,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          270,
+          270
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -1.443747136136765,
+         "lo": -2.7114111736523014,
+         "hi": -0.31292060094957774,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          266,
+          266
+         ]
+        }
+       ],
+       "reading": "BETTER"
+      },
+      "GEc-VS-RLc": {
+       "A": "RQ50KF5P60Hb20gGEc",
+       "B": "RLcKF5P60Hb20",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": -0.8885720179975255,
+         "lo": -1.6861439288013347,
+         "hi": -0.22131634592172278,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          270,
+          270
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": -0.9132230087867339,
+         "lo": -1.7178459454902257,
+         "hi": -0.19004114322351495,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          270,
+          270
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -0.7962237471898582,
+         "lo": -1.6716779040036567,
+         "hi": -0.013544373538836951,
+         "verdict": "BETTER",
+         "n_per_seed": [
+          266,
+          266
+         ]
+        }
+       ],
+       "reading": "BETTER"
+      }
+     },
+     "controls": {
+      "s4": {
+       "pass": true,
+       "checks": [
+        {
+         "name": "line: labels at the first logged steps reaching 30/50/80 m",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint on the label -> pos 0, lat 0, head 0",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint 1.5 m sideways -> lat 1.5, pos 1.5, along unchanged",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint 4 m along the track -> along +4, lat 0",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+         "ok": true
+        },
+        {
+         "name": "circle R=100: label positions equal the analytic ones to the step",
+         "ok": true
+        },
+        {
+         "name": "short track: 30 and 50 valid, 80 invalid",
+         "ok": true
+        },
+        {
+         "name": "join label: known pose and label -> analytic world position and heading",
+         "ok": true
+        },
+        {
+         "name": "join label: validity passes through (third arc invalid), a step outside the clip's label rows reads invalid",
+         "ok": true
+        },
+        {
+         "name": "join label: checkpoint on its label -> pos 0, head 0, along 0; invalid arc reads NaN",
+         "ok": true
+        },
+        {
+         "name": "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0",
+         "ok": true
+        }
+       ],
+       "all_checks_hold": true,
+       "planted_fault_fails": true,
+       "planted_fault_checks_failed": [
+        "line: labels at the first logged steps reaching 30/50/80 m",
+        "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+        "circle R=100: label positions equal the analytic ones to the step",
+        "short track: 30 and 50 valid, 80 invalid"
+       ],
+       "planted_fault_2_checks_failed": [
+        "join label: known pose and label -> analytic world position and heading",
+        "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0"
+       ]
+      },
+      "s1": {
+       "max_dxy_m": 6.976480221965176e-05,
+       "max_dpsi_rad": 6.814850408431994e-07,
+       "per_file": {
+        "R0_s0": [
+         5.3405761732960855e-05,
+         6.180386904475199e-07
+        ],
+        "R0_s1": [
+         6.267449371932798e-05,
+         5.175722677108752e-07
+        ],
+        "RLcKF5P60Hb20_s0": [
+         4.586731134281763e-05,
+         3.8743019104003906e-07
+        ],
+        "RLcKF5P60Hb20_s1": [
+         6.976480221965176e-05,
+         6.814850408431994e-07
+        ],
+        "RQ50KF5P60Hb20_s0": [
+         5.1750316515608574e-05,
+         3.8743019104003906e-07
+        ],
+        "RQ50KF5P60Hb20_s1": [
+         5.652773626252383e-05,
+         6.814850408431994e-07
+        ],
+        "RQ50KF5P60Hb20gA80_s0": [
+         4.008952890899309e-05,
+         4.76837158203125e-07
+        ],
+        "RQ50KF5P60Hb20gA80_s1": [
+         4.5524154927534255e-05,
+         6.814850408431994e-07
+        ],
+        "RQ50KF5P60Hb20gA90_s0": [
+         4.509535443730783e-05,
+         3.8743019104003906e-07
+        ],
+        "RQ50KF5P60Hb20gA90_s1": [
+         6.442150301211313e-05,
+         6.814850408431994e-07
+        ],
+        "RQ50KF5P60Hb20gGEc_s0": [
+         4.729500764710792e-05,
+         3.8743019104003906e-07
+        ],
+        "RQ50KF5P60Hb20gGEc_s1": [
+         6.976480221965176e-05,
+         6.814850408431994e-07
+        ]
+       },
+       "pass": true
+      },
+      "s2": {
+       "max_first_tick_anchor_dist_m": 0.0,
+       "n_rows_anchor_not_t0": 0,
+       "files": [
+        "R0_s0",
+        "R0_s1"
+       ],
+       "pass": true
+      },
+      "s6": {
+       "per_file": {
+        "R0_s0": true,
+        "R0_s1": true,
+        "RLcKF5P60Hb20_s0": true,
+        "RLcKF5P60Hb20_s1": true,
+        "RQ50KF5P60Hb20_s0": true,
+        "RQ50KF5P60Hb20_s1": true,
+        "RQ50KF5P60Hb20gA80_s0": true,
+        "RQ50KF5P60Hb20gA80_s1": true,
+        "RQ50KF5P60Hb20gA90_s0": true,
+        "RQ50KF5P60Hb20gA90_s1": true,
+        "RQ50KF5P60Hb20gGEc_s0": true,
+        "RQ50KF5P60Hb20gGEc_s1": true
+       },
+       "pass": true
+      },
+      "s9": {
+       "pass": true,
+       "n_files": 12,
+       "missing": []
+      },
+      "s5": {
+       "pass": true,
+       "largest_difference": 0.0,
+       "note": "first-tick cells of every run with no pre-roll equal those of R0 at the same model seed (pre-rolled runs excluded by construction)"
+      },
+      "s3": true
+     }
+    },
+    "strategic_a": true,
+    "strategic_b": true,
+    "instrument_bar_met": false
+   }
+  },
+  "family_note": "the rule changes the planned speed along the path through the distance to the lead; it does not move the path, so the lateral family is expected to be unmoved by it, and the tactical family is not read by the rule; the strategic family is read from the strategic grid of the engine at T1-kin",
+  "control_values": {
+   "e0": {
+    "n_rows_newly_in_range": {
+     "A90": 0,
+     "A80": 0
+    },
+    "counts": {
+     "n_rows": 14237,
+     "n_rows_with_output": 13673,
+     "n_base_gap_above_60": 0
+    }
+   },
+   "e6": {
+    "dump_files": {
+     "K30_A90_s0": 141,
+     "K30_A90_s1": 141,
+     "K30_A80_s0": 141,
+     "K30_A80_s1": 141,
+     "K60_A90_s0": 141,
+     "K60_A90_s1": 141,
+     "K60_A80_s0": 141,
+     "K60_A80_s1": 141
+    },
+    "expected": 141
+   },
+   "e7": {
+    "rollout_shares": {
+     "K30_A90_s0": {
+      "share_of_rule_steps_with_a_lead": 0.4008654602675059,
+      "n_rows": 7626,
+      "n_lead_rows": 3057,
+      "share_of_lead_steps_with_nonzero_closing": 0.8406934903500164
+     },
+     "K30_A90_s1": {
+      "share_of_rule_steps_with_a_lead": 0.42905848413322845,
+      "n_rows": 7626,
+      "n_lead_rows": 3272,
+      "share_of_lead_steps_with_nonzero_closing": 0.8419926650366748
+     },
+     "K30_A80_s0": {
+      "share_of_rule_steps_with_a_lead": 0.4008654602675059,
+      "n_rows": 7626,
+      "n_lead_rows": 3057,
+      "share_of_lead_steps_with_nonzero_closing": 0.8573765129211646
+     },
+     "K30_A80_s1": {
+      "share_of_rule_steps_with_a_lead": 0.42905848413322845,
+      "n_rows": 7626,
+      "n_lead_rows": 3272,
+      "share_of_lead_steps_with_nonzero_closing": 0.8566625916870416
+     },
+     "K60_A90_s0": {
+      "share_of_rule_steps_with_a_lead": 0.41725352112676056,
+      "n_rows": 1704,
+      "n_lead_rows": 711,
+      "share_of_lead_steps_with_nonzero_closing": 0.8438818565400844
+     },
+     "K60_A90_s1": {
+      "share_of_rule_steps_with_a_lead": 0.4354460093896714,
+      "n_rows": 1704,
+      "n_lead_rows": 742,
+      "share_of_lead_steps_with_nonzero_closing": 0.8450134770889488
+     },
+     "K60_A80_s0": {
+      "share_of_rule_steps_with_a_lead": 0.41725352112676056,
+      "n_rows": 1704,
+      "n_lead_rows": 711,
+      "share_of_lead_steps_with_nonzero_closing": 0.8579465541490858
+     },
+     "K60_A80_s1": {
+      "share_of_rule_steps_with_a_lead": 0.4354460093896714,
+      "n_rows": 1704,
+      "n_lead_rows": 742,
+      "share_of_lead_steps_with_nonzero_closing": 0.8571428571428571
+     }
+    }
+   }
+  }
+ }
+}
