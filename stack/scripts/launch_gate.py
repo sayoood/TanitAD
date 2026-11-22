@@ -1698,7 +1698,12 @@ _E1_MAP_BANDED_L64 = {**_E1_MAP_BANDED, "own_enc_lift64": {"flag": "--r9-map-own
 #: K2M1N20 RE-DOSE (MM 4a3d05, 2026-11-10): the FULL family (refcv9-e2 / refcv9-full / refcv9-full-d1; E3 inherits the E2 GO arm's argv) admits a banded argv's map weight from E1's own set PLUS 25 --
 #: K2M1N20 failed G-LIVE's SHARE-ALARM at 1.0 (banded map 0.00125 of the trunk gradient < 0.05) and is re-dosed to 25 by E:/Projects/TanitAD-artifacts/dagland/e2/PREREG_K2_REDOSE_2026-11-10.md
 #: (sha256 2c5c147bf10368bb88677f964f9474acf2b6eef4b96dfe06f72fa8e22043b5df). `_E1_MAP_BANDED["w_map_hires_admitted"]` (the E1 arms') is UNCHANGED; the share floor and every E2 / E3 bar stay as written.
-_R9F_MAP_W_ADMITTED = tuple(_E1_MAP_BANDED["w_map_hires_admitted"]) + (25.0,)
+#: K2DC02cl (the clamp arm; PI, 2026-11-22: "i approve it", then "Yes, use the clamp"): the same full family also admits 3.0 -- the INITIAL weight of a clamped dose arm (`--map-hires-w-bounds 2.5,3.5`;
+#: map_dose_ctl.pin_args requires the initial weight to lie inside the bounds, so 25 with the clamp is impossible). Pre-registered in
+#: TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/e2/e2raw/PREREG_K2DC02CL_2026-11-22.md; the offline replay
+#: E:/Projects/TanitAD-artifacts/refcv9_e2/dcreplay/ puts the dead-beat controller's mean map share at 0.080 / 0.063 against the 0.02 target and the clamp [2.5, 3.5] at 0.026 / 0.025.
+#: `_E1_MAP_BANDED["w_map_hires_admitted"]` (E1's) is UNCHANGED, so refcv9-e1rig still refuses 3.0 (and 25). No other gate value moves.
+_R9F_MAP_W_ADMITTED = tuple(_E1_MAP_BANDED["w_map_hires_admitted"]) + (25.0, 3.0)
 #: ⭐ THE NEAR-LIFT RULES, ONE definition for refcv9-e1rig AND the full family (K2-ARGV, MM 2026-11-07; before it each profile typed its own, and the full family had none).
 #: BANDED-NL (MM 2026-11-04): the banded map head (C1 `--r9-map-banded`) REFUSES any near lift but 10 m (MapHiresConfig(banded); `_E1_MAP_BANDED["near_lift_m"]`, the value its
 #: own G-MAP-OVERFIT record is held to), so an argv carrying the flag is held to 10 and every other to refcv8's 20. Before this the unconditional 20 refused M1 / M2a / M2b at the

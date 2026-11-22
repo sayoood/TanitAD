@@ -283,7 +283,7 @@ def test_fingerprints_the_full_family_moved_and_every_other_profile_is_unchanged
         "refcv8": "4841b2a6f0758b95", "refcv9-warm": "7099d75fa2f40240", "refcv9-e1rig": "1ff41b0acf93ee4f",     # refcv9 E1 arm T1v: E1_T1_FLAGS gained --r9-hist-supervise-geom (was 0bb9664939426521 after pin6, 18c28c61f19f5544 before it)
         "refcv8-nt": "a24d2c1a71042711", "refcv8-mapft": "f024877e5326f4ff", "v8f": "52860dd82f3a79af"}
     assert {n: _fp(n) for n in ("refcv9-e2", "refcv9-full", "refcv9-full-d1")} == {
-        "refcv9-e2": "1a60c7095be5a175", "refcv9-full": "01b824851c5825d7", "refcv9-full-d1": "349a16c05861ef6d"}   # T1v FLIP: was 2ee6fd2473fc296d / 0af11fbfd62e6ed1 / b48f8af8c7fe34d4   # K2M1N20 RE-DOSE (2026-11-10, `_R9F_MAP_W_ADMITTED` admitted_values_when): moved acc27e87d94fe9e2 / 95a02abfad8aab76 / ad790da13c9c84b8 -> 1a60c7095be5a175 / 01b824851c5825d7 / 349a16c05861ef6d
+        "refcv9-e2": "385f8939fdfebe5c", "refcv9-full": "3ef8f61317f228a6", "refcv9-full-d1": "ab2f02d95f861241"}   # T1v FLIP: was 2ee6fd2473fc296d / 0af11fbfd62e6ed1 / b48f8af8c7fe34d4   # K2M1N20 RE-DOSE (2026-11-10, `_R9F_MAP_W_ADMITTED` admitted_values_when): moved acc27e87d94fe9e2 / 95a02abfad8aab76 / ad790da13c9c84b8 -> 385f8939fdfebe5c / 3ef8f61317f228a6 / ab2f02d95f861241   # K2DC02cl (2026-11-22): _R9F_MAP_W_ADMITTED gained 3.0; was 1a60c7095be5a175 / 01b824851c5825d7 / 349a16c05861ef6d
 
 
 def test_the_full_family_required_values_when_is_one_dict_holding_all_three_rule_sets_and_e1rig_shares_the_near_lift_constant():

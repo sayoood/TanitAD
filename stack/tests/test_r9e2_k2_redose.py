@@ -96,9 +96,14 @@ def test_a_non_banded_full_argv_still_requires_refcv8s_1_0_and_25_does_not_leak_
 
 def test_E1s_admitted_set_is_unchanged_and_the_rig_refuses_25():
     assert tuple(LG._E1_MAP_BANDED["w_map_hires_admitted"]) == (1.0, 0.511, 1.018)
-    assert LG._R9F_MAP_W_ADMITTED == (1.0, 0.511, 1.018, 25.0)
+    assert LG._R9F_MAP_W_ADMITTED == (1.0, 0.511, 1.018, 25.0, 3.0)   # K2DC02cl (2026-11-22): + 3.0, the clamp arm's initial weight
     assert LG.PROFILES["refcv9-e1rig"]["admitted_values_when"] == {"--r9-map-banded": {W: ("1", "0.511", "1.018")}}
     rig = LG.PROFILES["refcv9-e1rig"]
     banded = LG.set_flag(list(doc("K2M1N20")["argv"]), W, ["25.0"])
     reasons, _ = LG.required_on_reasons(rig, banded)
     assert any(r.startswith(W) and "must be ONE of ['1', '0.511', '1.018']" in r for r in reasons)
+    # K2DC02cl (2026-11-22): the rig refuses 3.0 too, while refcv9-e2 admits it on a banded argv
+    banded3 = LG.set_flag(list(doc("K2M1N20")["argv"]), W, ["3.0"])
+    rig_reasons, _ = LG.required_on_reasons(rig, banded3)
+    assert any(r.startswith(W) and "must be ONE of ['1', '0.511', '1.018']" in r for r in rig_reasons)
+    assert not [r for r in LG.required_on_reasons(LG.PROFILES["refcv9-e2"], banded3)[0] if r.startswith(W)]

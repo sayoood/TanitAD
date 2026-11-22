@@ -1,0 +1,11 @@
+{
+ "max_s_per_step": 12.3,
+ "pi_verbatim": "i approve it  [PI, chat, 2026-11-22, answering the MM's proposal of a ~20 Thor-h dose-fix arm that trains if the K2DC02s1 read is DOSE-VOID]. Then: Yes, use the clamp  [PI, chat, 2026-11-22, choosing the 2.5-3.5 weight clamp instead of a smoothed controller. Basis (MM, MEASURED offline, E:/Projects/TanitAD-artifacts/refcv9_e2/dcreplay/dc_replay.py + replay_bounds.txt): the dead-beat controller turned one-batch reading noise into weights up to 20.5, mean share at steps >= 3000 was 0.080 (K2DC02) / 0.063 (K2DC02s1) against the 0.02 target; clamping the weight to [2.5, 3.5] gave a mean of 0.026 / 0.025 in the replay, POST-HOC and not pre-committed.]",
+ "date": "2026-11-22",
+ "status": "PI-APPROVED, CONDITIONAL: K2DC02cl (K2DC02's argv with --w-map-hires 25.0 -> 3.0 and --map-hires-w-bounds 0.1,25 -> 2.5,3.5, plus --out) for E2, trains ONLY IF the K2DC02s1 read is DOSE-VOID, once its launch-gate records (queue 27) are done. ~5 h Thor records + ~4 h gate + ~20.5 Thor-h training (K2DC02 MEASURED 12.2 s/step). max_s_per_step 12.3 = K2DC02's cap; a judged reading above 12.3 goes back to the PI. Still needs the launch-gate PASS, and the gate currently refuses --w-map-hires 3.0 (see PREREG_K2DC02CL_2026-11-22.md section 7).",
+ "condition": "K2DC02s1 read DOSE-VOID",
+ "context": "refcv9 E2 K2DC02cl = the PREREG_K2DC02CL_2026-11-22 clamp arm, profile refcv9-e2, argv stack/ops/runs.d/r9e2_K2DC02cl.argv.json. The approval is for this arm in E2 only, not for E3.",
+ "recorded_by": "Master Mind (build agent, from the MM's brief quoting the PI)",
+ "go_date": "2026-11-22",
+ "go_verbatim": "i approve it / Yes, use the clamp"
+}

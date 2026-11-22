@@ -50,7 +50,7 @@ SHARE_BAND = (0.05, 0.15)   # in-training validity: logged trunk share, design 2
 SHARE_MIN_STEP = 3000
 SHARE_MIN_PROBES = 2
 ARM_DEFAULT = "K2DC"        # the default arm: every constant above is K2DC's (share target 0.10); `--arm K2DC` and no --arm read bit-for-bit as before
-ARM_ARGV = {"K2DC02": "r9e2_K2DC02.argv.json", "K2DC02s1": "r9e2_K2DC02s1.argv.json"}      # arms whose dose settings are READ from stack/ops/runs.d/<file>, never typed here
+ARM_ARGV = {"K2DC02": "r9e2_K2DC02.argv.json", "K2DC02s1": "r9e2_K2DC02s1.argv.json", "K2DC02cl": "r9e2_K2DC02cl.argv.json"}      # arms whose dose settings are READ from stack/ops/runs.d/<file>, never typed here
 # the pre-registration sentence each derived arm's document carries (MM 11-20: K2DC02s1 = the PREREG_K2DC02 section 4.4 replicate; K2DC02's text is unchanged byte for byte)
 ARM_PREREG_NOTE = {
     "K2DC02": "Pre-registered for K2DC02 in e2/e2raw/PREREG_K2DC02_2026-11-18.md (landed 75d9ca52, before any K2DC02 training step): K2DC is the comparator "
@@ -58,10 +58,15 @@ ARM_PREREG_NOTE = {
     "K2DC02s1": "Pre-registered for K2DC02s1 in e2/e2raw/PREREG_K2DC02S1_2026-11-20.md (landed 48c797f3, before any K2DC02s1 training step): K2DC (EMA) or K2DC-tail "
                 "is the comparator in K2's slot; with K2DC02 (EMA) or K2DC02-tail in K2's slot the document is that PREREG's section 4 training-run FLOOR, "
                 "a noise reading and never a lever verdict; `reason` text naming next arms is K2DC's, and that PREREG's section 6 replaces it.",
+    "K2DC02cl": "Pre-registered for K2DC02cl in e2/e2raw/PREREG_K2DC02CL_2026-11-22.md (DRAFT FOR MM REVIEW until landed; to be landed before any K2DC02cl training step): the bars, comparators "
+                "and estimator are PREREG_K2DC02's, unchanged, with K2DC (EMA) in K2's slot; validity adds the DOSE-MEAN check (mean late share inside the mean band, else DOSE-OFF-TARGET, "
+                "which makes no claim about the 0.02 dose); `reason` text naming next arms is K2DC's, and that PREREG's section 5 replaces it.",
 }
+# K2DC02cl only (PREREG_K2DC02CL section 2 (iii)): the MEAN of the probe shares at step >= SHARE_MIN_STEP must lie inside this band, else DOSE-OFF-TARGET. Other arms: no mean check, documents byte-identical.
+ARM_MEAN_BAND = {"K2DC02cl": (0.01, 0.035)}
 ARGV_DIR = Path(__file__).resolve().parents[1] / "ops" / "runs.d"
 BAND_REL = (0.5, 1.5)       # K2DC's band [0.05, 0.15] is 0.5x..1.5x of its target 0.10; a derived arm keeps the same RELATIVE band around its own target
-EXIT = {"SUPPORTED": 0, "REFUTED": 1, "INCONCLUSIVE": 2, "DOSE-VOID": 3, "OP-VOID": 3}
+EXIT = {"SUPPORTED": 0, "REFUTED": 1, "INCONCLUSIVE": 2, "DOSE-VOID": 3, "OP-VOID": 3, "DOSE-OFF-TARGET": 3}
 ARM_SG = {"K2SG": "r9e2_K2SG.argv.json"}            # the stop-gradient arm: its lever is READ from the argv json, never typed here
 PREREG_SG = "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/e2/e2raw/PREREG_K2SG_2026-11-19.md"
 SG_FLAG = "--map-hires-trunk-grad-scale"
@@ -193,7 +198,7 @@ def decide(per_seed: dict) -> dict:
 # ---------------------------------------------------------------------------------------------------------------- #
 # the in-training validity check                                                                                    #
 # ---------------------------------------------------------------------------------------------------------------- #
-def void_check(metrics_path, band=SHARE_BAND, bounds=None) -> dict:
+def void_check(metrics_path, band=SHARE_BAND, bounds=None, mean_band=None) -> dict:
     """Reads the trainer's metrics.jsonl: rows carrying `dc_share_read` (map_dose_ctl.MapDoseController.fire, merged into the metrics row at the firing step)."""
     if metrics_path is None:
         return {"status": "NOT-CHECKED", "reason": "no --metrics given: the in-training validity condition was not read; the outcome is UNCHECKED-VOID", "valid": None}
@@ -231,6 +236,14 @@ def void_check(metrics_path, band=SHARE_BAND, bounds=None) -> dict:
     else:
         ok = len(inside) >= SHARE_MIN_PROBES
         out.update(status="HELD" if ok else "VOID", valid=ok, reason="" if ok else "the controller did not hold the share inside the band: DOSE-VOID")
+    if mean_band is not None:    # K2DC02cl's DOSE-MEAN check (PREREG_K2DC02CL section 2 (iii)); a VOID by the >= 2-probe rule stays VOID (the mean is then only reported)
+        vals = [v for s, v in late]
+        mean = sum(vals) / len(vals) if vals else None
+        mok = mean is not None and mean_band[0] <= mean <= mean_band[1]
+        out.update(mean_band=list(mean_band), mean_share_step_ge_3000=None if mean is None else round(mean, 6), n_mean_probes=len(vals), mean_in_band=mok,
+                   mean_rule=f"mean of the {SHARE_MIN_STEP}+ step probe shares inside [{mean_band[0]}, {mean_band[1]}]")
+        if out.get("valid") is True and not mok:
+            out.update(status="OFF-TARGET", valid=False, reason="the controller held the share in the band on >= 2 probes but the MEAN late share is outside the mean band: DOSE-OFF-TARGET (no claim about the 0.02 dose)")
     return out
 
 
@@ -408,7 +421,7 @@ def build(numbers: dict, void: dict, extra: dict | None = None, arm: dict | None
     if sg:
         d["reason"] = REASON_SG[d["outcome_if_valid"]]
     if void.get("valid") is False:
-        outcome = "OP-VOID" if sg else "DOSE-VOID"
+        outcome = "OP-VOID" if sg else "DOSE-OFF-TARGET" if void.get("status") == "OFF-TARGET" else "DOSE-VOID"
     elif void.get("valid") is None:
         outcome = d["outcome_if_valid"] + " (UNCHECKED-VOID: the in-training share condition was not read)"
     else:
@@ -450,7 +463,9 @@ def md(doc: dict) -> str:
                         f"{ov.get('n_control_bad')} bad control readings). {ov.get('reason', '')}").replace("K2DC", "K2SG")
     return _md_body(doc, f"# {doc.get('arm', {}).get('arm', ARM_DEFAULT)} dose hypothesis: **{doc['outcome']}**",
                     f"In-training validity (`dose_validity`): **{doc['dose_validity'].get('status')}** ({doc['dose_validity'].get('rule', '')}; "
-                    f"{doc['dose_validity'].get('n_inside_band', '-')} of {doc['dose_validity'].get('n_probes_step_ge_3000', '-')} late probes inside the band).")
+                    f"{doc['dose_validity'].get('n_inside_band', '-')} of {doc['dose_validity'].get('n_probes_step_ge_3000', '-')} late probes inside the band)."
+                    + (f" DOSE-MEAN: mean late share {doc['dose_validity'].get('mean_share_step_ge_3000')} vs mean band {doc['dose_validity'].get('mean_band')}: "
+                       f"{'inside' if doc['dose_validity'].get('mean_in_band') else 'OUTSIDE'}." if "mean_band" in doc["dose_validity"] else ""))
 
 
 def _md_body(doc: dict, head: str, validity: str) -> str:
@@ -501,7 +516,7 @@ def main(argv=None) -> int:
         sg = a.arm in ARM_SG
         arm = arm_sg(a.arm, a.argv_json) if sg else arm_dose(a.arm, a.argv_json)
         numbers = {s: seed_numbers(a.k2dc_pf, a.k2_pf, a.k0_pf, a.dev_split, s, a.boot, a.arm if sg else "K2DC") for s in SEEDS}
-        void = void_check_sg(a.metrics) if sg else void_check(a.metrics) if arm is None else void_check(a.metrics, tuple(arm["share_band"]), tuple(arm["bounds"]))
+        void = void_check_sg(a.metrics) if sg else void_check(a.metrics) if arm is None else void_check(a.metrics, tuple(arm["share_band"]), tuple(arm["bounds"]), ARM_MEAN_BAND.get(a.arm))
         doc = build(numbers, void, beside(a.k2dc_read, a.k2_read)) if arm is None else build(numbers, void, beside(a.k2dc_read, a.k2_read), arm)
     except SystemExit as e:
         print(e, file=sys.stderr)
