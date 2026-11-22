@@ -5640,6 +5640,19 @@ Every row is MEASURED from the harness CSV on the dev box, under `E:/Projects/Ta
 | four families (`executed_tracked`, P7 minus P6, `PK/raw/2026-11-16-p7-read/chain/fam_ci_P6_vs_P7.json`, per family, never pooled) | LATERAL: 5 of 8 cells separated, all error reductions (heading MAE -0.124 deg [-0.181, -0.067], cross-track MAE -0.026 m [-0.036, -0.016], curvature MAE -0.00024 1/m, yaw-rate MAE -0.047 deg/s [-0.093, -0.002], final cross MAE -0.061 m). LONGITUDINAL: 8 of 20 separated (speed bias -0.045 m/s, along-final bias -0.203 m [-0.257, -0.154], progress ratio mean -0.012, lead progress ratio -0.021), **under-progress rate +0.013 [+0.005, +0.022] the one separated move against P7**; headway, time gap, TTC, speed MAE not separated. TACTICAL: 12 of 33 separated (11 distinct values; brake_stop recall +2.0 pp longitudinal / +2.9 pp 5-way, 5-way accuracy +0.74 pp [+0.01, +1.45], goal-point error -0.049 m [-0.094, -0.001]); command adherence turn-active 0.8805 [0.8555, 0.9025] (P6 0.8869, floor 0.8841), `chain/command_adherence_p7_full.json`. **STRATEGIC: not computed (the instrument still stamps PAUSED; the PI lifted the pause 2026-11-16) = work item, not a pass** |
 | caveats | one training seed, deterministic planner: inference variance does not apply, training variance is unmeasured (`H-ESTIM-SEED-1`); bundle attribution; a separated family cell is necessary, not sufficient; not closed loop. Detail: `PK/raw/2026-11-16-p7-read/P7_READ_RESULT.md`; GAC `D-REFE-P7-READ-1` |
 
+### 14.5 `p7field_f` / `p7field_c` (F / C): P7 + 2,000 steps with / without the field loss [FULL NAVTEST, T1-class, ONE SEED] (added 2026-11-22, Master Mind)
+
+| field | value (MEASURED unless stated) |
+|---|---|
+| recipe | P7 (14.4) as init, 2,000 steps, seed 0, same bank; **F** `--w-field 2.0`, **C** `--w-field 0.0` (`PK/eval/PREREG_AUX_FIELD_LOSS_P7.md`; package `code_10848403`, pod run dirs `refe_runs/p7field_f`, `refe_runs/p7field_c`) |
+| result, full navtest, T1-class (NAVSIM v1.1 PDMS, 12,146 tokens, 136 logs, open loop against logged agents) | **F 91.1508 · C 91.2352** (`full_set` mean over all tokens of `refe_stage2_p7field_{f,c}.csv`, sha256 `606740179d98de04…` / `3d3d2936d5dae90d…`) |
+| sub-scores (level, x100, F / C) | NC 98.6498 / 98.8762 · DAC 98.0817 / 97.8758 · DDC 96.9043 / 96.4803 · TTC 94.9942 / 95.2248 · EP 86.9820 / 87.0811 · C 100.0000 / 99.9918 |
+| F minus C (paired log-cluster bootstrap, 136 logs, 10,000 draws, seed 20260927) | **E1 PDMS -0.0844 [-0.3771, +0.1955]**; DAC-zero share -0.2058 pp [-0.4413, +0.0400]; C3 fan DAC-compliant share +9.4474 pp [8.0722, 10.8551] (failure-enriched subset, not a rate); transparent-frame PDMS -0.7275 [-1.0912, -0.3597] |
+| four families | LONGITUDINAL none separated adverse; LATERAL 3 separated adverse (yaw-rate MAE, curvature MAE, last-pose heading); TACTICAL selection = E1; STRATEGIC reported, not gating. Detail `PK/raw/2026-11-22-field-read/FIELD_READ_RESULT.md` |
+| against the goal | **BELOW GOAL**: 94.55 (DriveZero A13, PUBLISHED). The best REFe is still C1, 92.5548 |
+| verdict | card rule as written: **NOT PROVEN**; K4 not fired; replicates C-seed / F-seed run (adopt_cs). GAC `D-REFE-FIELD-P7-6` |
+| caveats | one training seed each; training variance unmeasured until the replicate pair reads (`H-ESTIM-SEED-1`); deterministic planner; not closed loop |
+
 ## 15. refcv7-r101-s0 — refcv6 + FIX-1..5 + NEW-1/NEW-2 + A9 box head [NON-PARITY · NavSim zero-shot · ONE SEED]
 
 ⚠️ **Not the DrivoR planning heads.** That scope was renamed DrivoR-T on 2026-09-26 (`SPEC_DRIVORT.md`); this
