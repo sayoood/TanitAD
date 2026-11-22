@@ -55,6 +55,10 @@ LABELS_RE_EXPRESSED = ("lab_s.rc",)
 #: difference), and the T1-kin dead reckoning counts down only ``if row[4] > 0``. False (the default) = progress is rebuilt only where the route is valid, i.e. ORC's and T1's behaviour. True = the letter.
 NAV_REBUILD_INVALID = False
 DAGGER_DEFAULTS = {"p": 0.0, "seed": 0}          # the lever's OFF state: p is NEVER given a non-zero default here
+#: PREREG_V8F_ROLLADD: ``--dagger-mode``. ``swap`` (the default, and cf27dbb7's only behaviour) overwrites the selected rows in place; ``add`` keeps the logged batch whole and APPENDS the swapped rows after it.
+#: Kept OUT of ``DAGGER_DEFAULTS`` and ``constants()`` on purpose: the bank header's ``constants_sha256`` is compared with this tree's, so no existing bank may change its hash.
+DAGGER_MODES = ("swap", "add")
+DEFAULT_MODE = "swap"
 
 
 def constants() -> dict:
@@ -669,6 +673,22 @@ def parse_readout_token(tok) -> str:
     return canon
 
 
+def append_rows(batch: dict, rows, upd: dict) -> dict:
+    """PREREG_V8F_ROLLADD (``--dagger-mode add``): the batch with the swapped rows APPENDED. The first B rows are ``batch``'s own tensors, unchanged bit for bit; rows B .. B+N-1 are, for every key,
+    ``upd[key][rows]`` when ``swap_rows`` produced the key (the REBUILT tensors, ``lab_s``, and gt / s_h under speed_v1) and ``batch[key][rows]`` otherwise (the window's logged value, which is what the swap leaves
+    in those rows today). A tensor whose dim 0 is B is per-row; a dict (``lab``, ``lab_t``, ``lab_s``) is appended entry by entry; anything else (not a tensor, or dim 0 != B) is left as it is. ``batch`` is not modified."""
+    import torch
+    B = int(batch["p10f"].shape[0])
+    out = dict(batch)
+    for k, v in batch.items():
+        src = upd.get(k, v)
+        if isinstance(v, dict):
+            out[k] = {kk: (torch.cat([vv, src[kk][rows]], 0) if torch.is_tensor(vv) and vv.ndim >= 1 and int(vv.shape[0]) == B else vv) for kk, vv in v.items()}
+        elif torch.is_tensor(v) and v.ndim >= 1 and int(v.shape[0]) == B:
+            out[k] = torch.cat([v, src[rows]], 0)
+    return out
+
+
 class DaggerSwap:
     """The DAgger swap applied to a collated training batch just before ``model.loss`` (the trainer's ``b = dag.apply(b, step)``), with ``EgoPerturb``'s contract.
 
@@ -680,8 +700,9 @@ class DaggerSwap:
 
     PROBE_STEP = -1
 
-    def __init__(self, bank: DaggerBank | None = None, p: float = DAGGER_DEFAULTS["p"], seed: int = DAGGER_DEFAULTS["seed"], kin_mode: str = "yaw", bank_sha256: str | None = None):
+    def __init__(self, bank: DaggerBank | None = None, p: float = DAGGER_DEFAULTS["p"], seed: int = DAGGER_DEFAULTS["seed"], kin_mode: str = "yaw", bank_sha256: str | None = None, mode: str = DEFAULT_MODE):
         self.bank, self.p, self.seed, self.kin_mode = bank, float(p), int(seed), str(kin_mode)
+        self.mode = str(mode)                                                                        # PREREG_V8F_ROLLADD: "swap" (default) | "add"
         self.bank_sha256 = bank_sha256 if bank_sha256 is not None else (bank.sha256 if bank is not None else None)
         self.last = None
 
@@ -694,7 +715,7 @@ class DaggerSwap:
         (written by ``v8f_dagger_bank.py``); a header without it (every bank made before the field existed) reads ``pinned`` / ``none``, and so does no bank."""
         gen = ({} if self.bank is None else (getattr(self.bank, "header", None) or {}).get("generator")) or {}
         return {"dagger_bank_readout": readout_token(gen.get("readout", "pinned"), gen.get("acc_gain"), bool(gen.get("path_exec", False))), "dagger_bank_kappa": str(gen.get("kappa_max", "none")),
-                "dagger_label": "human" if self.bank is None else self.bank.label_kind, "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
+                "dagger_label": "human" if self.bank is None else self.bank.label_kind, "dagger_mode": self.mode, "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
                 "bank_hmax": None if self.bank is None else self.bank.hmax, "rebuilt": list(REBUILT), "kept": list(KEPT), "record": list(RECORD), "labels_re_expressed": list(LABELS_RE_EXPRESSED),
                 "nav_rebuild_invalid": NAV_REBUILD_INVALID, "constants_sha256": constants_sha256()}
 
@@ -704,6 +725,8 @@ class DaggerSwap:
             bad.append(f"dagger_p {self.p!r} is not in [0, 1]")
         if self.seed < 0:
             bad.append(f"dagger_seed {self.seed!r} is negative")
+        if self.mode not in DAGGER_MODES:
+            bad.append(f"dagger_mode {self.mode!r} is not one of {DAGGER_MODES}")
         return bad
 
     def problems(self) -> list:
@@ -713,6 +736,8 @@ class DaggerSwap:
             bad.append(f"dagger_p {self.p} needs --kin-mode yaw; got {self.kin_mode!r}")
         if self.active and self.bank is None:
             bad.append(f"dagger_p {self.p} > 0 but no bank is loaded")
+        if self.mode == "add" and not self.active:
+            bad.append("dagger_mode 'add' is declared while dagger_p is 0: a lever that is declared and does nothing")
         if not self.active:
             moved = [n for n, v in (("dagger_bank", self.bank), ("dagger_bank_sha256", self.bank_sha256), ("dagger_seed", self.seed if self.seed != DAGGER_DEFAULTS["seed"] else None)) if v is not None]
             if moved:
@@ -737,7 +762,7 @@ class DaggerSwap:
         p = self.p if p is None else float(p)
         elig = self.eligible(batch)
         if not p > 0.0:
-            self.last = {"step": int(step), "p": 0.0, "n_rows": int(elig.numel()), "n_eligible": int(elig.sum()), "n_selected": 0, "dagger_nav_kept": 0, "n_label_replaced": 0}
+            self.last = {"step": int(step), "p": 0.0, "n_rows": int(elig.numel()), "n_eligible": int(elig.sum()), "n_selected": 0, "dagger_nav_kept": 0, "n_label_replaced": 0, "n_appended": 0, "n_rows_out": int(elig.numel())}
             return batch
         bad = self.law_problems()
         if self.kin_mode != "yaw":
@@ -751,7 +776,7 @@ class DaggerSwap:
         u = torch.rand(2, B, generator=g, dtype=torch.float64)                       # selection, which of the window's own states
         sel = (u[0] < p).to(dev) & elig
         rows = sel.nonzero(as_tuple=True)[0]
-        self.last = {"step": int(step), "p": p, "n_rows": B, "n_eligible": int(elig.sum()), "n_selected": int(rows.numel()), "dagger_nav_kept": 0, "n_label_replaced": 0, "sel": sel.detach().cpu().clone()}
+        self.last = {"step": int(step), "p": p, "n_rows": B, "n_eligible": int(elig.sum()), "n_selected": int(rows.numel()), "dagger_nav_kept": 0, "n_label_replaced": 0, "n_appended": 0, "n_rows_out": B, "sel": sel.detach().cpu().clone()}      # n_appended: PREREG_V8F_ROLLADD, exactly 0 under swap; under add counted from the batch that is returned (below), never from n_selected
         out = dict(batch)
         if rows.numel():
             r = rows.cpu()
@@ -760,5 +785,10 @@ class DaggerSwap:
             self.last["dagger_nav_kept"] = upd.pop("_nav_kept")
             self.last["n_label_replaced"] = upd.pop("_rl_n", 0)                       # rows whose gt / s_h came from the speed_v1 label (exactly 0 under --dagger-label human)
             self.last["record_idx"] = idx
-            out.update(upd)                                                           # the ONE line that applies the swap: delete it and `out` is `batch`
+            if self.mode == "add":
+                out = append_rows(batch, rows, upd)                                       # the ONE line that applies `add`: delete it and `out` is `batch` (no row is appended)
+                self.last["n_appended"] = int(out["p10f"].shape[0]) - B
+                self.last["n_rows_out"] = int(out["p10f"].shape[0])
+            else:
+                out.update(upd)                                                       # the ONE line that applies the swap: delete it and `out` is `batch`
         return out

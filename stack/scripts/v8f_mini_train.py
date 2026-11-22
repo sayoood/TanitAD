@@ -101,6 +101,9 @@ FLAG_CHECKS = {
     # PREREG_V8F_ROLLHIST (label lever RL): `dagger:dagger_label` = equals the BUILT bank's label kind (DaggerSwap.built_levers()["dagger_label"]: "speed_v1" iff the speed-consistent labels are attached to the loaded
     # bank). argv -> make_dagger -> load_dagger_bank (label_bank at bank load) -> DaggerBank.attach_recovery -> DaggerSwap.apply -> swap_rows (gt, s_h installed) -> model.loss (ade / fde / acc / LEAD / consistency). Refused when non-default at --dagger-p 0.
     "dagger_label": "dagger:dagger_label",
+    # PREREG_V8F_ROLLADD (arm RA): `dagger:dagger_mode` = equals the BUILT swap's mode (DaggerSwap.built_levers()["dagger_mode"]). argv -> make_dagger (DaggerSwap(mode=)) -> DaggerSwap.apply -> append_rows (B logged rows + N swapped rows)
+    # -> model.loss on B + N rows -> backward. Default swap = cf27dbb7 bit for bit. Refused at --dagger-p 0, and beside every stage that assumes B rows (bad_dagger).
+    "dagger_mode": "dagger:dagger_mode",
     # AMEND1 (DAG-ORC re-based on DAG-OACC) section 1: the two levers above composed in ONE arm. `compose:<k>` = equals the BUILT stage's lever (EgoDaggerCompose.built_levers(), the object the loop calls `.apply` on):
     # argv -> make_compose -> the stage -> declared_vs_built (bad_ego_dagger; bad_dagger lifts the exclusivity ONLY for an argv that names it) -> G-LIVE on a COMPOSED batch (ego_dagger_compose_probe: both levers reach the
     # loss gradient, the p = 0 controls read EXACTLY 0.0) -> `b = comp.apply(b, step)` in the loop. Off (the default): the stage is never called and the loop runs its two original lines.
@@ -245,6 +248,10 @@ def build_parser():
                          "(v8f_recovery.speed_label, labelled once at bank load, matcher-ok records only): the human polyline from r' sampled at the human arc plus the integrated speed deficit of V1's rate-limited speed profile "
                          "started from the OWN speed; gt and s_h of the swapped rows come from it; a record the labeller refuses keeps the human label; the eligible index is unchanged. Must equal the built bank's label kind or "
                          "the launch gate refuses; refused when non-default at --dagger-p 0")
+    ap.add_argument("--dagger-mode", dest="dagger_mode", choices=DG.DAGGER_MODES, default=DG.DEFAULT_MODE,
+                    help="PREREG_V8F_ROLLADD (arm RA): swap (default) = the selected logged rows are overwritten by the own states, cf27dbb7 bit for bit. add = the logged batch is kept whole and the N swapped rows are APPENDED "
+                         "after it (the step trains on B + N rows; same selection, same generator). Must equal the BUILT swap's mode or the launch gate refuses; refused at --dagger-p 0 and with --launch-intent-w / --level-head on / "
+                         "--lead-head on / --ego-perturb-p > 0 / --ego-perturb-with-dagger / --recover-p > 0 / --t2-bank-p > 0 / --encoder lora / --wm-only / --wm-windows wmonly (each assumes a row count of B)")
     ap.add_argument("--ego-perturb-with-dagger", dest="ego_perturb_with_dagger", action="store_true", default=False,
                     help="AMEND1 section 1: lift the exclusivity of --dagger-p and --ego-perturb-p for THIS arm and compose them. The DAgger swap is drawn first; the ego perturbation is then drawn (its own p, its own seeded "
                          "generator) ONLY on the samples the swap did not replace, so no sample is both swapped and perturbed (the run record carries ego_dagger_overlap_n, exactly 0). REFUSED unless --dagger-p > 0 AND "
@@ -629,14 +636,14 @@ def make_dagger(a, J, wins, clips, info, store=None):
         except Exception as e:                                       # noqa: BLE001  a missing / foreign / corrupt bank is a REFUSAL, not a crash
             raise SystemExit(f"ZZDVB-REFUSEDZZ dagger-bank {a.dagger_bank}: {type(e).__name__}: {str(e)[:600]}")
         info["dagger"] = ctl                                         # selfcheck.json carries the controls that were read
-    return DG.DaggerSwap(bank, p=a.dagger_p, seed=a.dagger_seed, kin_mode=a.kin_mode)
+    return DG.DaggerSwap(bank, p=a.dagger_p, seed=a.dagger_seed, kin_mode=a.kin_mode, mode=a.dagger_mode)
 
 
 def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
     """The DAgger half of the launch gate (G-DVB). Empty = pass. Every flag is read back from the BUILT swap (``dag``); with no swap built every one must be at its default (a flag that builds nothing is
     refused, not ignored). Beyond the flags: the bank's path and sha256 against the declaration (the file on disk is re-hashed), K-B2 / K-B3 / COVERAGE were read (the record exists and says so), the bank's
     generating configuration equals PREREG section 1's and this model's, the exclusivity with --ego-perturb-p, and a lever declared without an effect (DAG-only flags at p = 0) is refused."""
-    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed", "dagger_bank_readout", "dagger_bank_kappa", "dagger_label")}
+    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed", "dagger_bank_readout", "dagger_bank_kappa", "dagger_label", "dagger_mode")}
     declared = {k: getattr(a, k) for k in dfl}
     if dag is None:
         moved = sorted(k for k in dfl if declared[k] != dfl[k])
@@ -646,7 +653,7 @@ def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
     for k in ("dagger_p", "dagger_seed"):
         if lv.get(k) != declared[k]:
             bad.append(f"lever {k}: declared {declared[k]!r} but built {lv.get(k)!r}")
-    for k in ("dagger_bank_readout", "dagger_bank_kappa", "dagger_label"):                       # PREREG_V8F_ROLLHIST N4 (+ the label lever): the declaration against the LOADED bank header (built_levers reads it)
+    for k in ("dagger_bank_readout", "dagger_bank_kappa", "dagger_label", "dagger_mode"):        # PREREG_V8F_ROLLHIST N4 (+ the label lever): the declaration against the LOADED bank header (built_levers reads it)
         if lv.get(k) != declared[k]:
             bad.append(f"lever {k}: declared {declared[k]!r} but the loaded bank's header says {lv.get(k)!r} (a header without the field reads {dfl[k]!r})")
         if a.dagger_p <= 0 and declared[k] != dfl[k]:
@@ -654,6 +661,12 @@ def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
     if lv.get("kin_mode") != a.kin_mode:
         bad.append(f"DAgger swap kin_mode: declared {a.kin_mode} but built {lv.get('kin_mode')}")
     bad += [f"DAgger swap: {m}" for m in dag.problems()]
+    if getattr(a, "dagger_mode", "swap") == "add":                                               # PREREG_V8F_ROLLADD: every stage that assumes a row count of B is refused, not approximated (FACTS_ROLLADD section 2)
+        for flag, on in (("--launch-intent-w", a.launch_intent_w > 0.0), ("--level-head on", a.level_head == "on"), ("--lead-head on", a.lead_head == "on"), ("--ego-perturb-p", a.ego_perturb_p > 0),
+                         ("--ego-perturb-with-dagger", bool(a.ego_perturb_with_dagger)), ("--recover-p", a.recover_p > 0), ("--t2-bank-p", a.t2_bank_p > 0), ("--encoder lora", a.encoder == "lora"),
+                         ("--wm-only", bool(a.wm_only)), ("--wm-windows wmonly", a.wm_windows == "wmonly")):
+            if on:
+                bad.append(f"--dagger-mode add together with {flag}: that stage reads or attaches a tensor of the B logged rows and would misalign with the B + N rows of an add batch (REFUSED, not approximated)")
     if a.dagger_p > 0 and a.ego_perturb_p > 0 and not a.ego_perturb_with_dagger:
         bad.append(f"--dagger-p {a.dagger_p} together with --ego-perturb-p {a.ego_perturb_p}: the two levers are never combined in one arm (PREREG_V8F_DAGGER section 4; AMEND1 section 1 lifts this only for an argv that names --ego-perturb-with-dagger)")
     if a.dagger_bank_sha256 and not is_sha256_hex(a.dagger_bank_sha256):
@@ -2718,6 +2731,85 @@ def recover_probe(model, batch, cfg, rec) -> dict:
     return res
 
 
+def dagger_add_probe(m, batch, cfg, dag, pert, last, res) -> dict:
+    """G-LIVE for ``--dagger-mode add`` (PREREG_V8F_ROLLADD), called by ``dagger_probe`` with the model copy ``m`` and ``pert`` = ``dag.apply(batch, PROBE_STEP, p=1.0)``:
+
+      rows         ``pert`` has B + N rows, N = the selected count and = ``last["n_appended"]`` (counted from the returned batch); the keys are the logged batch's
+      logged half  the first B rows of EVERY per-row entry (dict entries included) are the logged batch's, bit for bit
+      appended     rows B .. B+N-1 equal, bit for bit, the rows the SWAP mode produces for the same selection (an independent ``mode='swap'`` swap on the same bank, seed and step); the own ego state differs from
+                   the logged row on at least one appended row (p10f, kin3)
+      G-LIVE       ``live_check`` on the ADD batch: every loss term finite, every trainable group a non-zero gradient, the frozen prior EXACTLY 0.0
+      gradient     sum |grad(total on the add batch) - grad(total on the logged batch)| > 0 and the loss moves
+      controls     (a) the logged loss twice differs by EXACTLY 0.0; (b) p = 0 returns the SAME batch object, loss / gradient difference EXACTLY 0.0; (c) the frozen P10 prior's gradient difference is EXACTLY 0.0
+    (The world-model auxiliary's gradient DOES move under add: it sees more rows. It is recorded, not constrained.)"""
+    B, N = int(batch["p10f"].shape[0]), int(last["n_selected"])
+    sel_rows = last["sel"].nonzero(as_tuple=True)[0]
+    res["mode"] = "add"
+    res["rows_logged"], res["rows_appended"], res["rows_out"] = B, int(pert["p10f"].shape[0]) - B, int(pert["p10f"].shape[0])
+    if not (last.get("n_appended") == N and res["rows_appended"] == N and last.get("n_rows_out") == B + N and N >= 1):
+        raise AssertionError(f"dagger add probe: appended {res['rows_appended']} rows (last: n_appended {last.get('n_appended')}, n_rows_out {last.get('n_rows_out')}) for {N} selected: the add batch is not B + N rows")
+    if set(pert) != set(batch):
+        raise AssertionError("dagger add probe: the add batch changed the batch's keys")
+
+    def rows_of(x, lo, hi):
+        return {kk: vv[lo:hi] for kk, vv in x.items()} if isinstance(x, dict) else x[lo:hi]
+
+    def same(a, b):
+        if isinstance(a, dict):
+            return a.keys() == b.keys() and all(same(a[k], b[k]) for k in a)
+        return a.shape == b.shape and a.dtype == b.dtype and bool(((a == b) | (torch.isnan(a) & torch.isnan(b)) if a.is_floating_point() else (a == b)).all())
+    ref = DG.DaggerSwap(dag.bank, p=dag.p, seed=dag.seed, kin_mode=dag.kin_mode, mode="swap").apply(batch, dag.PROBE_STEP, p=1.0)
+    for k, v in batch.items():
+        if not (torch.is_tensor(v) or isinstance(v, dict)):
+            continue
+        if not same(rows_of(pert[k], 0, B), v):
+            raise AssertionError(f"dagger add probe: the first {B} rows of {k} are not the logged batch's")
+        want = {kk: vv[sel_rows] for kk, vv in ref[k].items()} if isinstance(v, dict) else ref[k][sel_rows]
+        if not same(rows_of(pert[k], B, B + N), want):
+            raise AssertionError(f"dagger add probe: the appended rows of {k} are not the swap mode's rows for the same selection")
+    ch = {k: bool((pert[k][B:] != batch[k][sel_rows]).reshape(N, -1).any()) for k in ("p10f", "kin3")}
+    if not all(ch.values()):
+        raise AssertionError(f"dagger add probe: the appended own states equal the logged rows ({ch}): the add cannot be seen")
+    res["appended_differs_from_logged"] = ch
+    lp = live_check(m, pert, cfg)
+    res["live_added"] = {"pass": lp["pass"], "terms": lp["terms"], "control_prior_grad_sum": lp["control_prior_grad_sum"], "groups_grad": lp["groups_grad"]}
+    named = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
+
+    def run(b):
+        for _, p in named:
+            p.grad = None
+        for p in m.prior.parameters():
+            p.grad = None
+        torch.manual_seed(20261026)
+        T = m.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(13))["terms"]
+        for k, v in T.items():
+            if not torch.isfinite(v):
+                raise AssertionError(f"dagger add probe: loss term {k} is not finite: {float(v)}")
+        T["total"].backward()
+        g = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in named}
+        gp = torch.cat([(p.grad.detach().reshape(-1) if p.grad is not None else torch.zeros(p.numel())) for p in m.prior.parameters()])
+        return float(T["total"].detach()), g, gp
+    dsum = lambda ga, gb, pre: float(sum((ga[n] - gb[n]).abs().sum() for n in ga if n.startswith(pre)))      # noqa: E731
+    t0, g0, gp0 = run(batch)
+    t0b, g0b, _ = run(batch)
+    t1, g1, gp1 = run(pert)
+    b_zero = dag.apply(batch, dag.PROBE_STEP, p=0.0)
+    tz, gz, _ = run(b_zero)
+    res.update({"total_logged": t0, "total_added": t1, "loss_diff": t1 - t0, "grad_diff_all": dsum(g1, g0, ""), "grad_diff_by_group": {pre: dsum(g1, g0, pre) for pre in ("adapter", "e_ego", "read_s", "read_t", "read_o", "head_s", "head_o", "wm.")},
+                "control_repeat_loss_diff": abs(t0b - t0), "control_repeat_grad_diff": dsum(g0, g0b, ""), "control_p0_same_object": b_zero is batch, "control_p0_loss_diff": abs(tz - t0), "control_p0_grad_diff": dsum(gz, g0, ""),
+                "control_prior_grad_diff": float((gp1 - gp0).abs().sum())})
+    if res["control_repeat_loss_diff"] != 0.0 or res["control_repeat_grad_diff"] != 0.0:
+        raise AssertionError(f"dagger add probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_loss_diff']} / {res['control_repeat_grad_diff']})")
+    if not res["control_p0_same_object"] or res["control_p0_loss_diff"] != 0.0 or res["control_p0_grad_diff"] != 0.0:
+        raise AssertionError(f"dagger add probe: p = 0 is not the identity (same object {res['control_p0_same_object']}, loss diff {res['control_p0_loss_diff']}, grad diff {res['control_p0_grad_diff']}): the control must read exactly 0.0")
+    if not (res["loss_diff"] != 0.0 and res["grad_diff_all"] > 0.0):
+        raise AssertionError(f"dagger add probe: the add batch moves the loss by {res['loss_diff']} and the gradient by {res['grad_diff_all']}: the appended rows do not reach the loss the trainer backpropagates")
+    if res["control_prior_grad_diff"] != 0.0:
+        raise AssertionError(f"dagger add probe: the frozen P10 prior's gradient moved ({res['control_prior_grad_diff']}): the control must read exactly 0.0")
+    res["pass"] = True
+    return res
+
+
 def dagger_probe(model, batch, cfg, dag) -> dict:
     """G-LIVE for DAgger (PREREG_V8F_DAGGER section 6): the swapped own-state tensors REACH THE LOSS THE TRAINER BACKPROPAGATES -- read from the BUILT model's own ``loss`` on the real probe batch (a COPY, its own
     seeds), through the SAME ``dag.apply`` the training loop calls, at p = 1. With the lever off (the default) there is nothing to prove and nothing runs (the pre-change model and loss).
@@ -2747,6 +2839,8 @@ def dagger_probe(model, batch, cfg, dag) -> dict:
         raise AssertionError(f"dagger probe: no ELIGIBLE window (an own state with r' = t that passed every cut) among the {last['n_rows']} probe windows: the swap cannot be seen")
     B = int(sel.numel())
     res = {"p_declared": dag.p, "n_rows": B, "n_eligible": last["n_eligible"], "n_selected_at_p1": n_sel}
+    if dag.mode == "add":                                                          # PREREG_V8F_ROLLADD: the add batch has B + N rows; the swap's row-by-row clauses below do not apply to it
+        return dagger_add_probe(m, batch, cfg, dag, pert, last, res)
 
     if set(pert) != set(batch):
         raise AssertionError(f"dagger probe: the swap changed the batch's keys (added {sorted(set(pert) - set(batch))}, removed {sorted(set(batch) - set(pert))}): it may replace the named ego tensors and nothing else")
@@ -3533,8 +3627,8 @@ def main(argv=None):
     step, ep, bi = 0, 0, 0
     ego_tot = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # O-RECOVER's run totals (samples seen, eligible = logged v0 < vmax, perturbed, nav frames left as logged); carried in the checkpoint so a resumed run keeps counting
     ego_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
-    dag_tot = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # PREREG_V8F_DAGGER's run totals (samples seen, eligible = an own state with r' = t, swapped, nav frames left as logged); carried in the checkpoint
-    dag_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
+    dag_tot = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0, **({"appended": 0, "rows_out": 0} if dag.mode == "add" else {})}   # PREREG_V8F_DAGGER's run totals (samples seen, eligible = an own state with r' = t, swapped, nav frames left as logged); carried in the checkpoint
+    dag_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0, **({"appended": 0, "rows_out": 0} if dag.mode == "add" else {})}   # ... and since the last log line
     rec_tot = {"rows": 0, "eligible": 0, "n": 0, "changed": 0}   # PREREG_RECOVER_FT's run totals (samples seen, eligible = NOW a real kinematic row, perturbed, rows whose kin3 the BATCH-level predicate saw differ); exactly 0 at --recover-p 0; carried in the checkpoint of a lever-ON arm only
     t2_tot, t2_int = {"rows": 0, "n": 0}, {"rows": 0, "n": 0}     # PREREG_T2_DAGGER: samples seen / replaced by a bank row (total and since the last log line); exactly 0 at --t2-bank-p 0
     rec_int = {"rows": 0, "eligible": 0, "n": 0, "changed": 0}   # ... and since the last log line
@@ -3639,6 +3733,9 @@ def main(argv=None):
                     c_["eligible"] += dag.last["n_eligible"]
                     c_["n"] += dag.last["n_selected"]
                     c_["nav_kept"] += dag.last["dagger_nav_kept"]
+                    if dag.mode == "add":                                                        # --dagger-mode add only (a swap run keeps today's key set): appended rows, counted from the returned batch, and the step's row count
+                        c_["appended"] += dag.last["n_appended"]
+                        c_["rows_out"] += dag.last["n_rows_out"]
                     if dag.bank is not None and dag.bank.label_kind == "speed_v1":               # --dagger-label speed_v1 only: rows whose gt / s_h came from the speed-consistent label (a human run keeps today's key set)
                         c_["label_replaced"] = c_.get("label_replaced", 0) + dag.last["n_label_replaced"]
                 if launch_on:                                          # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["launch"]
@@ -3696,7 +3793,9 @@ def main(argv=None):
                     rec["dagger_n"], rec["dagger_eligible"], rec["dagger_rows"], rec["dagger_nav_kept"] = dag_int["n"], dag_int["eligible"], dag_int["rows"], dag_int["nav_kept"]          # per log interval
                 if "label_replaced" in dag_int:
                     rec["dagger_label_replaced"] = dag_int["label_replaced"]
-                dag_int.update(rows=0, eligible=0, n=0, nav_kept=0, **({"label_replaced": 0} if "label_replaced" in dag_int else {}))
+                if "appended" in dag_int:
+                    rec["dagger_appended"], rec["dagger_rows_out"] = dag_int["appended"], dag_int["rows_out"]
+                dag_int.update(rows=0, eligible=0, n=0, nav_kept=0, **({"label_replaced": 0} if "label_replaced" in dag_int else {}), **({"appended": 0, "rows_out": 0} if "appended" in dag_int else {}))
                 if comp.on:
                     rec["ego_dagger_overlap_n"] = ov_int["n"]               # AMEND1 section 1: per log interval (exactly 0)
                 ov_int.update(n=0)
@@ -3731,7 +3830,7 @@ def main(argv=None):
                "seconds": time.time() - t0, "argv_sha": argv_sha(argv), "levers": levers,
                "selfcheck": "selfcheck.json",
                "ego_perturb_n": ego_tot["n"], "ego_perturb_eligible": ego_tot["eligible"], "ego_perturb_rows": ego_tot["rows"], "ego_perturb_nav_kept": ego_tot["nav_kept"],
-               "dagger_n": dag_tot["n"], "dagger_eligible": dag_tot["eligible"], "dagger_rows": dag_tot["rows"], "dagger_nav_kept": dag_tot["nav_kept"], **({"dagger_label_replaced": dag_tot["label_replaced"]} if "label_replaced" in dag_tot else {})}      # PREREG_V8F_DAGGER run totals: exactly 0 swapped at p = 0; swapped == eligible at p = 1      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
+               "dagger_n": dag_tot["n"], "dagger_eligible": dag_tot["eligible"], "dagger_rows": dag_tot["rows"], "dagger_nav_kept": dag_tot["nav_kept"], **({"dagger_label_replaced": dag_tot["label_replaced"]} if "label_replaced" in dag_tot else {}), **({"dagger_appended": dag_tot["appended"], "dagger_rows_out": dag_tot["rows_out"]} if "appended" in dag_tot else {})}      # PREREG_V8F_DAGGER run totals: exactly 0 swapped at p = 0; swapped == eligible at p = 1      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
     summary["recover_p"], summary["recover_n"], summary["recover_eligible"], summary["recover_rows"], summary["recover_changed"] = rcv.p, rec_tot["n"], rec_tot["eligible"], rec_tot["rows"], rec_tot["changed"]
     summary["t2_bank_p"], summary["t2_bank_n"], summary["t2_bank_rows"] = t2b.p, t2_tot["n"], t2_tot["rows"]
     summary["recover_share"] = (rec_tot["n"] / rec_tot["eligible"]) if rec_tot["eligible"] else None        # PREREG_RECOVER_FT: the card's KR1 reads n_selected / n_eligible: [0.25, 0.35] for R, exactly 0 (n) for C0 / C0rep
