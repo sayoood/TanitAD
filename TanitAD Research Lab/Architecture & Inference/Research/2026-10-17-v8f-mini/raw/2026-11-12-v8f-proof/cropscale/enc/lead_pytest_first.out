@@ -1,0 +1,21 @@
+..............F..                                                        [100%]
+================================== FAILURES ===================================
+___________ test_push_script_refuses_without_the_lead_pytest_output ___________
+
+    def test_push_script_refuses_without_the_lead_pytest_output():
+        text = open(PUSH, encoding="utf-8").read()
+        assert "lead_pytest.out is missing" in text and "set -C; cat >" in text and "GP=/workspace/v8proof/cropscale" in text and "kit_enc" in text
+        assert text.index("REFUSED") < text.index("for f in ")
+>       assert not os.path.exists(os.path.join(HERE, "lead_pytest.out"))
+E       AssertionError: assert not True
+E        +  where True = <built-in function _path_exists>('F:\\TanitAD-scratch\\v8proof\\cropscale\\enc\\lead_pytest.out')
+E        +    where <built-in function _path_exists> = <module 'ntpath' (frozen)>.exists
+E        +      where <module 'ntpath' (frozen)> = os.path
+E        +    and   'F:\\TanitAD-scratch\\v8proof\\cropscale\\enc\\lead_pytest.out' = <function join at 0x00000182F6D1FF60>('F:\\TanitAD-scratch\\v8proof\\cropscale\\enc', 'lead_pytest.out')
+E        +      where <function join at 0x00000182F6D1FF60> = <module 'ntpath' (frozen)>.join
+E        +        where <module 'ntpath' (frozen)> = os.path
+
+cropscale\enc\test_cropscale_enc.py:259: AssertionError
+=========================== short test summary info ===========================
+FAILED cropscale/enc/test_cropscale_enc.py::test_push_script_refuses_without_the_lead_pytest_output
+1 failed, 16 passed in 20.65s
