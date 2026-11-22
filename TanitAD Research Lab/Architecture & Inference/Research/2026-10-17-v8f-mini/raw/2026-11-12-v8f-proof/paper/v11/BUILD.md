@@ -137,3 +137,8 @@ Fragment added: `frag_row173.tex` (card ADD107 read: a head on the tokens of the
 - Rows 174 and 175 (cards ADD108, ADD109): fragments frag_row174.tex and frag_row175.tex appended to frag_row127.tex by the asserted script append_r175.py; status sentence now starts "Open on this fork after row 175:"; patch_tex_v11.py ok edits 11; Tectonic rc 0; check_numbers_v11.py over the rows: ZZ NUMBERS-V11 DONE 0 (3,833 tokens checked).
 - PDF tanitad_4b_paper_r175.pdf sha256 begins c87550b815f29516, 51 pages (as r173: the added text fits the page count; the file grew from 466,792 to 469,696 bytes); rows 174 and 175 on page 43, status on page 49.
 - Figure fig_lookgap (make_fig_lookgap.py, reads the result file of card ADD108) is beside the paper and not set into it.
+
+## r176 (2026-11-22T09:57:26Z)
+- Row 176 (card ADD110): fragment frag_row176.tex appended to frag_row127.tex by the asserted script append_r176.py; status sentence now starts "Open on this fork after row 176:"; one spec bullet added; the cost card is unchanged (no decision arises); patch_tex_v11.py ok edits 11; Tectonic rc 0; check_numbers_v11.py over the rows: ZZ NUMBERS-V11 DONE 0 (3,932 tokens checked).
+- PDF tanitad_4b_paper_r176.pdf sha256 begins 35610100c11c28c0, 51 pages, 472395 bytes; the text "row 176" is found twice in the PDF text, the status sentence once.
+- Figure fig_fallattr (make_fig_fallattr.py, reads the pulled result file of card ADD110) is beside the paper and not set into it.
