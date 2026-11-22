@@ -1,0 +1,39 @@
+# LOOKGAP_DIRS_DEFS -- kit of stage A of card PREREG_V8F_PROOF_ADD108 (LOOKGAP-T0), as coded
+
+Tier T0. Built on the dev box with tiny synthetic data; nothing of it has run on the pod. The card is frozen and was not edited. `locator_fit.py` of card ADD107 is used unchanged (imported by `loc_dirs.py predict`, run as a script by the queue); it is not pushed with this kit.
+
+## 0. Clauses that can fail by construction, or that the code cannot do as written (first duty)
+
+1. **m0 "the evaluation directions come from the head file whose hash the fit record of seed 0 of card ADD107 names"** is coded as: `predict` refuses unless the sha256 of the head file equals `head_pt_sha256` of the named fit record, the record is of card ADD107, seed 0, no permuted targets; the check then compares the predict record's head hash with the one of that fit record. It can only fail if the head file on the pod was changed or the wrong record is named.
+2. **m0 "each train clip's fold record lists neither the clip as fit nor as selection clip"** holds by construction of the fold lists; the check reads the fit records that `locator_fit.py` wrote (`clips_read`), so it fails only if a fold was fitted on lists other than those of `FOLDS.json`.
+3. **"A direction on every frame; frames with no history get (0, -2)"** is coded exactly: `has_lead` True on all frames, frames 0 to 3 (and every frame of a clip shorter than five frames) get azimuth 0, elevation -2. The locator output exists from frame 4 on (head H5 reads frames f-4..f).
+4. **Score (S4, S8, S8_out) is not on the row set of card ADD107.** That card's rows need the join (lead_valid, gap 0 to 60 m) and a finite output of five gap files; the train clips have no such set here. Coded: frames with `has_lead` and finite centre in the box file and a full history (f >= 4). So the printed train and evaluation values are on label-lead frames, not on the 3,841 rows; m5 (the card's check that the evaluation directions reproduce S4 0.8748 and S8_out 0.5844) needs the rows of card ADD107 and is NOT coded here: it belongs to the reader of stage D.
+5. **Stop rule 1.5 pod-hours** is coded as the sum of the seconds of finished jobs (`<job>.SECS`), checked before each start; a job in flight is not stopped, so the sum can pass the limit by the length of the jobs that were running (at most two fits).
+6. **Fit settings.** The folds' fits call `locator_fit.py` with its defaults (the settings of card ADD107, seed 0, 40 epochs, batch 256, lr 1e-3). The queue passes no setting.
+
+## 1. Definitions as coded
+
+* **Folds** (`loc_dirs.py folds`): clips of `lists/train_final.txt` (lines `<clip> fit|sel`) sorted by clip id (string order); clip number i (from 0) in fold i mod 5. Fold k: fit clips = fit-role clips not in fold k, selection clips = sel-role clips not in fold k, held-out = fold k. `FOLDS.json`: the rule, the sha256 of the train list, per fold the three lists, their counts and the sha256 of each (sha256 of the ids, one per line). The lists are refused if a held-out clip is in its fit or selection list or the held-out lists are not a partition.
+* **How a fold fit is fed to `locator_fit.py` unchanged:** one run root per fold, `FO/f<k>/run/`, with `lists/train_final.txt` (fit lines then sel lines, each in clip-id order), `lists/eval141.txt` (the held-out clips: the name the tool reads; its own prediction file then covers them and is not used), and `tok` as a symbolic link to `<run1>/tok` (no token file is copied). Command: `locator_fit.py --seed 0 --root FO/f<k>/run --box-dir <pilot box folder> --out-root FO/f<k>/loc --kit-fit <kit fit> --device cuda`. The fit record `FO/f<k>/loc/fits/LOC_s0/FIT_RECORD.json` names the fold's clips in `clips_read`.
+* **Direction files** (`loc_dirs.py predict`): `<out-dir>/<clip>.npz` with exactly `has_lead` (bool, True), `ctr_az`, `ctr_el` (float64, degrees); read-out of the locator as in card ADD107 (`az = 16 a`, `el = -2 + 8 e`, done by `locator_fit.predict_clip`). Every frame with a full history of five frames gets the head's output, label or no label. The mode takes no box folder and no label file; the run record states `box_folder_opened: false`. Existing files are refused before anything is written; a file is written to `.part` and renamed. Run record `--record` (refused if it exists): head sha256, fit-record head sha256, tool hashes, clip list hash, clip count, frame counts (with / without history) and per clip n, counts and file sha256.
+* **Keys the encode tool reads from a box file:** `has_lead`, `ctr_az`, `ctr_el` and no others (`window_encode.load_box_dirs`; the pilot's box files also hold `gap_re`, `bot_az`, `bot_el`, `ang_w`, `ang_h`, `rng`, `ctr_ego`, `size_lwh`, `yaw_rel` and more, which the encode tool never reads). A direction file holds only those three keys, so no key needs a neutral fill; the only neutral values are (0, -2) on frames with no history.
+* **Check** (`loc_dirs.py check`, writes one JSON, exit 0 only when all pass): c0 the folds file belongs to the train list and follows the rule; c1 a file for each clip of the 500 train and 141 evaluation lists and no other file (and 641 when `--expect-total`); c2 frame count equals the token file's (header, memory map); c3 `has_lead` True and the centres finite on every frame; c4 the keys are exactly the three (no field from a label); c5 frames 0 to 3 are (0, -2); c6 the fit record of each fold is a seed 0 locator fit, its `clips_read` equals the fold's lists and does not hold a held-out clip; c7 the predict record of each fold names the head of that fold's fit and the fold's held-out clips; c8 the predict record of the evaluation clips names the head hash of the ADD107 fit record and the evaluation clips.
+* **Score** (`loc_dirs.py score`, prints only, refuses unless the check JSON says `all_pass`): rows = frames with a label lead and f >= 4; `d_az = |az_pred - az|`, `d_el = |el_pred - el|`; S4 / S8 = share of rows with both <= 4 / <= 8; `S8_out` = S8 on rows with `|az| > 8`. Frames with a label lead and no history are counted and not scored.
+* **Queue** (`pod_lookgap_dirs_queue.sh`): folds, then five fold fits (at most `LG_MAX_JOBS`, default 2, at a time), then six predict jobs one at a time (folds 0 to 4, then the evaluation clips), then check, then `score_train` and `score_eval`; slot rule, markers `START_DIRS.txt` / `DONE_DIRS.txt` / `STOP_DIRS.txt`, job markers `.START/.DONE/.STOP/.SECS`, `RESUME=1`, `DRY=1` as the queue of card ADD107. A finished fit (its record exists) is not run again. A failed check writes the stop marker and no score runs; a second check run writes `CHECK_DIRS_2.json` (the first is kept). Nothing is deleted or moved; a direction file left by a failed predict job stays and the next predict refuses (the lead decides).
+
+## 2. Open points
+
+* The order of clips in a fold's train list (fit lines, then sel lines, each in clip-id order) is a choice of this kit; the card fixes the clip sets, not the file order. The fit's sample order follows the list order, so a list in another order gives another fit of the same sets.
+* A fold fit predicts its own held-out clips through `locator_fit.py` too (its `pred/LOC_s0.npz`); those files are not used.
+* The scores of this stage are on label-lead frames (point 4 above), so they are not comparable digit for digit with S4 / S8 / S8_out of card ADD107.
+
+## 3. The lead's commands, in order
+
+Dev box (from `F:/TanitAD-scratch/v8proof`):
+1. `PYCAP_MB=3000 bash ops/pycap.sh lookgap/dirs/loc_dirs.py --selftest`
+2. `PYCAP_MB=3000 bash ops/pycap.sh -m pytest lookgap/dirs/test_lookgap_dirs.py -q -p no:cacheprovider --basetemp lookgap/dirs/tmp_pt/<new name> > lookgap/dirs/lead_pytest.out`
+3. `bash lookgap/dirs/push_lookgap_dirs.sh`
+
+Pod (`K=/workspace/v8proof/lookgap/kit_dirs`):
+4. `DRY=1 bash $K/pod_lookgap_dirs_queue.sh`
+5. `nohup bash $K/pod_lookgap_dirs_queue.sh > /workspace/v8proof/lookgap/queue_dirs.out 2>&1 &`

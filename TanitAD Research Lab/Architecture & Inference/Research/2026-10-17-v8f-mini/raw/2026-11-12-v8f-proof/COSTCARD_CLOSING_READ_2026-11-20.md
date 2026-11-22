@@ -176,3 +176,10 @@ No statement on driving in a re-perception tier (T2 is not provisioned). LATERAL
 * What it can and cannot give. It can give at most what the bound gives at T0; the admissible form is expected to give less, since the head's direction has its own error. It does not change the convention, the readout or the candidate spec; adoption of any input stays a separate decision.
 * Order of work if the go is given: a card frozen with its hash file before any tool of it; directions for the train clips from fits that did not see them; stop rule set in the card from the figures above.
 * If no go: the candidates left with no new encode are processed forms of the present gap, which rows 169 and 170 rank low.
+
+## 20. Read after the go of section 19 (rows 174 and 175, cards ADD108 and ADD109, 2026-11-22): no decision asked
+
+* The go: the PI approved the encode on 2026-11-22 ("Yes do it"). Cost: 0.37 of the 2 GPU-hours and 17.23 of the 20 GB of the stop rule; the four fits and the read stayed inside their stop rule.
+* The read (tier T0, not driving performance). Row 174: windows at the head's direction give a gap error of 3.895, 3.699 and 3.689 m against 3.960, 3.913 and 4.112 m; ratio of the means 0.9413 [0.8038, 1.0939]; not separated. Row 175: a mix by the head's own direction gives 0.9772 [0.8575, 1.0949]; not separated.
+* What is not proposed: an encode of more clips at the head's direction. The condition of section 19 for the ten rollouts (a cut of the gap error at T0) is not met, so they are not run.
+* What runs with no decision: card ADD110, eight rollouts at T1-kin/hb0.2 on existing models with gap files composed from the label gap and the camera gap, to read where in the gap range the price in falling behind sits (ESTIMATED 1.2 to 1.6 pod-hours on the fork pod, stop rule 3 pod-hours).

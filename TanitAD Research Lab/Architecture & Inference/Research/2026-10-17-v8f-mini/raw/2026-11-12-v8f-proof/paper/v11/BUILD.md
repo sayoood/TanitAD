@@ -132,3 +132,8 @@ Fragment added: `frag_row172.tex` (card ADD106 read: the camera head on 1,629 fi
 ## Update after row 173 (2026-11-22)
 
 Fragment added: `frag_row173.tex` (card ADD107 read: a head on the tokens of the fixed windows finds the direction of the lead with no label; the gap error with windows at that direction is not measured and needs a new encode, a decision for the PI). Status sentence of the fork replaced (now "Open on this fork after row 173"). Build: `patch_tex_v11.py` (ok edits 11), Tectonic 0.17.0, 51 pages; row 173 on page 43, status sentence on page 49; `check_numbers_v11.py` over rows 100 to 173: 3711 tokens checked, 0 not found. Output `tanitad_4b_paper_r173.pdf` 329f0d49959bc166. Figure beside the paper, not set into it: `figs/fig_lookat.png` from `figs/make_fig_lookat.py`.
+
+## r175 (2026-11-22T08:16:07Z)
+- Rows 174 and 175 (cards ADD108, ADD109): fragments frag_row174.tex and frag_row175.tex appended to frag_row127.tex by the asserted script append_r175.py; status sentence now starts "Open on this fork after row 175:"; patch_tex_v11.py ok edits 11; Tectonic rc 0; check_numbers_v11.py over the rows: ZZ NUMBERS-V11 DONE 0 (3,833 tokens checked).
+- PDF tanitad_4b_paper_r175.pdf sha256 begins c87550b815f29516, 51 pages (as r173: the added text fits the page count; the file grew from 466,792 to 469,696 bytes); rows 174 and 175 on page 43, status on page 49.
+- Figure fig_lookgap (make_fig_lookgap.py, reads the result file of card ADD108) is beside the paper and not set into it.

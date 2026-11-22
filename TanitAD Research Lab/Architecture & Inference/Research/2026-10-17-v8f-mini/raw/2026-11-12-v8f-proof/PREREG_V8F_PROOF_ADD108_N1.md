@@ -1,0 +1,19 @@
+# Note N1 to card ADD108 (LOOKGAP-T0): open definitions and limits by construction, fixed before stage B and before any value of the card is opened
+
+Card: `PREREG_V8F_PROOF_ADD108.md` (sha256 begins d3df16d6eee65c9f). This note is frozen with its own hash file after the kits of stages A and B were built and tested on synthetic data and after stage A has run on the pod (markers and the pass line of its check read; no score line of stage A opened), and before the encode of stage B, before any fit of stage C and before any value of the card is opened. It changes no control, no bar and no name of the card. Kits: `lookgap/dirs` (`loc_dirs.py` 8ed82eb6d133b25f, `pod_lookgap_dirs_queue.sh` c5a8609c447b57c5), `lookgap/enc` (`gen_window_encode_p.py` 4329bce250260c3a, `ctl_m1.py` b496a3b83d73891a, `pod_lookgap_enc_queue.sh` f3cdbbecf1dd1b1a).
+
+## 1. Limits by construction (stated, not repaired)
+
+1. Control m1, identity: it asks for the pilot's bytes of arm B from a second run on the same GPU. A difference from run-to-run noise of the GPU kernels would fail it without a fault of the variant; the queue then stops before the 641 clips and the card is reported as failed with no name. On this pod a second encode has reproduced the pilot's bytes before (card ADD106, control g1, arm D).
+2. The variant of the encode tool has two code paths. A clip in which some frame has no lead in its box file goes through the pilot's own path (arm D for every frame, arm B for the frames with a lead). A clip with a direction on every frame, which is every clip of arm P, goes through one encoder call on all windows. Section 2 sets the three identity clips so that both paths are run against the pilot's bytes.
+3. Control m1, second clause, tests the token files of arm P against the manifest that the encode itself wrote; it shows that the files are whole and counted, not that they are right. What shows that they are right is the identity clause and the code of the variant.
+4. Control m5 is a control of the reader (stage D) on the 3,841 rows. Stage A prints its own measures on another frame set (frames with a lead in the label and a full history of five frames), for the train clips and the evaluation clips; those lines are values of the card and are opened only after its controls pass.
+5. Stage A, stop rule: the queue sums the seconds of its finished jobs before each start and does not end a running job; the sum can pass the rule by the length of the jobs then running.
+
+## 2. Open definitions, as coded and as set at launch
+
+* The three clips of the identity run: the one clip of the evaluation list that has a lead on every frame of its box file (number 14 of the list, counted from 0; a label fact, 1 of 141 evaluation clips and 4 of 500 train clips have this), then the first two clips of the evaluation list (numbers 0 and 1), which have frames with no lead. The lead writes them to the list file of the queue before its start; the queue takes an existing list and never rewrites it.
+* Direction files: exactly the three fields the encode tool reads (`has_lead`, true on every frame; `ctr_az`; `ctr_el`); frames 0 to 3 of a clip have no full history and get azimuth 0, elevation -2. In arm P both windows of such a frame are centred there (arm D has its wide window at elevation -6).
+* Fold lists: the card fixes the clip sets; the order in a fold's list file is fit clips, then selection clips, each sorted by clip id.
+* Stage B, "GPU-hours": the wall time of the identity run and of the encode, summed by the queue; at a stop rule the queue ends its own encode job and writes the stop marker. It starts only when the lead has written the go file after the PI's go.
+* Stage A as run: queue 03:43:12Z to 04:06:31Z (pod clock) with at most three fits at a time; five fold fits of 750, 767, 783, 595 and 590 s; 641 direction files; the check of stage A passed in all nine clauses.

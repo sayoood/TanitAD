@@ -1,0 +1,15 @@
+tier: T0 (recorded frames, no rollout; a diagnostic of a perception head, not driving performance)
+families: LONGITUDINAL, LATERAL, TACTICAL, STRATEGIC: not read (n = 0 for each; reason: T0, no rollout and no plan in this card, card section 5)
+rows 3841 of 141 clips; head's direction inside the fixed narrow window on 3376 rows, outside on 465 rows (25 clips have outside rows)
+E (mean absolute gap error, m): S0 3.846; S1 3.830; S2 4.037; D0 3.960; D1 3.913; D2 4.112; P0 3.895; P1 3.699; P2 3.689
+R_S = mean E(S0..S2) / mean E(D0..D2) = 0.9772; interval [0.8575, 1.0949] (2000 draws, RandomState(109), two-sided 95 % percentile, cluster bootstrap over the evaluation clips, fits held fixed)
+name: LOOKSWITCH-T0-NOT-SEPARATED
+inside rows (n 3376): S0 3.328; S1 3.354; S2 3.583; D0 3.328; D1 3.354; D2 3.583; P0 3.382; P1 3.206; P2 3.186
+outside rows (n 465): S0 7.613; S1 7.280; S2 7.337; D0 8.554; D1 7.971; D2 7.958; P0 7.613; P1 7.280; P2 7.337
+inverse mix (P inside, D outside) against D: E 4.009, 3.783, 3.764; ratio 0.9641 interval [0.8992, 1.0337]
+mix with the bound of 4 degrees (outside rows 919): E 3.774, 3.791, 3.972; ratio 0.9626 interval [0.8376, 1.0916]
+mix with the bound of 16 degrees (outside rows 240): E 3.909, 3.880, 4.100; ratio 0.9919 interval [0.8938, 1.0915]
+S0 by label gap: 0-10 m n 596 E 1.282 signed 0.740 short>5m 0.000; 10-20 m n 1111 E 2.523 signed 1.196 short>5m 0.005; 20-40 m n 1349 E 4.021 signed -1.569 short>5m 0.132; 40-60 m n 785 E 7.366 signed -6.064 short>5m 0.442
+S0 by |label azimuth|: 0-4 deg n 2934 E 2.737; 4-8 deg n 421 E 4.631; 8-16 deg n 239 E 7.673; above 16 deg n 247 E 11.989
+directions on the rows: S4 0.8748 S8 0.9279 S8_out 0.5844
+ZZ READ-LOOKSWITCH names rc 0
