@@ -1,0 +1,763 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD115",
+ "tier": "T1-kin/hb0.2 (kinematic rollout on the model's own actions, executor of record v8f_t1_eval_hb.py with the heading bound 0.2 1/m); CONV: pinned readout, no pre-roll, pinned grid",
+ "controls_file": "/workspace/v8proof/presattrc/read/PRESATTRC10K_CONTROLS.json",
+ "controls_sha256": "49d77708e76cd509b01e47cebfc765ae87437ea545e26877d1ed6bdefe425be8",
+ "names": {
+  "CONV_PRESENCE-AT-LABEL-GAP_UNSAFE": "PRESATTRC10K-CONV-PRESENCE-AT-LABEL-GAP-UNSAFE-NOT-SEPARATED",
+  "CONV_PRESENCE-AT-LABEL-GAP_CONTACT": "PRESATTRC10K-CONV-PRESENCE-AT-LABEL-GAP-CONTACT-NOT-SEPARATED",
+  "CONV_PRESENCE-AT-LABEL-GAP_FALLING-BEHIND": "PRESATTRC10K-CONV-PRESENCE-AT-LABEL-GAP-LOWERS-FALLING-BEHIND",
+  "CONV_PRESENCE-AT-CAMERA-GAP_UNSAFE": "PRESATTRC10K-CONV-PRESENCE-AT-CAMERA-GAP-RAISES-UNSAFE",
+  "CONV_PRESENCE-AT-CAMERA-GAP_CONTACT": "PRESATTRC10K-CONV-PRESENCE-AT-CAMERA-GAP-CONTACT-NOT-SEPARATED",
+  "CONV_PRESENCE-AT-CAMERA-GAP_FALLING-BEHIND": "PRESATTRC10K-CONV-PRESENCE-AT-CAMERA-GAP-FALLING-BEHIND-NOT-SEPARATED",
+  "CONV_GAP-AT-LABEL-PRESENCE_UNSAFE": "PRESATTRC10K-CONV-GAP-AT-LABEL-PRESENCE-RAISES-UNSAFE",
+  "CONV_GAP-AT-LABEL-PRESENCE_CONTACT": "PRESATTRC10K-CONV-GAP-AT-LABEL-PRESENCE-CONTACT-NOT-SEPARATED",
+  "CONV_GAP-AT-LABEL-PRESENCE_FALLING-BEHIND": "PRESATTRC10K-CONV-GAP-AT-LABEL-PRESENCE-FALLING-BEHIND-NOT-SEPARATED",
+  "CONV_GAP-AT-CAMERA-PRESENCE_UNSAFE": "PRESATTRC10K-CONV-GAP-AT-CAMERA-PRESENCE-RAISES-UNSAFE",
+  "CONV_GAP-AT-CAMERA-PRESENCE_CONTACT": "PRESATTRC10K-CONV-GAP-AT-CAMERA-PRESENCE-CONTACT-NOT-SEPARATED",
+  "CONV_GAP-AT-CAMERA-PRESENCE_FALLING-BEHIND": "PRESATTRC10K-CONV-GAP-AT-CAMERA-PRESENCE-FALLING-BEHIND-NOT-SEPARATED",
+  "CONV_OVERALL": "PRESATTRC10K-CONV-BOTH-CARRY-UNSAFE"
+ },
+ "values": {
+  "settings": {
+   "CONV": {
+    "grid_all_pass": true,
+    "counts": {
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_lead_windows": 642,
+     "n_episodes_with_lead": 56,
+     "n_scored_U_windows": {
+      "R0Hb20": 562,
+      "RLcHb20": 562,
+      "RLcHb20pLE": 562,
+      "RQ50Hb20": 562,
+      "RQ50Hb20aLA": 562,
+      "RQ50Hb20gGEc": 562
+     }
+    },
+    "levels": {
+     "RLc": {
+      "C": 0.001557632398753894,
+      "U": 0.03202846975088968,
+      "F": 0.22429906542056072
+     },
+     "LA": {
+      "C": 0.001557632398753894,
+      "U": 0.042704626334519574,
+      "F": 0.21651090342679127
+     },
+     "PL": {
+      "C": 0.000778816199376947,
+      "U": 0.048932384341637006,
+      "F": 0.23987538940809966
+     },
+     "GEc": {
+      "C": 0.001557632398753894,
+      "U": 0.05693950177935943,
+      "F": 0.23286604361370716
+     },
+     "RR": {
+      "C": 0.02803738317757009,
+      "U": 0.07829181494661921,
+      "F": 0.25934579439252337
+     }
+    },
+    "levels_per_seed": {
+     "RLc": {
+      "C": [
+       0.0,
+       0.003115264797507788
+      ],
+      "U": [
+       0.042704626334519574,
+       0.021352313167259787
+      ],
+      "F": [
+       0.19626168224299065,
+       0.2523364485981308
+      ]
+     },
+     "LA": {
+      "C": [
+       0.0,
+       0.003115264797507788
+      ],
+      "U": [
+       0.05516014234875445,
+       0.030249110320284697
+      ],
+      "F": [
+       0.19003115264797507,
+       0.24299065420560748
+      ]
+     },
+     "PL": {
+      "C": [
+       0.0,
+       0.001557632398753894
+      ],
+      "U": [
+       0.06583629893238434,
+       0.03202846975088968
+      ],
+      "F": [
+       0.19937694704049844,
+       0.2803738317757009
+      ]
+     },
+     "GEc": {
+      "C": [
+       0.001557632398753894,
+       0.001557632398753894
+      ],
+      "U": [
+       0.07473309608540925,
+       0.03914590747330961
+      ],
+      "F": [
+       0.19314641744548286,
+       0.27258566978193144
+      ]
+     },
+     "RR": {
+      "C": [
+       0.03582554517133956,
+       0.020249221183800622
+      ],
+      "U": [
+       0.08540925266903915,
+       0.0711743772241993
+      ],
+      "F": [
+       0.2383177570093458,
+       0.2803738317757009
+      ]
+     }
+    },
+    "pairs": {
+     "LA-VS-RLc": {
+      "U": {
+       "per_seed": [
+        0.012455516014234875,
+        0.008896797153024912
+       ],
+       "pooled": 0.010676156583629894,
+       "interval": [
+        0.0,
+        0.02324503042759313
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.0,
+        0.0
+       ],
+       "pooled": 0.0,
+       "interval": [
+        0.0,
+        0.0
+       ]
+      },
+      "F": {
+       "per_seed": [
+        -0.006230529595015576,
+        -0.009345794392523364
+       ],
+       "pooled": -0.0077881619937694695,
+       "interval": [
+        -0.015721089946555845,
+        -0.0005675359461859182
+       ]
+      }
+     },
+     "GEc-VS-PL": {
+      "U": {
+       "per_seed": [
+        0.008896797153024912,
+        0.0071174377224199285
+       ],
+       "pooled": 0.00800711743772242,
+       "interval": [
+        0.0008559826848384771,
+        0.01706422354256879
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.001557632398753894,
+        0.0
+       ],
+       "pooled": 0.000778816199376947,
+       "interval": [
+        0.0,
+        0.0029819590740418215
+       ]
+      },
+      "F": {
+       "per_seed": [
+        -0.006230529595015576,
+        -0.00778816199376947
+       ],
+       "pooled": -0.007009345794392523,
+       "interval": [
+        -0.016320836868014842,
+        0.0
+       ]
+      }
+     },
+     "PL-VS-RLc": {
+      "U": {
+       "per_seed": [
+        0.023131672597864767,
+        0.010676156583629894
+       ],
+       "pooled": 0.016903914590747332,
+       "interval": [
+        0.003395231354963925,
+        0.0333110819126102
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.0,
+        -0.001557632398753894
+       ],
+       "pooled": -0.000778816199376947,
+       "interval": [
+        -0.0032386135159832314,
+        0.0
+       ]
+      },
+      "F": {
+       "per_seed": [
+        0.003115264797507788,
+        0.028037383177570093
+       ],
+       "pooled": 0.01557632398753894,
+       "interval": [
+        -0.006315713297548898,
+        0.037994869541835834
+       ]
+      }
+     },
+     "GEc-VS-LA": {
+      "U": {
+       "per_seed": [
+        0.019572953736654804,
+        0.008896797153024912
+       ],
+       "pooled": 0.014234875444839857,
+       "interval": [
+        0.0006920433158448535,
+        0.029208481614935645
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.001557632398753894,
+        -0.001557632398753894
+       ],
+       "pooled": 0.0,
+       "interval": [
+        -0.003154797191714759,
+        0.002877905467833524
+       ]
+      },
+      "F": {
+       "per_seed": [
+        0.003115264797507788,
+        0.029595015576323987
+       ],
+       "pooled": 0.016355140186915886,
+       "interval": [
+        -0.007305708697823448,
+        0.04096187053190875
+       ]
+      }
+     },
+     "GEc-VS-RLc": {
+      "U": {
+       "per_seed": [
+        0.03202846975088968,
+        0.017793594306049824
+       ],
+       "pooled": 0.024911032028469754,
+       "interval": [
+        0.007185366529885434,
+        0.046379534512878164
+       ]
+      },
+      "C": {
+       "per_seed": [
+        0.001557632398753894,
+        -0.001557632398753894
+       ],
+       "pooled": 0.0,
+       "interval": [
+        -0.003154797191714759,
+        0.002877905467833524
+       ]
+      },
+      "F": {
+       "per_seed": [
+        -0.003115264797507788,
+        0.020249221183800622
+       ],
+       "pooled": 0.008566978193146417,
+       "interval": [
+        -0.015050302117484421,
+        0.031114263196778937
+       ]
+      }
+     }
+    },
+    "families": {
+     "LA-VS-RLc": {
+      "LONGITUDINAL": "NOT-SEPARATED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     },
+     "GEc-VS-PL": {
+      "LONGITUDINAL": "NOT-SEPARATED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     },
+     "PL-VS-RLc": {
+      "LONGITUDINAL": "WORSE",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     },
+     "GEc-VS-LA": {
+      "LONGITUDINAL": "MIXED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     },
+     "GEc-VS-RLc": {
+      "LONGITUDINAL": "NOT-SEPARATED",
+      "LATERAL": "NOT-SEPARATED",
+      "TACTICAL": "NOT-SEPARATED"
+     }
+    },
+    "strategic": {
+     "pairs": {
+      "LA-VS-RLc": {
+       "A": "RQ50Hb20aLA",
+       "B": "RLcHb20",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": -0.027104668298538116,
+         "lo": -0.11109194977951024,
+         "hi": 0.0414365180483462,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2312,
+          2313
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": -0.04120865195029202,
+         "lo": -0.20097584989208522,
+         "hi": 0.09469778569990811,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2300,
+          2299
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -0.08566249174330141,
+         "lo": -0.34604969701673954,
+         "hi": 0.12698240423238616,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2274,
+          2275
+         ]
+        }
+       ],
+       "reading": "NOT-SEPARATED"
+      },
+      "GEc-VS-PL": {
+       "A": "RQ50Hb20gGEc",
+       "B": "RLcHb20pLE",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": -0.06037820416081593,
+         "lo": -0.14567363029436964,
+         "hi": 0.007528512410855717,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2312,
+          2313
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": -0.10800035791104538,
+         "lo": -0.2696521717278033,
+         "hi": 0.022728614495958803,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2300,
+          2299
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -0.1813803067405531,
+         "lo": -0.4450019626191361,
+         "hi": 0.027185089547973128,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2274,
+          2275
+         ]
+        }
+       ],
+       "reading": "NOT-SEPARATED"
+      },
+      "PL-VS-RLc": {
+       "A": "RLcHb20pLE",
+       "B": "RLcHb20",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": 0.07367909856525477,
+         "lo": -0.038052463226907585,
+         "hi": 0.184343205439518,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2312,
+          2313
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": 0.117484126210362,
+         "lo": -0.10489308743593465,
+         "hi": 0.3437262511270612,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2300,
+          2299
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": 0.14598935872151164,
+         "lo": -0.2067967742842584,
+         "hi": 0.5134769471113723,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2274,
+          2275
+         ]
+        }
+       ],
+       "reading": "NOT-SEPARATED"
+      },
+      "GEc-VS-LA": {
+       "A": "RQ50Hb20gGEc",
+       "B": "RQ50Hb20aLA",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": 0.04040556270297697,
+         "lo": -0.06438402957239656,
+         "hi": 0.14715984487499534,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2312,
+          2313
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": 0.05069242024960863,
+         "lo": -0.15499006540996532,
+         "hi": 0.25545351794922727,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2300,
+          2299
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": 0.05027154372425996,
+         "lo": -0.27711039063263065,
+         "hi": 0.3865138166550647,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2274,
+          2275
+         ]
+        }
+       ],
+       "reading": "NOT-SEPARATED"
+      },
+      "GEc-VS-RLc": {
+       "A": "RQ50Hb20gGEc",
+       "B": "RLcHb20",
+       "pos_30_50_80m_tick_t0_plus_20": [
+        {
+         "arc_m": 30.0,
+         "mean": 0.013300894404438842,
+         "lo": -0.11336464019740972,
+         "hi": 0.12942878623244586,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2312,
+          2313
+         ]
+        },
+        {
+         "arc_m": 50.0,
+         "mean": 0.00948376829931658,
+         "lo": -0.24714561125672432,
+         "hi": 0.22928710583882994,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2300,
+          2299
+         ]
+        },
+        {
+         "arc_m": 80.0,
+         "mean": -0.03539094801904146,
+         "lo": -0.43561535609978563,
+         "hi": 0.3509146600560901,
+         "verdict": "NOT-SEPARATED",
+         "n_per_seed": [
+          2274,
+          2275
+         ]
+        }
+       ],
+       "reading": "NOT-SEPARATED"
+      }
+     },
+     "controls": {
+      "s4": {
+       "pass": true,
+       "checks": [
+        {
+         "name": "line: labels at the first logged steps reaching 30/50/80 m",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint on the label -> pos 0, lat 0, head 0",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint 1.5 m sideways -> lat 1.5, pos 1.5, along unchanged",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint 4 m along the track -> along +4, lat 0",
+         "ok": true
+        },
+        {
+         "name": "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+         "ok": true
+        },
+        {
+         "name": "circle R=100: label positions equal the analytic ones to the step",
+         "ok": true
+        },
+        {
+         "name": "short track: 30 and 50 valid, 80 invalid",
+         "ok": true
+        },
+        {
+         "name": "join label: known pose and label -> analytic world position and heading",
+         "ok": true
+        },
+        {
+         "name": "join label: validity passes through (third arc invalid), a step outside the clip's label rows reads invalid",
+         "ok": true
+        },
+        {
+         "name": "join label: checkpoint on its label -> pos 0, head 0, along 0; invalid arc reads NaN",
+         "ok": true
+        },
+        {
+         "name": "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0",
+         "ok": true
+        }
+       ],
+       "all_checks_hold": true,
+       "planted_fault_fails": true,
+       "planted_fault_checks_failed": [
+        "line: labels at the first logged steps reaching 30/50/80 m",
+        "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+        "circle R=100: label positions equal the analytic ones to the step",
+        "short track: 30 and 50 valid, 80 invalid"
+       ],
+       "planted_fault_2_checks_failed": [
+        "join label: known pose and label -> analytic world position and heading",
+        "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0"
+       ]
+      },
+      "s1": {
+       "max_dxy_m": 6.267449371932798e-05,
+       "max_dpsi_rad": 6.74965782820891e-07,
+       "per_file": {
+        "R0_s0": [
+         5.3405761732960855e-05,
+         6.74965782820891e-07
+        ],
+        "R0_s1": [
+         6.267449371932798e-05,
+         5.329273093934717e-07
+        ],
+        "RLcHb20_s0": [
+         5.3405761732960855e-05,
+         5.920780736801134e-07
+        ],
+        "RLcHb20_s1": [
+         6.267449371932798e-05,
+         5.175722677108752e-07
+        ],
+        "RLcHb20pLE_s0": [
+         5.3405761732960855e-05,
+         5.920780736801134e-07
+        ],
+        "RLcHb20pLE_s1": [
+         6.267449371932798e-05,
+         5.175722677108752e-07
+        ],
+        "RQ50Hb20_s0": [
+         5.3405761732960855e-05,
+         5.920780736801134e-07
+        ],
+        "RQ50Hb20_s1": [
+         6.267449371932798e-05,
+         5.175722677108752e-07
+        ],
+        "RQ50Hb20aLA_s0": [
+         5.3405761732960855e-05,
+         5.920780736801134e-07
+        ],
+        "RQ50Hb20aLA_s1": [
+         6.267449371932798e-05,
+         5.175722677108752e-07
+        ],
+        "RQ50Hb20gGEc_s0": [
+         5.3405761732960855e-05,
+         5.920780736801134e-07
+        ],
+        "RQ50Hb20gGEc_s1": [
+         6.267449371932798e-05,
+         5.175722677108752e-07
+        ]
+       },
+       "pass": true
+      },
+      "s2": {
+       "max_first_tick_anchor_dist_m": 0.0,
+       "n_rows_anchor_not_t0": 0,
+       "files": [
+        "R0_s0",
+        "R0_s1",
+        "RLcHb20_s0",
+        "RLcHb20_s1",
+        "RLcHb20pLE_s0",
+        "RLcHb20pLE_s1",
+        "RQ50Hb20_s0",
+        "RQ50Hb20_s1",
+        "RQ50Hb20aLA_s0",
+        "RQ50Hb20aLA_s1",
+        "RQ50Hb20gGEc_s0",
+        "RQ50Hb20gGEc_s1"
+       ],
+       "pass": true
+      },
+      "s6": {
+       "per_file": {
+        "R0_s0": true,
+        "R0_s1": true,
+        "RLcHb20_s0": true,
+        "RLcHb20_s1": true,
+        "RLcHb20pLE_s0": true,
+        "RLcHb20pLE_s1": true,
+        "RQ50Hb20_s0": true,
+        "RQ50Hb20_s1": true,
+        "RQ50Hb20aLA_s0": true,
+        "RQ50Hb20aLA_s1": true,
+        "RQ50Hb20gGEc_s0": true,
+        "RQ50Hb20gGEc_s1": true
+       },
+       "pass": true
+      },
+      "s9": {
+       "pass": true,
+       "n_files": 12,
+       "missing": []
+      },
+      "s5": {
+       "pass": true,
+       "largest_difference": 0.0,
+       "note": "first-tick cells of every run with no pre-roll equal those of R0 at the same model seed (pre-rolled runs excluded by construction)"
+      },
+      "s3": true
+     }
+    },
+    "strategic_a": true,
+    "strategic_b": true,
+    "instrument_bar_met": true
+   }
+  },
+  "family_note": "the rule changes the planned speed along the path through the distance to the lead; it does not move the path, so the lateral family is expected to be unmoved by it, and the tactical family is not read by the rule; the strategic family is read from the strategic grid of the engine at T1-kin",
+  "control_values": {
+   "e0": {
+    "n_replaced_rows_above_gap_max": 0,
+    "n_replaced_rows": 3841,
+    "n_label_rows": 3986
+   },
+   "e6": {
+    "dump_files": {
+     "CONV_LA_s0": 141,
+     "CONV_LA_s1": 141,
+     "CONV_PL_s0": 141,
+     "CONV_PL_s1": 141
+    },
+    "expected": 141
+   },
+   "e7": {
+    "rollout_shares": {
+     "CONV_LA_s0": {
+      "share_of_rule_steps_with_a_lead": 0.3912741420036126,
+      "n_rows": 7197,
+      "n_lead_rows": 2816,
+      "share_of_lead_steps_with_nonzero_closing": 0.8235085227272727
+     },
+     "CONV_LA_s1": {
+      "share_of_rule_steps_with_a_lead": 0.42545505071557593,
+      "n_rows": 7197,
+      "n_lead_rows": 3062,
+      "share_of_lead_steps_with_nonzero_closing": 0.8367080339647289
+     },
+     "CONV_PL_s0": {
+      "share_of_rule_steps_with_a_lead": 0.31679866611087953,
+      "n_rows": 7197,
+      "n_lead_rows": 2280,
+      "share_of_lead_steps_with_nonzero_closing": null
+     },
+     "CONV_PL_s1": {
+      "share_of_rule_steps_with_a_lead": 0.31679866611087953,
+      "n_rows": 7197,
+      "n_lead_rows": 2280,
+      "share_of_lead_steps_with_nonzero_closing": null
+     }
+    },
+    "n_replaced_rows_above_gap_max": 0
+   }
+  }
+ }
+}
