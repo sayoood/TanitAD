@@ -29,7 +29,12 @@ tail -c 600 $R/logs/navrbd_gsuite.log 2>/dev/null | grep -q "ZZ NAVRBD GSUITE DO
 [ "$(sha256sum $SUITE | cut -d' ' -f1)" = "20f0279e93597f09e1dc51ed6b861166519b71c62c49850f8e367c1d19b2294f" ] || fail "G-SUITE result is not the one N1D_s0's token binds"
 (cd $TREE && sha256sum -c $N0/navrbd_tree.sha256) > $R/logs/n1drep_tree_verify.log 2>&1 || fail "navrbd tree sha256 (logs/n1drep_tree_verify.log)"
 $PY $N0/blobcheck.py $TREE $N0/all_blobs.txt > $R/logs/n1drep_blobcheck.log 2>&1 || fail "navrbd tree blob check (logs/n1drep_blobcheck.log)"
-[ "$(find $TREE -type f -not -path '*/__pycache__/*' | wc -l)" = "$(wc -l < $N0/all_blobs.txt)" ] || fail "navrbd tree file count"
+# Amendment 1: the tree holds exactly one file outside all_blobs.txt, the eval-141 grid (placed 2026-11-18 21:02:08Z, before N1D_s0's mint at 21:05:37Z), at blob c489b553
+GRID="$TREE/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json"
+grep -q "eval_grid_windows" $N0/all_blobs.txt && fail "all_blobs.txt lists the grid: the +1 count below would be wrong"
+[ "$(find $TREE -type f -not -path '*/__pycache__/*' | wc -l)" = "$(( $(wc -l < $N0/all_blobs.txt) + 1 ))" ] || fail "navrbd tree file count (want all_blobs.txt + the eval-141 grid)"
+[ "$(find "$TREE/TanitAD Research Lab" -type f | wc -l)" = 1 ] || fail "navrbd tree: more than the one Research Lab file"
+[ "$($PY -c 'import hashlib,sys; b=open(sys.argv[1],"rb").read(); print(hashlib.sha1(b"blob %d\0" % len(b) + b).hexdigest())' "$GRID")" = "c489b553fe9355cf50e6007bdf395bd4a07a6e9a" ] || fail "eval-141 grid blob is not c489b553"
 sha256sum -c $R/inputs.sha256 > $R/logs/inputs_verify_n1drep.log 2>&1 || fail "inputs sha256"
 (cd $INP/strat1 && sha256sum -c $R/navrb2/navrb2_inputs.sha256 && sha256sum -c $N0/navrbd_inputs.sha256) >> $R/logs/inputs_verify_n1drep.log 2>&1 || fail "nav inputs sha256"
 unset CUDA_VISIBLE_DEVICES
