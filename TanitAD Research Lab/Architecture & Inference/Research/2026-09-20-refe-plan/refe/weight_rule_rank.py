@@ -44,6 +44,8 @@ SEED = 20261012
 N_MICRO = 8
 CANDIDATES = tuple(2.0 ** k for k in range(-6, 3))            # 1/64 ... 4
 R_TARGET, RHO_MAX = 1.0, 1.0
+REPLAY_SEED = 20261122                                        # A3: the RNG state the three forwards of one micro-batch replay (REPLAY_SEED + k); fixes dropout masks, not the draw
+GRAD_PASSES = 3                                               # A3: one forward + one backward per gradient (l_score, L_rank, l_traj); never a retained graph
 
 
 class Stop(Exception):
@@ -169,37 +171,65 @@ def measure(T, a, model, ds, lab, dev, rank) -> dict:
     cfg = model.cfg
     acc = {k: None for k in ("sS", "sR", "sTt", "sTr")}
     per, pairs, sets, labelled_sets, total_sets = [], {h: 0 for h in rank.heads}, {h: 0 for h in rank.heads}, 0, 0
+    # MM 2026-11-22 (A3): ONE FORWARD PER GRADIENT, ONE BACKWARD PER FORWARD, NO RETAINED GRAPH. A2 turned donated buffers off and the pod still crashed at the SECOND
+    # torch.autograd.grad on one --compile graph (2026-11-22 21:39:51Z, torch 2.7.1: "a variable needed for gradient computation has been modified by an inplace operation:
+    # [16, 1925, 1024] is at version 18; expected version 0"): the compiled backward reuses a saved activation in place, so a retained compiled graph cannot be backpropagated
+    # twice. The trainer takes exactly one backward per forward, so each gradient here does the same. The three forwards replay ONE RNG state (fork_rng + manual_seed), so they
+    # are the same graph; `replay_max_abs_diff_*` measures that (0.0 on a deterministic device) and is reported, not used. The labels come from the FIRST forward, as before.
+    rng_devs = [dev] if dev.type == "cuda" else []
+
+    def forward(img, ego, goal, cal, seed):
+        with torch.random.fork_rng(devices=rng_devs):
+            torch.manual_seed(seed)
+            with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(a.amp == "bf16" and dev.type == "cuda")):
+                traj, score = model(img, ego, goal, calib=cal if cal.numel() else None)[:2]
+        traj, score = traj.float(), score.float()
+        return traj, score
+
     for k, b in enumerate(batches):
         batch = default_collate([ds[i] for i in b])
         img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id, cal = batch[:9]
         img, ego, goal, tgt = (x.to(dev) for x in (img, ego, goal, tgt))
-        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(a.amp == "bf16" and dev.type == "cuda")):
-            traj, score = model(img, ego, goal, calib=cal if cal.numel() else None)[:2]
-        traj, score = traj.float(), score.float()
-        l_traj = T.wta_loss(traj, tgt, yaw_wrap=(a.yaw_wrap == "on"))[0]
+        seed_k = REPLAY_SEED + k
+        # pass 1: l_score (and the labels, from this forward's DETACHED proposals)
+        traj1, score1 = forward(img, ego, goal, cal, seed_k)
         metas = [{kk: ds.rows[int(j)].get(kk) for kk in ("log_name", "token", "rank", "aug", "step")} for j in b]
-        h = lab.submit(k, 0, metas, traj.detach().double().cpu().numpy())
+        h = lab.submit(k, 0, metas, traj1.detach().double().cpu().numpy())
         labels_np, mask_np, _ = lab.collect(h, 0)
         lab_t, msk = torch.from_numpy(labels_np).to(dev), torch.from_numpy(mask_np).to(dev)
-        bce = F.binary_cross_entropy_with_logits(score, lab_t, reduction="none")
+        bce = F.binary_cross_entropy_with_logits(score1, lab_t, reduction="none")
         denom = max(float(cfg.n_proposals) * float(img.shape[0]), 1.0)          # the online trainer's constant denominator (train.py: cov_norm = n_proposals)
         l_score = (bce.mean(-1) * msk[:, None]).sum() / denom * a.score_w
-        l_rank = rank.term(score=score, labels=lab_t, msk=msk, batch=a.batch)
+        gs = torch.autograd.grad(l_score, S + Tr, retain_graph=False, allow_unused=True)
+        traj1, score1, l_score_v = traj1.detach(), score1.detach(), float(l_score)
+        del bce, l_score
+        # pass 2: L_rank (weight 1) on the same graph, replayed
+        traj2, score2 = forward(img, ego, goal, cal, seed_k)
+        l_rank = rank.term(score=score2, labels=lab_t, msk=msk, batch=a.batch)
         for hh in rank.heads:
             pairs[hh] += rank.last["pairs"][hh]
             sets[hh] += rank.last["sets"][hh]
         labelled_sets += int((msk > 0).sum())
         total_sets += int(msk.numel())
-        gs = torch.autograd.grad(l_score, S + Tr, retain_graph=True, allow_unused=True)
-        gr = torch.autograd.grad(l_rank, S + Tr, retain_graph=True, allow_unused=True)
-        gt = torch.autograd.grad(l_traj, Tr, retain_graph=True, allow_unused=True)
+        d_score = float((score2.detach() - score1).abs().max())
+        gr = torch.autograd.grad(l_rank, S + Tr, retain_graph=False, allow_unused=True)
+        l_rank_v = float(l_rank)
+        del traj2, score2, l_rank
+        # pass 3: l_traj on the trunk, replayed
+        traj3, score3 = forward(img, ego, goal, cal, seed_k)
+        l_traj = T.wta_loss(traj3, tgt, yaw_wrap=(a.yaw_wrap == "on"))[0]
+        d_traj = float((traj3.detach() - traj1).abs().max())
+        gt = torch.autograd.grad(l_traj, Tr, retain_graph=False, allow_unused=True)
+        l_traj_v = float(l_traj)
+        del traj3, score3, l_traj
         ns = len(S)
         v = {"sS": _vec(gs[:ns], S), "sR": _vec(gr[:ns], S), "sTt": _vec(gt, Tr), "sTr": _vec(gr[ns:], Tr)}
         for kk in acc:
             acc[kk] = v[kk] if acc[kk] is None else acc[kk] + v[kk]
         nS, nR = float(v["sS"].norm()), float(v["sR"].norm())
-        per.append({"l_score": float(l_score), "l_rank": float(l_rank), "l_traj": float(l_traj), "norm_score_S": nS, "norm_rank_S": nR, "norm_traj_T": float(v["sTt"].norm()),
-                    "norm_rank_T": float(v["sTr"].norm()), "r1": (nR / nS) if nS > 0 else None})
+        per.append({"l_score": l_score_v, "l_rank": l_rank_v, "l_traj": l_traj_v, "norm_score_S": nS, "norm_rank_S": nR, "norm_traj_T": float(v["sTt"].norm()),
+                    "norm_rank_T": float(v["sTr"].norm()), "r1": (nR / nS) if nS > 0 else None,
+                    "replay_max_abs_diff_score": d_score, "replay_max_abs_diff_traj": d_traj})
         model.zero_grad(set_to_none=True)
     pooled = {kk: float((acc[kk] / N_MICRO).norm()) for kk in acc}
     if not pooled["sS"] > 0.0:
@@ -209,6 +239,8 @@ def measure(T, a, model, ds, lab, dev, rank) -> dict:
     r1, rho1 = pooled["sR"] / pooled["sS"], pooled["sTr"] / pooled["sTt"]
     rs = sorted(p["r1"] for p in per if p["r1"] is not None)
     return {"seed": SEED, "n_micro": N_MICRO, "batch": a.batch, "micro_batch_ids": ids, "scorer_tensors": len(S), "trunk_tensors": len(Tr),
+            "grad_passes": GRAD_PASSES, "retained_graph": False, "replay_seed": REPLAY_SEED,
+            "replay_max_abs_diff": {"score": max(p["replay_max_abs_diff_score"] for p in per), "traj": max(p["replay_max_abs_diff_traj"] for p in per)},
             "pooled": {"norm_grad_S_l_score": pooled["sS"], "norm_grad_S_rank_w1": pooled["sR"], "norm_grad_T_l_traj": pooled["sTt"], "norm_grad_T_rank_w1": pooled["sTr"], "r1": r1, "rho1": rho1},
             "per_micro_batch": per, "r1_per_micro_min_median_max": [rs[0], rs[len(rs) // 2], rs[-1]] if rs else None,
             "r_by_w": {repr(w): w * r1 for w in CANDIDATES}, "rho_by_w": {repr(w): w * rho1 for w in CANDIDATES},
@@ -242,6 +274,7 @@ def main(argv=None) -> int:
     print("  rho(w): " + "  ".join(f"{w:g}:{res['rho_by_w'][repr(w)]:.4g}" for w in CANDIDATES))
     print(f"  pairs by head {res['pairs_by_head']}   sets with pairs {res['sets_with_pairs_by_head']}   label coverage {res['label_coverage_of_the_8_batches']:.3f}"
           + (f"   DEAD HEADS: {res['dead_heads']}" if res["dead_heads"] else ""))
+    print(f"  grad passes {res['grad_passes']} (one forward + one backward each, no retained graph)   replay max |diff| score {res['replay_max_abs_diff']['score']:.3g}  traj {res['replay_max_abs_diff']['traj']:.3g}")
     print(f"  RULE: {rule['status']}  rank_w = {rule['rank_w']}  -- {rule['why']}" + ("   [SYNTHETIC LABELS: NOT A DECISION]" if synthetic else ""))
     return {"SELECT": 0, "K2": 5, "K2b": 5}.get(rule["status"], 4)
 

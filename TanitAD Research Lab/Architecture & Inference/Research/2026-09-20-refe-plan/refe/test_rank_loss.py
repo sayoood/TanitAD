@@ -513,15 +513,28 @@ def chk_weight_rule_smoke():
     args = " ".join(P6.argv_p6(bank, str(td / "wr_out"), extra=("--rank-heads", "ep,gate")))
     real = OL.synthetic_labels
     OL.synthetic_labels = _rich_labels()
+    real_grad = torch.autograd.grad
+    grad_calls = []                                   # A3: every torch.autograd.grad the tool takes, with its retain_graph / create_graph
+
+    def rec_grad(*a_, **k_):
+        grad_calls.append((bool(k_.get("retain_graph")), bool(k_.get("create_graph"))))
+        return real_grad(*a_, **k_)
     buf = io.StringIO()
     try:
+        torch.autograd.grad = rec_grad
         with contextlib.redirect_stdout(buf):
             rc = WR.main(["--args", args, "--refe", str(HERE), "--out", str(td / "wr.json")])
     finally:
+        torch.autograd.grad = real_grad
         OL.synthetic_labels = real
     res = json.loads((td / "wr.json").read_text(encoding="utf-8"))
     ok(rc in (0, 5) and res["NOT_A_DECISION"] is True and res["label_backend"] == "synthetic" and res["heads"] == ["ep", "gate"], (rc, buf.getvalue()[-400:]))
     ok(res["donated_buffer"] is False, "the measurement must run with donated buffers OFF: three retain_graph grads on one --compile graph (pod 2026-11-21 16:43Z)")
+    ok(len(grad_calls) == WR.GRAD_PASSES * WR.N_MICRO and not any(r or c for r, c in grad_calls) and res["grad_passes"] == 3 and res["retained_graph"] is False,
+       ("A3: one forward + one backward per gradient, NEVER a retained graph: a retained --compile graph cannot be backpropagated twice (pod 2026-11-22 21:39Z, in-place "
+        "version 18 vs 0)", len(grad_calls), grad_calls[:4]))
+    ok(res["replay_max_abs_diff"]["score"] == 0.0 and res["replay_max_abs_diff"]["traj"] == 0.0,
+       ("A3: the three passes of one micro-batch must be the SAME graph (replayed input and RNG state); on CPU the replay is exact", res["replay_max_abs_diff"]))
     ok(res["pairs_by_head"]["ep"] > 0 and res["pairs_by_head"]["gate"] > 0 and res["dead_heads"] == [], res["pairs_by_head"])
     ok(res["labelled_sets"] == 8 and res["scorer_tensors"] > 0 and res["trunk_tensors"] > 0, res)
     p = res["pooled"]
@@ -565,6 +578,10 @@ LINE_MUTATIONS = [
     ("weight rule: the L_rank gradient is taken on detached logits", "weight_rule_rank.py", "        traj, score = traj.float(), score.float()", "        traj, score = traj.float(), score.float().detach()", "weight_rule_smoke"),
     ("weight rule: labels never collected from the arm's labeller (all-ones)", "weight_rule_rank.py", "lab_t, msk = torch.from_numpy(labels_np).to(dev), torch.from_numpy(mask_np).to(dev)", "lab_t, msk = torch.ones(1, cfg.n_proposals, 6).to(dev), torch.ones(1).to(dev)", "weight_rule_smoke"),
     ("weight rule: donated buffers left on (retain_graph on a compiled graph)", "weight_rule_rank.py", "    FC.donated_buffer = False", "    pass", "weight_rule_smoke"),
+    ("weight rule: a retained graph again (A3: a compiled backward reuses saved buffers)", "weight_rule_rank.py",
+     "gs = torch.autograd.grad(l_score, S + Tr, retain_graph=False, allow_unused=True)", "gs = torch.autograd.grad(l_score, S + Tr, retain_graph=True, allow_unused=True)", "weight_rule_smoke"),
+    ("weight rule: pass 2 is not a replay of pass 1 (A3: L_rank on another graph)", "weight_rule_rank.py",
+     "        traj2, score2 = forward(img, ego, goal, cal, seed_k)", "        traj2, score2 = forward(img * 0.5, ego, goal, cal, seed_k)", "weight_rule_smoke"),
     ("rank_loss: the loss is a sum, not a weighted mean", "rank_loss.py", "num / torch.where(den > 0, den, torch.ones_like(den))", "num", "analytic"),
 ]
 # (name, env, the check that must go RED).  REFE_RANK_MUTATE arms: the env is set for the child; the named check must exit != 0.
