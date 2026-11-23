@@ -1,0 +1,17 @@
+--- F:/TanitAD-scratch/rollhist/read/rh_roll.py.bk_ki	2026-11-23 10:00:32.593406800 +0100
++++ F:/TanitAD-scratch/rollhist/read/rh_roll.py	2026-11-23 10:00:32.786041600 +0100
+@@ -1,4 +1,4 @@
+-"""rh_roll.py -- ONE rollout of the ROLLHIST read: python rh_roll.py KIND FORM SEED   (KIND RH|B0|UEA|RHp3|RHK|RL|RA|RK, FORM in rh_common.FORMS, SEED 0|1)
++"""rh_roll.py -- ONE rollout of the ROLLHIST read: python rh_roll.py KIND FORM SEED   (KIND RH|B0|UEA|RHp3|RHK|RL|RA|RK|KI, FORM in rh_common.FORMS, SEED 0|1)
+ Renders the tier-of-record argv (rh_common.argv_record), refuses unless the checkpoint sha256 equals the pod's sha256sum record (ckpts/SHA256_PODS.txt; UEA: the card's pinned sha256),
+ runs it on the dev-box CPU (2 threads), writes ticks/run_<name>.txt (the checkpoint sha256 and the executor sha256 the rollout used), checks 141 dump files and 1 tick file, touches T1_DONE.
+ Resumable: T1_DONE present = skipped.  A failed rollout stops with rc 1.  `--dry` prints the argv and runs nothing.  `--max-windows N` is a code check, never a result (writes under out/smoke)."""
+@@ -26,7 +26,7 @@
+ 
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("kind", choices=("RH", "B0", "UEA", "RHp3", "RHK", "RL", "RA", "RK"))
++    ap.add_argument("kind", choices=("RH", "B0", "UEA", "RHp3", "RHK", "RL", "RA", "RK", "KI"))
+     ap.add_argument("form", choices=list(C.FORMS))
+     ap.add_argument("seed", type=int, choices=(0, 1))
+     ap.add_argument("--dry", action="store_true")
