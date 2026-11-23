@@ -518,7 +518,7 @@ def test_judge_reads_the_null_s6c_as_not_computable_even_when_everything_else_pa
     st = {c["id"]: c["status"] for c in v["clauses"]}
     assert st == {"a": "PASS", "b": "PASS", "c": "NOT-COMPUTABLE", "d": "PASS", "e": "PASS"}
     assert v["verdict"] == "NO-GO" and [f["id"] for f in v["failing_clauses"]] == ["c"]
-    assert v["four_families"]["0"]["STRATEGIC"]["status"] == "PAUSED"
+    assert v["four_families"]["0"]["STRATEGIC"]["status"] == "NOT-SUPPLIED" and "PAUSED" not in json.dumps(v)
 
 
 def test_RED_a_placeholder_s6c_would_read_as_evidence_so_the_writer_refuses_one(tmp_path):

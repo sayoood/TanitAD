@@ -4,7 +4,7 @@ Clause (b) is "K2 NOT SEPARATED WORSE than K0" on box AP@2 m (PI 2026-11-17), re
 K2 better PASSES, an absent / non-finite record is NOT-COMPUTABLE (never the old point rule).
 
 The GO case; one RED arm per clause (a)-(e) that must flip to NO-GO NAMING THAT clause (and no other); seed 1 failing alone; a missing family;
-a NOT-COMPUTABLE clause is NO-GO (never dropped); STRATEGIC is PAUSED (never a pass, never omitted); the per-window row form goes through taniteval.ci.
+a NOT-COMPUTABLE clause is NO-GO (never dropped); STRATEGIC is REPORT-ONLY / NOT-SUPPLIED (PI 2026-11-16; never PAUSED, never a pass, never in clause (d)); the per-window row form goes through taniteval.ci.
 """
 from __future__ import annotations
 
@@ -111,16 +111,62 @@ def test_not_computable_clause_is_no_go(tmp_path):
     assert rc == 1 and [(f["id"], f["status"]) for f in v["failing_clauses"]] == [("a", "NOT-COMPUTABLE"), ("c", "NOT-COMPUTABLE")]
 
 
-def test_strategic_is_paused_never_pass_never_omitted(tmp_path):
-    rc, v, md = run(tmp_path, both(good_docs()))
-    for s in ("0", "1"):
-        assert v["four_families"][s]["STRATEGIC"]["status"] == "PAUSED" and "ITEM 25" in v["four_families"][s]["STRATEGIC"]["reason"]
-    assert "PAUSED" in md and v["strategic"].startswith("PAUSED")
+def _sub(tmp, name, d):
+    p = tmp / name
+    p.mkdir()
+    return run(p, both(d))
+
+
+def _failing_d_docs():
     d = good_docs()
-    d["families"]["rows"]["STRATEGIC"] = {"x": row(-9.0, "lower", True)}          # a supplied strategic row can never turn the pause into a pass
-    (tmp_path / "x").mkdir()
-    rc, v, _ = run(tmp_path / "x", both(d))
-    assert v["four_families"]["0"]["STRATEGIC"]["status"] == "PAUSED"
+    d["families"]["rows"]["LATERAL"]["curv_err"] = row(0.4, "lower", True)         # a LATERAL row separated WORSE: clause (d) FAILS
+    return d
+
+
+def test_strategic_not_supplied_is_never_paused_never_pass_never_omitted(tmp_path):
+    """(a) no strategic rows => NOT-SUPPLIED, the reason names the producer, and 'PAUSED' appears nowhere in the JSON or the md."""
+    rc, v, md = run(tmp_path, both(good_docs()))
+    assert rc == 0 and v["verdict"] == "GO"
+    for s in ("0", "1"):
+        st = v["four_families"][s]["STRATEGIC"]
+        assert st["status"] == "NOT-SUPPLIED" and st["rows"] == {} and "openloop_suite.py:943" in st["reason"]
+    blob = json.dumps(v)
+    for text in (blob, md):
+        assert "PAUSED" not in text and "paused" not in text.lower() and "ITEM 25" not in text
+    assert v["strategic"].startswith("REPORT-ONLY") and "STRATEGIC" in md and "NOT-SUPPLIED" in md
+    d = good_docs()                                                                 # a stamp dict (no dict-valued rows, as r9_e2_families.build emits) carries no rows
+    d["families"]["rows"]["STRATEGIC"] = {"status": "PAUSED", "reason": "stamp copied from a producer"}
+    rc, v2, md2 = _sub(tmp_path, "stamp", d)
+    assert v2["four_families"]["0"]["STRATEGIC"]["status"] == "NOT-SUPPLIED" and "PAUSED" not in json.dumps(v2) and "PAUSED" not in md2
+
+
+def test_strategic_separated_worse_is_reported_but_never_enters_the_rule(tmp_path):
+    """(b) a supplied strategic row separated WORSE is REPORT-ONLY, visible in JSON and md, and clause (d) + the verdict equal the same input without it."""
+    for k, base in (("go", good_docs()), ("nogo", _failing_d_docs())):
+        with_row = copy.deepcopy(base)
+        with_row["families"]["rows"]["STRATEGIC"] = {"route_acc": row(0.3, "lower", True), "route_zero": row(0.0, "lower", False)}
+        rc0, v0, md0 = _sub(tmp_path, k + "_without", base)
+        rc1, v1, md1 = _sub(tmp_path, k + "_with", with_row)
+        st = v1["four_families"]["0"]["STRATEGIC"]
+        assert st["status"] == "REPORT-ONLY" and st["rows"]["route_acc"]["separated"] is True and st["rows"]["route_acc"]["separated_worse"] is True
+        assert st["separated_worse_rows"] == ["route_acc"] and "separated worse (report-only, outside clause (d))" in st["rows"]["route_acc"]["report_only_note"]
+        assert "STRATEGIC/route_acc" in md1 and "separated worse (report-only, outside clause (d))" in md1 and "PAUSED" not in md1
+        assert (rc1, v1["verdict"]) == (rc0, v0["verdict"])
+        assert v1["clauses"] == v0["clauses"] and v1["failing_clauses"] == v0["failing_clauses"]          # clause (d) and every other clause are IDENTICAL
+        d1 = {c["id"]: c for c in v1["clauses"]}["d"]
+        assert not any("STRATEGIC" in str(x) for x in d1["per_seed"]["0"].get("failing_rows", []))
+
+
+def test_strategic_separated_better_cannot_turn_a_failing_d_into_a_pass(tmp_path):
+    """(c) mirror of the old check: a strategic row separated BETTER by a mile cannot rescue a failing clause (d)."""
+    d = _failing_d_docs()
+    d["families"]["rows"]["STRATEGIC"] = {"x": row(-9.0, "lower", True)}
+    rc, v, _ = run(tmp_path, both(d))
+    cd = {c["id"]: c for c in v["clauses"]}["d"]
+    assert rc == 1 and cd["status"] == "FAIL" and [f["id"] for f in v["failing_clauses"]] == ["d"]
+    assert cd["per_seed"]["0"]["failing_rows"] == ["LATERAL/curv_err"]
+    st = v["four_families"]["0"]["STRATEGIC"]
+    assert st["status"] == "REPORT-ONLY" and st["rows"]["x"]["separated_better"] is True and st["separated_worse_rows"] == []
 
 
 def test_both_seeds_required(tmp_path):

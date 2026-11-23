@@ -118,8 +118,10 @@ def test_families_json_validates_against_judge(dumps, dev_split):
     assert c["status"] == "PASS", c
     for f in F.FAMILIES:
         assert rep[f]["rows"] and all(r["ok"] for r in rep[f]["rows"].values())
-    assert rep["STRATEGIC"]["status"] == "PAUSED"                    # never a pass, never omitted
-    assert doc["STRATEGIC"]["status"] == "PAUSED" and doc["rows"]["STRATEGIC"]["status"] == "PAUSED"
+    assert rep["STRATEGIC"]["status"] == "NOT-SUPPLIED" and "PAUSED" not in json.dumps(rep)   # the judge reads no rows from the producer's stamp dict (PI 2026-11-16)
+    assert doc["STRATEGIC"]["status"] == "NOT-SUPPLIED" and doc["rows"]["STRATEGIC"]["status"] == "NOT-SUPPLIED"
+    assert "PAUSED" not in json.dumps(doc)                           # PI 2026-11-16: strategic is not paused; never a pass, never omitted
+    assert not any(isinstance(v, dict) for v in doc["rows"]["STRATEGIC"].values())   # the stamp must carry no row-shaped entry
     assert doc["n_windows_paired"] == len(DEV_CLIPS) * NW and doc["a"]["n_non_dev_dropped"] == len(HOLD_CLIPS) * NW
     # K2 beats K0 on every distance row: delta < 0 (lower better) and separated
     assert doc["rows"]["LATERAL"]["LAT_cross_mae_m"]["delta"] < 0 and doc["rows"]["LATERAL"]["LAT_cross_mae_m"]["separated"]
@@ -214,7 +216,7 @@ def test_camblind_rows_validate_w4_and_equal_arms_do_not_pass(dumps, dev_split):
     J = _judge()
     cb = fam(dumps, dev_split, "good", "bad", mode="camblind")      # K2 = good, "blind" = bad -> separated better on every primary row
     assert set(cb["rows"]) == {"ade_m", "LONGITUDINAL", "LATERAL", "TACTICAL"}
-    assert cb["primary_rows"] == F.PRIMARY and cb["primary_cite"] and "all_rows" in cb and cb["STRATEGIC"]["status"] == "PAUSED"
+    assert cb["primary_rows"] == F.PRIMARY and cb["primary_cite"] and "all_rows" in cb and cb["STRATEGIC"]["status"] == "NOT-SUPPLIED"
     c, rep = J.w4_clause(json.loads(json.dumps(cb)))
     assert c["status"] == "PASS" and all(rep[k]["separated_better"] for k in ("ade_m",) + F.FAMILIES), (c, rep)
     same = fam(dumps, dev_split, "good", "good2", mode="camblind")  # K2 identical to its "camera-blind": the W4 bar must NOT be read as passed

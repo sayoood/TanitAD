@@ -45,7 +45,7 @@ def _row(delta, sep=False):
 
 def _seed():
     rows = {"LAT_cross_mae_m": _row(-0.004), "LAT_cross_abs_final_m": _row(-0.004)}
-    fam = {"LONGITUDINAL": {"LON_x": _row(0.001)}, "LATERAL": dict(rows), "TACTICAL": {"TAC_x": _row(0.0)}, "STRATEGIC": {"status": "PAUSED"}}
+    fam = {"LONGITUDINAL": {"LON_x": _row(0.001)}, "LATERAL": dict(rows), "TACTICAL": {"TAC_x": _row(0.0)}, "STRATEGIC": {"status": "NOT-SUPPLIED", "rows": {}}}
     return {"dc_vs_k0": {"LAT_cross_mae_m": _row(0.001), "LAT_cross_abs_final_m": _row(0.0)}, "dc_vs_k2": rows, "jitter_dlag_dc_vs_k2": _row(-0.0005),
             "dc_vs_k0_by_family": fam, "dc_vs_k2_by_family": fam}
 
@@ -62,8 +62,9 @@ def _outputs(m):
     return res
 
 
-# sha256 of the tip module's (7decfcc9 blob, commit 16ef6ff1) JSON + md for the input above
-GOLDEN = {"K2DC": "0c2aa62807431b3c92aa91722640d05289f13f8196a01fdf0337de73429d52ce", "K2DC02": "cd72632657617be84847cfb85952d90fffbc68199dd0b4c41701eb23bfc9a5aa"}
+# sha256 of the module's JSON + md for the input above.  RE-PINNED when STRATEGIC went PAUSED -> NOT-SUPPLIED / REPORT-ONLY (PI 2026-11-16): the previous pins were
+# K2DC 0c2aa628...d52ce, K2DC02 cd726326...aa5aa (tip 7decfcc9 / 16ef6ff1).  A one-off check showed the OLD and NEW modules agree byte-for-byte once the STRATEGIC keys / lines are removed.
+GOLDEN = {"K2DC": "fb52752d2fadc7913c51090105eaa87e51c7689cb8139895781732d334221a78", "K2DC02": "32c90fab9a5a3e1fc5e2e3cb8ab65c08ce094a812bbab4d514ef16f89d6c0aaf"}
 
 
 def test_k2dc_and_k2dc02_outputs_are_unchanged_golden():
@@ -73,7 +74,19 @@ def test_k2dc_and_k2dc02_outputs_are_unchanged_golden():
 @pytest.mark.skipif(not os.environ.get("R9_DOSE_TIP_MODULE"), reason="R9_DOSE_TIP_MODULE (the tip's r9_e2_dose_verdict.py from an export) not set")
 def test_k2dc_and_k2dc02_outputs_equal_the_tip_module_live():
     tip = _load(os.environ["R9_DOSE_TIP_MODULE"], "_dose_tip")
-    assert _outputs(D) == _outputs(tip)
+    import copy
+
+    def stripped(m):                       # everything except the STRATEGIC report (intentionally changed 2026-11-16)
+        nums = {"0": _seed(), "1": _seed()}
+        void = {"valid": True, "status": "HELD", "rule": "r", "n_inside_band": 2, "n_probes_step_ge_3000": 3}
+        doc = copy.deepcopy(m.build(copy.deepcopy(nums), void, None, None))
+        for k in ("STRATEGIC", "families_note"):
+            doc.pop(k)
+        for s in doc["seeds"].values():
+            s["dc_vs_k0_by_family"].pop("STRATEGIC", None)
+            s["dc_vs_k2_by_family"].pop("STRATEGIC", None)
+        return json.dumps(doc, sort_keys=True, default=float), [x for x in m.md(m.build(copy.deepcopy(nums), void, None, None)).split("\n") if x.strip() and "STRATEGIC" not in x]
+    assert stripped(D) == stripped(tip)
 
 
 # ---------------------------------------------------------------------------------------------------------------- #
@@ -190,7 +203,7 @@ def test_build_valid_void_and_wording():
     arm = {"arm": "K2SG", "kind": "stop-gradient", "argv_json": "x", "trunk_grad_scale": 0.0}
     ok = D.build(_nums(), {"valid": True, "status": "VALID"}, None, arm)
     assert ok["outcome"] == "SUPPORTED" and ok["arm"]["arm"] == "K2SG" and "op_validity" in ok and "dose_validity" not in ok
-    assert ok["prereg"].endswith("PREREG_K2SG_2026-11-19.md") and ok["STRATEGIC"]["status"] == "PAUSED"
+    assert ok["prereg"].endswith("PREREG_K2SG_2026-11-19.md") and ok["STRATEGIC"]["status"] == "NOT-SUPPLIED"
     assert "K2DC" not in json.dumps({k: v for k, v in ok.items() if k not in ("seeds", "arm")})   # the arm label is K2SG everywhere (the `arm.note` legitimately cites PREREG_K2DC's constants)
     assert "K2DC" not in D.md(ok)
     void = D.build(_nums(), {"valid": False, "status": "OP-VOID"}, None, arm)

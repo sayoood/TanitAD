@@ -10,7 +10,7 @@ Encodes PREREG_K2DC_2026-11-12.md "Read -> Dose hypothesis" EXACTLY (frozen; PI-
   * DOSE-VOID    the run is valid for the dose question only if the trainer's logged trunk share (metrics.jsonl `dc_share_read`) lies in [0.05, 0.15] at >= 2 probes
                  at steps >= 3,000.  Outside => reported DOSE-VOID (the controller did not hold), never silently re-run.  The three outcomes above are still computed and
                  printed under `outcome_if_valid`; `outcome` reads DOSE-VOID.
-  All four metric families are reported per seed (K2DC - K0 and K2DC - K2), per family and never pooled; STRATEGIC = PAUSED (PI 2026-09-19, ITEM 25).  The map primary / box AP /
+  All four metric families are reported per seed (K2DC - K0 and K2DC - K2), per family and never pooled; STRATEGIC = REPORT-ONLY (PI 2026-11-16: shown beside, outside the decision; NOT-SUPPLIED when no rows).  The map primary / box AP /
   S6c rate K2DC - K2 are reported with NO committed direction (the PREREG says so), from the two reads' EVAL / S6c files when supplied.
 
 The E2 GO rule itself (REFCV9_DESIGN 4.4) is NOT re-implemented here: `r9_e2_verdict.py` reads K2DC vs K0 exactly as it read K2.
@@ -356,6 +356,39 @@ def _slim(r: dict) -> dict:
     return {k: r[k] for k in ("delta", "lo", "hi", "separated", "better", "n", "n_episodes", "a_mean", "b_mean") if k in r}
 
 
+STRATEGIC_REASON = ("REPORT-ONLY: the strategic layer was switched back on by the PI on 2026-11-16 and is reported in full; the dose decision and the E2 rule were pre-registered "
+                    "over LONGITUDINAL / LATERAL / TACTICAL, so STRATEGIC rows are shown BESIDE them and never enter the decision; never a pass, never omitted.")
+STRATEGIC_PRODUCER = ("taniteval/tools/openloop_suite.py:943 (_strategic_block: route head vs the v2.1 route label under nav true / shuffled / zero; headline :1140) "
+                      "and taniteval/tools/refcv3_arm.py:2646 (_navcomp_row)")
+STRATEGIC_NOT_SUPPLIED = ("NOT-SUPPLIED: the paired dump read produced no STRATEGIC rows (never a pass, never omitted); the strategic numbers are computed by " + STRATEGIC_PRODUCER
+                          + " and are not yet paired rows; reported beside the decision, outside it.")
+STRATEGIC_WORSE = "separated worse (report-only, outside the decision)"
+
+
+def strategic_entry(raw) -> dict:
+    """One per-family STRATEGIC entry: REPORT-ONLY with its paired rows (only dict rows carrying `better` count; a stamp dict has none) or NOT-SUPPLIED."""
+    got = {rid: r for rid, r in raw.items() if isinstance(r, dict) and "better" in r} if isinstance(raw, dict) else {}
+    if not got:
+        return {"status": "NOT-SUPPLIED", "reason": STRATEGIC_NOT_SUPPLIED, "rows": {}}
+    rows = {}
+    for rid, r in got.items():
+        s = _slim(r)
+        good = (s.get("delta", 0) > 0) if s.get("better") == "higher" else (s.get("delta", 0) < 0)
+        s["separated_worse"] = bool(s.get("separated") and not good)
+        if s["separated_worse"]:
+            s["report_only_note"] = STRATEGIC_WORSE
+        rows[rid] = s
+    return {"status": "REPORT-ONLY", "reason": STRATEGIC_REASON, "rows": rows, "separated_worse_rows": [rid for rid, s in rows.items() if s["separated_worse"]]}
+
+
+def strategic_top(numbers: dict) -> dict:
+    """The document-level STRATEGIC block: per seed and per pairing, the entry's status and its separated-worse rows (no decision input)."""
+    per = {s: {tag: {k: v for k, v in (numbers[s].get(tag + "_by_family") or {}).get("STRATEGIC", {}).items() if k in ("status", "separated_worse_rows")}
+               for tag in ("dc_vs_k2", "dc_vs_k0")} for s in numbers}
+    sup = any(e.get("status") == "REPORT-ONLY" for p in per.values() for e in p.values())
+    return {"status": "REPORT-ONLY" if sup else "NOT-SUPPLIED", "reason": STRATEGIC_REASON if sup else STRATEGIC_NOT_SUPPLIED, "per_seed": per}
+
+
 def seed_numbers(k2dc_pf, k2_pf, k0_pf, dev_split, seed: str, n_boot: int = 2000, label: str = "K2DC") -> dict:
     F = _families()
     dev = F.load_dev(dev_split)
@@ -368,7 +401,7 @@ def seed_numbers(k2dc_pf, k2_pf, k0_pf, dev_split, seed: str, n_boot: int = 2000
         out[tag] = {rid: _slim(r) for fam in F.FAMILIES for rid, r in doc["rows"][fam].items()}
         out[tag + "_ade_m"] = _slim(doc["ade_m"])
         out[tag + "_by_family"] = {fam: {rid: _slim(r) for rid, r in doc["rows"][fam].items()} for fam in F.FAMILIES}
-        out[tag + "_by_family"]["STRATEGIC"] = dict(doc["rows"]["STRATEGIC"])
+        out[tag + "_by_family"]["STRATEGIC"] = strategic_entry(doc["rows"].get("STRATEGIC"))
         out[tag + "_window_set_sha256"] = doc["window_set_sha256"]
         out[tag + "_n_windows_paired"] = doc["n_windows_paired"]
     if out["dc_vs_k0_window_set_sha256"] != out["dc_vs_k2_window_set_sha256"]:
@@ -433,8 +466,8 @@ def build(numbers: dict, void: dict, extra: dict | None = None, arm: dict | None
            "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, over EPISODES (clips); delta = A - B; it answers 'another draw of EPISODES', not 'another training run' "
                         "(H-ESTIM-SEED-1) and not 'another inference draw' (each seed is one call)",
            "families_note": "four families per seed, per family, never pooled: LONGITUDINAL / LATERAL / TACTICAL rows in `seeds.<s>.dc_vs_k2_by_family` and `dc_vs_k0_by_family`; ade_m beside; "
-                            "STRATEGIC = PAUSED (PI 2026-09-19, ITEM 25), never a pass, never omitted",
-           "STRATEGIC": {"status": "PAUSED", "reason": "PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high quality"},
+                            "STRATEGIC = REPORT-ONLY (PI 2026-11-16), shown beside the decision and never in it; NOT-SUPPLIED when no rows; never a pass, never omitted",
+           "STRATEGIC": strategic_top(numbers),
            "seeds": numbers}
     if extra:
         doc["beside_no_direction"] = extra
@@ -488,7 +521,16 @@ def _md_body(doc: dict, head: str, validity: str) -> str:
             for rid, r in doc["seeds"][s]["dc_vs_k2_by_family"][fam].items():
                 r0 = doc["seeds"][s]["dc_vs_k0_by_family"][fam].get(rid, {})
                 L.append(f"| {fam} | {rid} | {r['delta']:+.5f} | {'*' if r['separated'] else ''} | {r0.get('delta', float('nan')):+.5f} | {'*' if r0.get('separated') else ''} |")
-        L += ["| STRATEGIC | - | PAUSED | | PAUSED | |", ""]
+        e2 = (doc["seeds"][s].get("dc_vs_k2_by_family") or {}).get("STRATEGIC") or {}
+        e0 = (doc["seeds"][s].get("dc_vs_k0_by_family") or {}).get("STRATEGIC") or {}
+        if e2.get("status") == "REPORT-ONLY" or e0.get("status") == "REPORT-ONLY":
+            for rid in sorted(set(e2.get("rows", {})) | set(e0.get("rows", {}))):
+                a, b = e2.get("rows", {}).get(rid, {}), e0.get("rows", {}).get(rid, {})
+                tag = lambda x: ("*" if x.get("separated") else "") + (" WORSE" if x.get("separated_worse") else "")        # noqa: E731
+                L.append(f"| STRATEGIC (report-only) | {rid} | {a.get('delta', float('nan')):+.5f} | {tag(a)} | {b.get('delta', float('nan')):+.5f} | {tag(b)} |")
+            L += ["", f"STRATEGIC rows are REPORT-ONLY: shown beside the decision, never in it ({STRATEGIC_WORSE} when marked WORSE).", ""]
+        else:
+            L += ["| STRATEGIC | - | NOT-SUPPLIED | | NOT-SUPPLIED | |", "", f"STRATEGIC: {STRATEGIC_NOT_SUPPLIED}", ""]
     b = doc.get("beside_no_direction")
     if b:
         L += ["## Beside (no committed direction)", "", "```", json.dumps(b, indent=1, default=float), "```", ""]

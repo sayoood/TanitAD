@@ -19,7 +19,9 @@ WHAT IT DOES (and refuses):
     uses (``t1_eval.py:540-560``), not a re-derivation.  Each row = ``ci.paired_episode_cluster_bootstrap(a, b, eid, B 2000, seed 0)``: delta = A - B, A = the first arm
     (K2).  A window whose value is non-finite in either arm (e.g. a stopped window has no heading) is dropped from THAT row for both arms and counted
     (``n_dropped_nonfinite``).  A row with no finite window is OMITTED and listed in ``omitted`` (never faked); a family left with no rows reads NOT-COMPUTABLE in the judge.
-  * STRATEGIC: ``{"status": "PAUSED", ...}`` (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25) -- never a pass, never omitted.
+  * STRATEGIC: ``{"status": "NOT-SUPPLIED", "reason": ...}`` -- this builder computes no strategic rows; the PI switched the strategic layer back on
+    (2026-11-16) and it is reported in full, BESIDE clause (d) (r9_e2_verdict.STRATEGIC_PRODUCER names where it is computed).  Never a pass, never omitted.
+    The stamp carries no dict-valued entry, so the judge reads it as no rows (r9_e2_verdict.strategic_report).
 
 THE WAYPOINT CLOCK (fixed 2026-11-12, MM 4a3d05 -- the v1 reader got it wrong).  ``_seq_geometry(wp, dt)`` needs the spacing BETWEEN the supplied waypoints
 (``four_families._DT_CONTRACT``).  The battery dump publishes it: ``manifest.json`` ``grid.dt_s`` (the E2 dumps: ``grid`` 2s, k 4, ``dt_s`` 0.5, instants
@@ -59,8 +61,9 @@ ROWS = (("ADE", "ade_m", True), ("ADE", "fde_m", True),
         ("TACTICAL", "TAC_traj_lat_correct", False), ("TACTICAL", "TAC_traj_lon_correct", False), ("TACTICAL", "TAC_traj_man5_correct", False))
 PRIMARY = {"ade_m": "ade_m", "LONGITUDINAL": "LON_speed_mae_mps", "LATERAL": "LAT_heading_mae_deg", "TACTICAL": "TAC_traj_lat_correct"}
 FAMILIES = ("LONGITUDINAL", "LATERAL", "TACTICAL")
-STRATEGIC = {"status": "PAUSED", "reason": "PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with "
-                                           "high quality; never a pass, never omitted, never extended to the other families."}
+STRATEGIC = {"status": "NOT-SUPPLIED", "reason": "NOT-SUPPLIED: this families builder computes no STRATEGIC rows. The PI switched the strategic layer back on "
+                                                 "(2026-11-16): it is reported in full, beside clause (d) and outside it (PREREG_K2DC02CL section 1: the E2 rule is "
+                                                 "unchanged). Never a pass, never omitted."}
 TIER = "T1 (self-action open loop on logged eval139 frames; the `os` arm of the battery dump)"
 ESTIMATOR = "taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, over EPISODES (clips); delta = A - B"
 

@@ -125,7 +125,7 @@ def test_void_overrides_and_unchecked_is_labelled():
     assert unchecked["outcome"].startswith("SUPPORTED") and "UNCHECKED-VOID" in unchecked["outcome"]
     held = D.build(nums, {"valid": True, "status": "HELD"})
     assert held["outcome"] == "SUPPORTED"
-    assert held["STRATEGIC"]["status"] == "PAUSED"                                                    # never omitted, never a pass
+    assert held["STRATEGIC"]["status"] == "NOT-SUPPLIED" and "PAUSED" not in json.dumps(held)        # never omitted, never a pass, never PAUSED (PI 2026-11-16)
 
 
 # ---------------------------------------------------------------------------------------------------------------- #
@@ -163,8 +163,53 @@ def test_e2e_supported(fam_mod, tmp_path):
     assert doc["outcome"] == "SUPPORTED", json.dumps(doc["per_seed"], indent=1)
     for s in ("0", "1"):
         assert nums[s]["dc_vs_k2"]["LAT_cross_mae_m"]["delta"] <= -0.0025 and nums[s]["jitter_dlag_dc_vs_k2"]["delta"] < 0
-        assert set(nums[s]["dc_vs_k2_by_family"]) == {"LONGITUDINAL", "LATERAL", "TACTICAL", "STRATEGIC"}      # all four families, STRATEGIC PAUSED
-        assert nums[s]["dc_vs_k2_by_family"]["STRATEGIC"]["status"] == "PAUSED"
+        assert set(nums[s]["dc_vs_k2_by_family"]) == {"LONGITUDINAL", "LATERAL", "TACTICAL", "STRATEGIC"}      # all four families, STRATEGIC NOT-SUPPLIED (no dump rows)
+        assert nums[s]["dc_vs_k2_by_family"]["STRATEGIC"]["status"] == "NOT-SUPPLIED" and nums[s]["dc_vs_k0_by_family"]["STRATEGIC"]["rows"] == {}
+    assert doc["STRATEGIC"]["status"] == "NOT-SUPPLIED" and "openloop_suite.py:943" in doc["STRATEGIC"]["reason"]
+    for text in (json.dumps(doc, default=float), D.md(doc)):                                                  # (a) PAUSED appears nowhere
+        assert "PAUSED" not in text and "paused" not in text.lower() and "ITEM 25" not in text
+    assert "NOT-SUPPLIED" in D.md(doc)
+
+
+def _strict(doc):
+    """Everything the decision and the validity read, i.e. the document minus the STRATEGIC report and the seeds' per-family tables."""
+    return {k: v for k, v in doc.items() if k not in ("STRATEGIC", "seeds", "families_note")}
+
+
+def _with_strategic(nums, rows):
+    import copy
+    n2 = copy.deepcopy(nums)
+    for s in n2:
+        for tag in ("dc_vs_k2_by_family", "dc_vs_k0_by_family"):
+            n2[s][tag]["STRATEGIC"] = D.strategic_entry(rows)
+    return n2
+
+
+def test_strategic_separated_worse_is_report_only_and_never_moves_the_decision(fam_mod, tmp_path):
+    """(b) a supplied strategic row separated WORSE: REPORT-ONLY, separated True in the JSON, visible in the md; outcome / per_seed / validity identical to the same input without it."""
+    doc, nums = e2e(fam_mod, tmp_path, k2dc=0.010, k2=0.040, k0=0.010)
+    worse = {"route_acc": {"delta": 0.3, "lo": 0.2, "hi": 0.4, "separated": True, "better": "lower", "n": 100}}
+    doc2 = D.build(_with_strategic(nums, worse), {"valid": True, "status": "HELD"})
+    st = doc2["seeds"]["0"]["dc_vs_k2_by_family"]["STRATEGIC"]
+    assert st["status"] == "REPORT-ONLY" and st["rows"]["route_acc"]["separated"] is True and st["rows"]["route_acc"]["separated_worse"] is True
+    assert doc2["STRATEGIC"]["status"] == "REPORT-ONLY" and doc2["STRATEGIC"]["per_seed"]["0"]["dc_vs_k2"]["separated_worse_rows"] == ["route_acc"]
+    m = D.md(doc2)
+    assert "STRATEGIC (report-only)" in m and "route_acc" in m and "WORSE" in m and "PAUSED" not in m
+    assert _strict(doc2) == _strict(doc) and doc2["outcome"] == doc["outcome"] == "SUPPORTED"
+
+
+def test_strategic_separated_better_cannot_rescue_a_failing_outcome(fam_mod, tmp_path):
+    """(c) a strategic row separated BETTER by a mile cannot turn an INCONCLUSIVE (K2DC separated worse than K0) into SUPPORTED."""
+    doc, nums = e2e(fam_mod, tmp_path, k2dc=0.010, k2=0.040, k0=0.002)
+    assert doc["outcome"] == "INCONCLUSIVE"
+    better = {"route_acc": {"delta": -9.0, "lo": -9.1, "hi": -8.9, "separated": True, "better": "lower", "n": 100}}
+    doc2 = D.build(_with_strategic(nums, better), {"valid": True, "status": "HELD"})
+    assert doc2["outcome"] == "INCONCLUSIVE" and _strict(doc2) == _strict(doc)
+    assert doc2["seeds"]["0"]["dc_vs_k2_by_family"]["STRATEGIC"]["separated_worse_rows"] == []
+
+
+def test_strategic_stamp_dict_carries_no_rows():
+    assert D.strategic_entry({"status": "PAUSED", "reason": "x"})["status"] == "NOT-SUPPLIED" and D.strategic_entry(None)["status"] == "NOT-SUPPLIED"
 
 
 def test_e2e_refuted_and_k2_vs_k2_reads_zeros(fam_mod, tmp_path):

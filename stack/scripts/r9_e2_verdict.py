@@ -12,7 +12,8 @@ GO iff, at EVERY inference seed, ALL FIVE clauses PASS (REFCV9_DESIGN 4.4, verba
                record is NOT-COMPUTABLE -- never a silent fall-back to the old point rule.  Banked verdicts produced under the old point rule are NOT re-scored.
   (c) S6c      K2 beats K0 (LOWER) on the planner's sidewalk rate on S6c-DEV (``rate``, or MAPSEL's ``map_compliance.S6c.arms.BASE.off_drivable.rate``; T1).
   (d) FAMILIES no four-family row is SEPARATED WORSE (K2 - K0, paired episode-cluster bootstrap over EPISODES; T1).  LONGITUDINAL / LATERAL / TACTICAL are
-               read row by row; STRATEGIC is PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): reported as PAUSED, never a pass, never omitted.
+               read row by row.  STRATEGIC is REPORT-ONLY (PI 2026-11-16, strategic switched back on): supplied rows are read and shown BESIDE
+               the rule and never enter (a)-(e); NOT-SUPPLIED when the input has none; never a pass, never omitted (PREREG_K2DC02CL section 1: the rule is unchanged).
                A required family with no rows is NOT-COMPUTABLE.
   (e) W4       a partial W4 preview: K2 vs its CAMERA-BLIND is separated BETTER on ``ade_m`` and each of the three families' primary row (T1).
 A clause that is NOT-COMPUTABLE (an input absent / non-finite / unaligned) is NO-GO -- never silently dropped.  NO-GO NAMES every failing clause and
@@ -29,7 +30,7 @@ INPUTS.json::
     {"k2_label": "K2", "k0_label": "K0",
      "seeds": {"0": {"eval_k2": p, "eval_k0": p, "s6c_k2": p, "s6c_k0": p, "families": p, "camblind": p, "box_paired": p},
                "1": {...}}}
-``families`` = ``{"rows": {"LONGITUDINAL": {row_id: row}, "LATERAL": {...}, "TACTICAL": {...}, "STRATEGIC": {...optional, ignored}}}``;
+``families`` = ``{"rows": {"LONGITUDINAL": {row_id: row}, "LATERAL": {...}, "TACTICAL": {...}, "STRATEGIC": {...optional, REPORT-ONLY, outside clause (d)}}}``;
 ``camblind`` = ``{"rows": {"ade_m": row, "LONGITUDINAL": row, "LATERAL": row, "TACTICAL": row}}`` (delta = K2 - CAMERA-BLIND).
 """
 from __future__ import annotations
@@ -44,8 +45,14 @@ from pathlib import Path
 SCHEMA = "r9e2-verdict-v1"
 MAP_KEY = "nf_swedge_prec_lv_5_20"
 FAMILIES = ("LONGITUDINAL", "LATERAL", "TACTICAL")
-STRATEGIC_PAUSED = ("PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high "
-                    "quality; reported PAUSED -- never a pass, never omitted, never extended to the other families.")
+STRATEGIC_REPORT_ONLY = ("REPORT-ONLY: the strategic layer was switched back on by the PI on 2026-11-16 and is reported in full; clause (d) was pre-registered over "
+                         "LONGITUDINAL / LATERAL / TACTICAL and stays exactly that (PREREG_K2DC02CL_2026-11-22 section 1, 'unchanged'), so STRATEGIC rows are shown "
+                         "BESIDE the rule and never enter clauses (a)-(e); never a pass, never omitted.")
+STRATEGIC_PRODUCER = ("taniteval/tools/openloop_suite.py:943 (_strategic_block: the route head vs the v2.1 route label under nav true / shuffled / zero; headline at :1140) "
+                      "and taniteval/tools/refcv3_arm.py:2646 (_navcomp_row)")
+STRATEGIC_NOT_SUPPLIED = ("NOT-SUPPLIED: the families input carried no STRATEGIC rows (never a pass, never omitted); the strategic numbers are computed by " + STRATEGIC_PRODUCER
+                          + " and are not yet paired {delta, lo, hi, separated, better} rows, so none reach this reader; reported BESIDE clause (d), outside it.")
+STRATEGIC_WORSE = "separated worse (report-only, outside clause (d))"
 CLAUSES = (("a", "MAP primary nf_swedge_prec_lv_5_20: K2 > K0 (point)"), ("b", "box AP@2 m head output no NMS: K2 not separated worse than K0 (paired, episodes)"),
            ("c", "planner sidewalk rate S6c-DEV: K2 < K0 (point)"), ("d", "no four-family row separated worse (paired, episodes)"),
            ("e", "W4 preview: K2 separated BETTER than camera-blind on ade_m + each family primary"))
@@ -143,6 +150,20 @@ def row_read(row, boot=2000, seed=0) -> dict:
     return d
 
 
+def strategic_report(sr) -> dict:
+    """STRATEGIC family: REPORT-ONLY (rows read with the SAME `row_read`, shown beside the rule, never in clause (d)) or NOT-SUPPLIED.  Only dict-valued entries are rows;
+    a stamp such as {"status": ..., "reason": ...} carries no rows and reads NOT-SUPPLIED."""
+    got = {k: v for k, v in sr.items() if isinstance(v, dict)} if isinstance(sr, dict) else {}
+    if not got:
+        return {"status": "NOT-SUPPLIED", "reason": STRATEGIC_NOT_SUPPLIED, "rows": {}}
+    out = {rid: row_read(r) for rid, r in got.items()}
+    worse = [rid for rid, v in out.items() if v.get("separated_worse")]
+    for rid in worse:
+        out[rid]["report_only_note"] = STRATEGIC_WORSE
+    return {"status": "REPORT-ONLY", "reason": STRATEGIC_REPORT_ONLY, "rows": out, "separated_worse_rows": worse,
+            "unreadable_rows": [rid for rid, v in out.items() if not v["ok"]]}
+
+
 def families_clause(doc) -> tuple[dict, dict]:
     """Clause (d) + the per-family report.  A required family with no rows is NOT-COMPUTABLE; any separated-worse row is FAIL."""
     rows = _dig(doc, "rows") or {}
@@ -163,13 +184,13 @@ def families_clause(doc) -> tuple[dict, dict]:
                 worse.append(f"{fam}/{rid}")
         rep[fam] = {"status": "FAIL" if any(v.get("separated_worse") for v in out.values()) else
                     ("NOT-COMPUTABLE" if any(not v["ok"] for v in out.values()) else "PASS"), "rows": out}
-    rep["STRATEGIC"] = {"status": "PAUSED", "reason": STRATEGIC_PAUSED, "rows": {}}
+    rep["STRATEGIC"] = strategic_report(rows.get("STRATEGIC") if isinstance(rows, dict) else None)
     if worse:
         c = _clause("d", "FAIL", "separated WORSE: " + ", ".join(worse), failing_rows=worse)
     elif missing or bad:
         c = _clause("d", "NOT-COMPUTABLE", "; ".join([f"family {m} has no rows" for m in missing] + bad), missing_families=missing, unreadable=bad)
     else:
-        c = _clause("d", "PASS", "no LONGITUDINAL / LATERAL / TACTICAL row separated worse (STRATEGIC PAUSED, not a pass)")
+        c = _clause("d", "PASS", "no LONGITUDINAL / LATERAL / TACTICAL row separated worse (STRATEGIC is reported beside, outside this clause; never a pass)")
     return c, rep
 
 
@@ -229,7 +250,7 @@ def build(inputs: dict) -> dict:
             "clauses": clauses, "four_families": {s: per[s]["families"] for s in ("0", "1")}, "w4_rows": {s: per[s]["w4_rows"] for s in ("0", "1")},
             "n": {s: per[s]["n"] for s in ("0", "1")}, "identical_inputs_across_seeds_note": {s: per[s]["identical_inputs"] for s in ("0", "1")},
             "windows": "DEV (eval139 even half, DEV_HOLD_SPLIT.json); HOLD is never read here", "labels": inputs.get("k2_label", "K2") + " vs " + inputs.get("k0_label", "K0"),
-            "strategic": STRATEGIC_PAUSED,
+            "strategic": STRATEGIC_REPORT_ONLY,
             "caveat": "H-ESTIM-SEED-1: the paired interval answers another draw of EPISODES, not another TRAINING run; K2 and K0 are ONE training run each."}
 
 
@@ -245,6 +266,13 @@ def render_md(v: dict) -> str:
             L.append(f"* ({c['id']}) {c['per_seed'][s]['status']}: {c['per_seed'][s]['detail']}")
         for fam, r in v["four_families"][s].items():
             L.append(f"  * family {fam}: {r['status']}" + (f" -- {r['reason']}" if r.get("reason") else ""))
+            if fam == "STRATEGIC":
+                for rid, rr in r["rows"].items():
+                    if not rr.get("ok"):
+                        L.append(f"    * STRATEGIC/{rid}: unreadable ({rr.get('why')})")
+                    else:
+                        tag = STRATEGIC_WORSE if rr["separated_worse"] else ("separated better (report-only)" if rr["separated_better"] else "not separated (report-only)")
+                        L.append(f"    * STRATEGIC/{rid}: delta={rr['delta']:+.6g} CI [{rr['lo']:.6g}, {rr['hi']:.6g}] separated={rr['separated']} -- {tag}")
     L += ["", f"STRATEGIC: {v['strategic']}", f"Windows: {v['windows']}", f"Caveat: {v['caveat']}"]
     return "\n".join(L) + "\n"
 
