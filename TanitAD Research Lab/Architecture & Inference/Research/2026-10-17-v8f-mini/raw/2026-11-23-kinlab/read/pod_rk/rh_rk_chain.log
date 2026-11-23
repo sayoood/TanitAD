@@ -1,0 +1,39 @@
+2026-11-23T06:12:35Z chain start commit=1a8b11a1 readout=causal_g1x (decl token causal_g1x) arms RK_s0 RK_s1 (--dagger-p 0.1 --dagger-label kin_v1 --dagger-label-cache /root/rollhist/kin_cache/s<K>_kin_v1.npz, same banks)
+2026-11-23T06:12:35Z step wait_add123
+2026-11-23T06:12:35Z ADD123 ended: ZZ ADD123 DONE ZZ
+2026-11-23T06:12:35Z validate tree_prep
+2026-11-23T06:12:35Z validate gsuite
+gsuite_result_rk.json: new 1a8b11a1abd50c09636da8b7425e97573cdf1d04 n_regressions 0 new_test_failures 0 missing 0 -> VALID
+2026-11-23T06:12:35Z G-SUITE at 1a8b11a1 passed earlier: kept (rk_gate_record.py re-checks it at mint)
+2026-11-23T06:12:35Z validate caches
+cache /root/rollhist/kin_cache/s0_kin_v1.npz sha256 c882733d15c2f6214d72a80b0ecec5337846b5adeb146c1a215e82924ca094ea; census 0.6398 (953301 of 1490036), bar 0.5
+ZZ RK-CACHE-PRECHECK OK RK_s0
+cache /root/rollhist/kin_cache/s1_kin_v1.npz sha256 5a99afdcf7ba48b19946cd2fa9fe26e1112afa894d7e10f19f648173b928c4dd; census 0.6397 (945608 of 1478090), bar 0.5
+ZZ RK-CACHE-PRECHECK OK RK_s1
+2026-11-23T06:12:36Z validate argv
+s0: RK argv = RL argv with [('--out', '/root/rollhist/runs/RL_s0/train', '/root/rollhist/runs/RK_s0/train'), ('--dagger-label', 'speed_v1', 'kin_v1')] and the appended ['--dagger-label-cache', '/root/rollhist/kin_cache/s0_kin_v1.npz']; 66 tokens; sha256 b33c3e9ce24e95d94ddb2b5f854f5b0c8ccfff885d686ee7e8269ac1e6dd27e5
+s1: RK argv = RL argv with [('--out', '/root/rollhist/runs/RL_s1/train', '/root/rollhist/runs/RK_s1/train'), ('--dagger-label', 'speed_v1', 'kin_v1')] and the appended ['--dagger-label-cache', '/root/rollhist/kin_cache/s1_kin_v1.npz']; 66 tokens; sha256 ef02f855601ffd876ddd685f8eeaea37b5c9c360008ecaea216221faa45bc9fa
+ZZ RK-SHOW PASS
+2026-11-23T06:12:36Z waiting for the GPU queue lock
+2026-11-23T06:33:55Z GPU queue lock held to the end of the chain
+2026-11-23T06:33:55Z step tree
+2026-11-23T06:33:56Z step inputs
+2026-11-23T06:33:56Z step disk0
+2026-11-23T06:33:56Z free disk 41 GB
+2026-11-23T06:33:56Z step render
+2026-11-23T06:33:56Z free disk 41 GB
+2026-11-23T06:33:56Z step RK_s0
+2026-11-23T06:33:56Z arm RK_s0
+06:33:58 selfcheck RK_s0
+census: relabelled share of ok records 0.6398 (953301 of 1490036), bar 0.5
+06:36:20 train RK_s0
+ZZ ARM RK_s0 DONE ZZ
+2026-11-23T06:50:32Z free disk 41 GB
+2026-11-23T06:50:32Z step RK_s1
+2026-11-23T06:50:32Z arm RK_s1
+06:50:34 selfcheck RK_s1
+census: relabelled share of ok records 0.6397 (945608 of 1478090), bar 0.5
+06:52:57 train RK_s1
+ZZ ARM RK_s1 DONE ZZ
+2026-11-23T07:07:05Z free disk 41 GB at the end
+ZZ ROLLHIST-RK DONE ZZ

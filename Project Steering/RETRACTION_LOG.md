@@ -19042,3 +19042,16 @@ and prints both readings for any cell it moves; `scorerft_read.py` calls the sha
 every metric nobody named, including ones added after it was written (the distance-keeping metrics came later than the rule). Same family
 as "a flag whose default disables it". Before a new metric enters any guard: name its direction explicitly in the rule and add the
 RED arm; a rule that returns a direction for an unknown name should be treated as a defect, not a convenience.
+
+## 2026-11-23 — R-KINCACHE-COUNT-1: the 1a8b11a1 commit message said "test_v8f_kinlab.py 59 passed (MM re-run)" (Master Mind)
+
+**What was wrong:** the message of commit 1a8b11a1 (`--dagger-label-cache`, branch agent/v8f-rollhist-cdb-20261120) reads "with
+test_v8f_kinlab.py 59 passed (MM re-run)". That file holds 21 test functions, 35 test items with its parametrisations, and every
+log of it reads 35 (`kc_test_v8f_kinlab.log` 35 passed, `kl3_tests_b.log` 35 passed, `kt_nb_test_v8f_kinlab.log` 35 passed).
+59 is the sum of test_v8f_kincache.py (24) and test_v8f_kinlab.py (35). Found by the MM while checking the KINTB hand-back.
+
+**What is true:** test_v8f_kinlab.py passed 35 of 35 at 1a8b11a1 and at fde8b716. No verdict rests on the count. The KINTB commit
+fde8b716 states it in its message.
+
+**Class / rule: A SUM QUOTED AS ONE FILE'S COUNT.** A pass count copied into a message must be read off that file's own log line,
+never added up across files in the head. Same family as "a number carries its arm and its artifact path".
