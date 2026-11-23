@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -258,46 +259,166 @@ def test_all_four_families_are_always_reported(tmp_path):
     assert "distance_keeping_not_worse" in {s["id"] for s in v["bars"]["FAM-2"]["subs"]}
 
 
-def assert_strategic_paused(v):
+def assert_strategic_report_only(v, supplied):
+    """STRATEGIC is REPORT-ONLY (rows supplied) or NOT-SUPPLIED (none) -- never a pass, never omitted, never PAUSED."""
     for s in ("0", "1"):
         st = v["four_families"][s]["STRATEGIC"]
-        assert st["status"] == "PAUSED" and "ITEM 25" in st["reason"]
-    assert v["strategic"].startswith("PAUSED")
+        assert st["status"] == ("REPORT-ONLY" if supplied else "NOT-SUPPLIED") and st["reason"]
+    assert v["strategic"].startswith("REPORT-ONLY")
 
 
-def test_strategic_is_paused_never_pass_never_omitted(tmp_path):
+def _all_values(o):
+    if isinstance(o, dict):
+        for x in o.values():
+            yield from _all_values(x)
+    elif isinstance(o, list):
+        for x in o:
+            yield from _all_values(x)
+    else:
+        yield o
+
+
+def test_strategic_no_rows_is_not_supplied_never_pass_never_omitted(tmp_path):
+    rc, v, md = run(tmp_path, good())
+    assert_strategic_report_only(v, False)
+    assert "STRATEGIC: REPORT-ONLY" in md
+    for s in ("0", "1"):
+        assert "openloop_suite.py" in v["four_families"][s]["STRATEGIC"]["reason"]                            # the producer is named
+
+
+def test_strategic_rows_are_read_beside_fam1_and_never_change_it(tmp_path):
     D = good()
-    both(D, "families", lambda d: d["rows"].__setitem__("STRATEGIC", {"x": prec(-9.0, True, "lower")}))      # a supplied strategic row can never turn the pause into a pass
+    both(D, "families", lambda d: d["rows"].__setitem__("STRATEGIC", {"route_acc": prec(0.5, True, "lower"), "route_zero": prec(-0.1, True, "lower")}))
     rc, v, md = run(tmp_path, D)
-    assert_strategic_paused(v)
-    assert "STRATEGIC: PAUSED" in md
+    assert_strategic_report_only(v, True)
+    assert rc == 0 and v["verdict"] == "PASS" and v["bars"]["FAM-1"]["status"] == "PASS"                      # a STRATEGIC row separated worse never changes FAM-1
+    for s in ("0", "1"):
+        st = v["four_families"][s]["STRATEGIC"]
+        assert st["rows"]["route_acc"]["ok"] and st["separated_worse_rows"] == ["route_acc"] and "report_only_note" in st["rows"]["route_acc"]
+        assert "estimator" in st["rows"]["route_acc"] and st["status"] != "PASS"
 
 
-def test_strategic_marked_pass_turns_the_check_red(tmp_path):
-    rc, v, _ = run(tmp_path, good())
-    bad = copy.deepcopy(v)
-    bad["four_families"]["0"]["STRATEGIC"]["status"] = "PASS"
-    with pytest.raises(AssertionError):
-        assert_strategic_paused(bad)
-    bad = copy.deepcopy(v)
-    del bad["four_families"]["1"]["STRATEGIC"]
-    with pytest.raises(KeyError):
-        assert_strategic_paused(bad)
+def test_no_emitted_value_is_PAUSED(tmp_path):
+    for D in (good(), _mk(lambda d: d["rows"].__setitem__("STRATEGIC", {"r": prec(0.5, True, "lower")}))):
+        (tmp_path / str(id(D))).mkdir()
+        rc, v, md = run(tmp_path / str(id(D)), D)
+        assert not [x for x in _all_values(v) if isinstance(x, str) and x.strip() == "PAUSED" or (isinstance(x, str) and x.startswith("PAUSED"))]
+        assert "STRATEGIC: PAUSED" not in md
 
 
-def test_strategic_pass_in_the_judge_would_be_caught(tmp_path, monkeypatch):
-    """Mutate the JUDGE: a families_report that marks STRATEGIC PASS must make the pause check RED."""
-    orig = V.families_report
-
-    def mutated(fdoc):
-        r = orig(fdoc)
-        r["STRATEGIC"] = {"status": "PASS", "reason": "mutant", "rows": {}}
-        return r
-
-    monkeypatch.setattr(V, "families_report", mutated)
+def test_strategic_marked_pass_in_the_judge_would_be_caught(tmp_path, monkeypatch):
+    """Mutate the JUDGE: a strategic_report that marks STRATEGIC PASS must make the report-only check RED."""
+    monkeypatch.setattr(V, "strategic_report", lambda sr: {"status": "PASS", "reason": "mutant", "rows": {}})
     rc, v, _ = run(tmp_path, good())
     with pytest.raises(AssertionError):
-        assert_strategic_paused(v)
+        assert_strategic_report_only(v, False)
+
+
+# ------------------------------------------------------------------------------------------------------------- (4b) FAM-1 PI margins (seal amendment 2026-11-23)
+MARGIN_ROWS = {"LAT_cross_mae_m": ("LATERAL", 0.0074), "LAT_cross_abs_final_m": ("LATERAL", 0.0165), "LON_dk_headway_abs_err_m": ("LONGITUDINAL", 0.0416)}
+
+
+def _mk(fn):
+    D = good()
+    both(D, "families", fn)
+    return D
+
+
+def _margin_case(tmp_path, rid, fam, deltas, sep=True, monkeypatch=None):
+    """deltas = {seed: paired point delta (positive = worse, `lower` is better)}; the row is added to each seed's families input."""
+    D = good()
+    for s in ("0", "1"):
+        D[s]["families"]["rows"][fam][rid] = prec(deltas[s], sep, "lower")
+    return run(tmp_path, D)
+
+
+@pytest.mark.parametrize("rid", sorted(MARGIN_ROWS))
+def test_margin_row_within_at_and_beyond_the_margin(tmp_path, rid):
+    fam, m = MARGIN_ROWS[rid]
+    for name, delta, want in (("within", m * 0.9, "PASS"), ("at", m, "PASS"), ("beyond", m * 1.1, "FAIL")):
+        (tmp_path / name).mkdir()
+        rc, v, md = _margin_case(tmp_path / name, rid, fam, {"0": delta, "1": delta})
+        assert v["bars"]["FAM-1"]["status"] == want, (rid, name, delta)
+        row = v["four_families"]["0"][fam]["rows"][rid]
+        if want == "PASS":
+            assert row["margin"] == m and row["within_pi_margin"] is True and "D-R9-E2-ACCEPT-D" in row["margin_detail"]        # never silent
+            assert "D-R9-E2-ACCEPT-D" in v["four_families"]["0"][fam]["reason"]
+        else:
+            assert row["within_pi_margin"] is False and v["verdict"] == "FAIL" and [f["id"] for f in v["failing_bars"]] == ["FAM-1"]
+
+
+def test_literal_amounts_0070_0074_0080(tmp_path):
+    for name, delta, want in (("a", 0.0070, "PASS"), ("b", 0.0074, "PASS"), ("c", 0.0080, "FAIL")):
+        (tmp_path / name).mkdir()
+        rc, v, _ = _margin_case(tmp_path / name, "LAT_cross_mae_m", "LATERAL", {"0": delta, "1": delta})
+        assert v["bars"]["FAM-1"]["status"] == want, delta
+
+
+def test_non_margin_row_separated_worse_by_0_0001_fails(tmp_path):
+    for name, fam, rid in (("ade", "LONGITUDINAL", "ade_m"), ("tac", "TACTICAL", "decision_acc"), ("lat", "LATERAL", "curv_err")):
+        (tmp_path / name).mkdir()
+        D = good()
+        both(D, "families", lambda d: d["rows"][fam].__setitem__(rid, prec(0.0001 if rid != "decision_acc" else -0.0001, True, "higher" if rid == "decision_acc" else "lower")))
+        rc, v, _ = run(tmp_path / name, D)
+        assert v["bars"]["FAM-1"]["status"] == "FAIL", rid
+        assert "within_pi_margin" not in v["four_families"]["0"][fam]["rows"][rid]
+
+
+def test_margin_row_not_separated_passes_without_the_margin_note(tmp_path):
+    rc, v, _ = _margin_case(tmp_path, "LAT_cross_mae_m", "LATERAL", {"0": 0.5, "1": 0.5}, sep=False)
+    assert v["bars"]["FAM-1"]["status"] == "PASS"
+    row = v["four_families"]["0"]["LATERAL"]["rows"]["LAT_cross_mae_m"]
+    assert "margin" not in row and "within_pi_margin" not in row and "reason" not in v["four_families"]["0"]["LATERAL"]
+
+
+def test_margin_row_separated_better_is_a_plain_pass(tmp_path):
+    rc, v, _ = _margin_case(tmp_path, "LAT_cross_mae_m", "LATERAL", {"0": -0.3, "1": -0.3})
+    assert v["bars"]["FAM-1"]["status"] == "PASS" and "margin" not in v["four_families"]["0"]["LATERAL"]["rows"]["LAT_cross_mae_m"]
+
+
+def test_margin_is_judged_per_seed(tmp_path):
+    rc, v, _ = _margin_case(tmp_path, "LAT_cross_mae_m", "LATERAL", {"0": 0.0070, "1": 0.0080})
+    sub = v["bars"]["FAM-1"]["subs"][0]
+    assert sub["per_seed"]["0"]["status"] == "PASS" and sub["per_seed"]["1"]["status"] == "FAIL" and sub["seeds_not_pass"] == ["1"]
+    assert v["bars"]["FAM-1"]["status"] == "FAIL"
+
+
+def test_the_margin_gives_fam2_distance_keeping_nothing(tmp_path):
+    D = good()
+    both(D, "distkeep", lambda d: d["rows"]["LONGITUDINAL"].__setitem__("LON_dk_min_ttc_s", prec(-0.0001, True, "higher")))
+    rc, v, _ = run(tmp_path, D)
+    assert v["bars"]["FAM-2"]["status"] == "FAIL" and not (set(V.DK_ROWS) & set(V.FAM1_PI_MARGINS))
+    assert v["bars"]["FAM-1"]["status"] == "PASS"
+
+
+def test_a_margin_row_in_fam2_distkeep_gets_no_margin(tmp_path):
+    D = good()
+    both(D, "distkeep", lambda d: d["rows"]["LONGITUDINAL"].__setitem__("LON_dk_headway_min_m", prec(-0.0001, True, "higher")))
+    rc, v, _ = run(tmp_path, D)
+    assert v["bars"]["FAM-2"]["status"] == "FAIL"
+
+
+def test_margin_constants_equal_the_seal_file():
+    seal = PR / "e3" / "SEAL_DECISIONS_PRE_DATA_2026-11-08.md"
+    if not seal.is_file():
+        pytest.skip("seal decisions not in this checkout")
+    txt = seal.read_text(encoding="utf-8")
+    sec = txt.split("## PI amendment, 2026-11-23", 1)[1]
+    got = {m.group(1): float(m.group(2)) for m in re.finditer(r"^\s*\*\s+`(\w+)`:\s*\+(\d+\.\d+) m", sec, re.M)}
+    assert got == V.FAM1_PI_MARGINS, (f"FAM1_PI_MARGINS in {SCRIPT.name} = {V.FAM1_PI_MARGINS} but {seal.name} amendment says {got}: "
+                                       "the sealed text is the spec; fix the constant, never the seal")
+    assert len(got) == 3
+
+
+def test_mutation_emptied_margins_turn_the_within_margin_case_red(tmp_path, monkeypatch):
+    """Wiring proof: with the margin constant emptied, the 0.0070 case that PASSES must FAIL -- so the constant reaches the judged path."""
+    (tmp_path / "ok").mkdir()
+    rc, v, _ = _margin_case(tmp_path / "ok", "LAT_cross_mae_m", "LATERAL", {"0": 0.0070, "1": 0.0070})
+    assert v["bars"]["FAM-1"]["status"] == "PASS"
+    monkeypatch.setattr(V, "FAM1_PI_MARGINS", {})
+    (tmp_path / "mut").mkdir()
+    rc, v, _ = _margin_case(tmp_path / "mut", "LAT_cross_mae_m", "LATERAL", {"0": 0.0070, "1": 0.0070})
+    assert v["bars"]["FAM-1"]["status"] == "FAIL"
 
 
 # ------------------------------------------------------------------------------------------------------------- (5) refusals: rc 2, no verdict

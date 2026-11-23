@@ -13,8 +13,8 @@ PASS = every bold section-5 bar (MAP-1, MAP-2, MAP-3, BOX-1, BOX-2, BOX-3, FAM-1
 Verdicts: PASS | FAIL (a bar missed, reported as written; the section-5.4 lever is named) | INCOMPLETE (no bar failed but one is NOT-COMPUTABLE: never a pass) |
 VOID (K-BASE false: "the bars are void").  K-BASE needs the table sha256 match AND the forward re-fit reproducing it (seal decision: the hash alone does not close it).
 
-FOUR FAMILIES (CLAUDE.md binding): LONGITUDINAL (incl. distance keeping), LATERAL, TACTICAL read row by row; STRATEGIC is PAUSED (PI 2026-09-19, ITEM 25) --
-reported PAUSED, never a pass, never omitted, never extended to the other families.  A family that cannot be computed is reported per family with the reason and n.
+FOUR FAMILIES (CLAUDE.md binding): LONGITUDINAL (incl. distance keeping), LATERAL, TACTICAL read row by row; STRATEGIC is REPORT-ONLY (PI 2026-11-16: "strategic is not paused
+anymore"; the earlier PAUSED stamp of 2026-09-19 ITEM 25 is superseded) -- rows shown BESIDE FAM-1, never a pass, never omitted.  A family that cannot be computed is reported per family with the reason and n.
 
 EVERY NUMBER carries estimator, tier, split, inference seed and the artifact path + sha256 it came from.  REFUSED (rc 2, no verdict) on: a DEV input (or any split that
 is not the bar's own), an input with no split / tier stamp, a planner input whose ``infer_seed`` is not the seed slot it sits in, one file used for both seeds, a
@@ -59,8 +59,18 @@ INPUT_KEYS = {"refcv9_label", "reference_label", "scored_ema_step", "kbase", "pe
 PERC_KEYS = {"eval_r9", "eval_r8", "map_paired"}
 SEED_KEYS = {"s6c_r9", "compliance", "families", "distkeep", "w12", "camblind", "egofloor"}
 FAMILIES = ("LONGITUDINAL", "LATERAL", "TACTICAL")
-STRATEGIC_PAUSED = ("PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high quality; "
-                    "reported PAUSED -- never a pass, never omitted, never extended to the other families. (Design 5.2 FAM-1 also states STRATEGIC n = 0: no route label.)")
+STRATEGIC_REPORT_ONLY = ("REPORT-ONLY: the strategic layer was switched back on by the PI on 2026-11-16 and is reported in full; FAM-1 is the bar of REFCV9_DESIGN section 5, "
+                         "sealed over LONGITUDINAL / LATERAL / TACTICAL / ade_m (STRATEGIC was outside it), so STRATEGIC rows are shown BESIDE FAM-1 and never enter it; "
+                         "never a pass, never omitted.")
+STRATEGIC_PRODUCER = ("taniteval/tools/openloop_suite.py:943 (_strategic_block: the route head vs the v2.1 route label under nav true / shuffled / zero; headline at :1140) "
+                      "and taniteval/tools/refcv3_arm.py:2646 (_navcomp_row)")
+STRATEGIC_NOT_SUPPLIED = ("NOT-SUPPLIED: the families input carried no STRATEGIC rows (never a pass, never omitted); the strategic numbers are computed by " + STRATEGIC_PRODUCER
+                          + " and are not yet paired {delta, lo, hi, separated, better} rows, so none reach this reader; reported BESIDE FAM-1, outside it.")
+STRATEGIC_WORSE = "separated worse (report-only, outside FAM-1)"
+#: PI amendment 2026-11-23 (D-R9-E2-ACCEPT-D): the amount of paired point delta the PI accepted at E2 for three FAM-1 rows.  A row SEPARATED WORSE with |delta| <= margin
+#: (inclusive) does not fail FAM-1; a larger delta fails.  Spec: TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/e3/
+#: SEAL_DECISIONS_PRE_DATA_2026-11-08.md, section "PI amendment, 2026-11-23: FAM-1 carries the accepted E2 cost as margins".  No other bar (FAM-2 distance keeping included) has a margin.
+FAM1_PI_MARGINS = {"LAT_cross_mae_m": 0.0074, "LAT_cross_abs_final_m": 0.0165, "LON_dk_headway_abs_err_m": 0.0416}
 CAVEAT = ("H-ESTIM-SEED-1: the paired interval answers another draw of EPISODES, not another TRAINING run; ONE training run per arm -- training variance at full length "
           "not estimated (design 5.3). Perception = T0 label level; planner = T1 self-action open loop on logged eval139 frames (not driving performance).")
 DK_ROWS = ("LON_dk_headway_min_m", "LON_dk_time_gap_min_s", "LON_dk_min_ttc_s")             # headway / time-gap / TTC (higher = more distance kept)
@@ -99,7 +109,8 @@ BARS: dict = {
               "lever": "de-dup not trained in: in-loss BEV-NMS (B3') if not in; more DN groups (5.4)", "subs": [{"id": "bpo_le", "kind": "le", "value": 1.25, "key": "boxes_per_object_noNMS"}]},
     "BOX-4": {"required": False, "planner": False, "split": "hold", "tier": "T0", "rule": "(beside, never a bar) TP class accuracy >= 0.822 - its CI half-width; person->rider confusion reported",
               "lever": "-", "subs": [{"id": "tp_class_acc_beside", "kind": "beside", "value": 0.822, "key": "tp_class_acc"}]},
-    "FAM-1": {"required": True, "planner": True, "split": "all", "tier": "T1", "rule": "no registered LONGITUDINAL / LATERAL / TACTICAL / ade_m row separated worse than refcv8 at seeds 0 and 1; STRATEGIC PAUSED",
+    "FAM-1": {"required": True, "planner": True, "split": "all", "tier": "T1", "rule": "no registered LONGITUDINAL / LATERAL / TACTICAL / ade_m row separated worse than refcv8 at seeds 0 and 1, except the three PI-accepted margins on the paired point delta (|delta| <= margin, inclusive, per seed): "
+                                                                                + ", ".join(f"{k} {v} m" for k, v in FAM1_PI_MARGINS.items()) + " (PI amendment 2026-11-23, D-R9-E2-ACCEPT-D); STRATEGIC is report-only, beside FAM-1",
               "lever": "name the row; attribute with the trace-fixed method (MAPFT K-PLAN-ID) and E2 K0 vs K2 (5.4)",
               "subs": [{"id": "no_row_separated_worse", "kind": "not_sep_worse"}]},
     "FAM-2": {"required": True, "planner": True, "split": "hold", "tier": "T1", "rule": "MAP-COMPLIANCE (off-drivable, edge contact, lane crossing vs GT) each separated better on S6c-HOLD; "
@@ -330,6 +341,35 @@ def _rows_of(doc):
     return r if isinstance(r, dict) else {}
 
 
+def strategic_report(sr) -> dict:
+    """STRATEGIC family: REPORT-ONLY (dict-valued rows read with the SAME `row_read`, shown beside FAM-1, never inside it) or NOT-SUPPLIED.  A stamp such as
+    {"status": ..., "reason": ...} is not a row (its values are not dicts) and reads NOT-SUPPLIED."""
+    got = {k: v for k, v in sr.items() if isinstance(v, dict)} if isinstance(sr, dict) else {}
+    if not got:
+        return {"status": "NOT-SUPPLIED", "reason": STRATEGIC_NOT_SUPPLIED, "rows": {}}
+    out = {rid: row_read(r, None, f"families.STRATEGIC.{rid}") for rid, r in got.items()}
+    worse = [rid for rid, v in out.items() if v.get("separated_worse")]
+    for rid in worse:
+        out[rid]["report_only_note"] = STRATEGIC_WORSE
+    return {"status": "REPORT-ONLY", "reason": STRATEGIC_REPORT_ONLY, "rows": out, "separated_worse_rows": worse,
+            "unreadable_rows": [rid for rid, v in out.items() if not v["ok"]]}
+
+
+def _apply_fam1_margin(rid, rr):
+    """FAM-1 PI margin: a separated-worse row with |delta| <= margin is forgiven, visibly.  Direction comes from `row_read`; the magnitude is abs(delta)."""
+    rr["forgiven"] = False
+    m = FAM1_PI_MARGINS.get(rid)
+    if m is None or not rr.get("ok") or not rr.get("separated_worse"):
+        return rr
+    within = abs(rr["delta"]) <= m
+    rr["margin"] = m
+    rr["within_pi_margin"] = within
+    rr["margin_detail"] = (f"{rid}: separated worse, |delta| {abs(rr['delta']):.6g} {'<=' if within else '>'} PI margin {m} m "
+                           f"({'FORGIVEN' if within else 'EXCEEDED -> FAIL'}; PI amendment 2026-11-23, D-R9-E2-ACCEPT-D)")
+    rr["forgiven"] = within
+    return rr
+
+
 def families_report(fdoc):
     rows = _rows_of(fdoc)
     rep = {}
@@ -338,10 +378,13 @@ def families_report(fdoc):
         if not isinstance(fr, dict) or not fr:
             rep[fam] = {"status": "NOT-COMPUTABLE", "reason": "no rows for this family in the input", "n_rows": 0, "rows": {}}
             continue
-        rr = {rid: row_read(r, None, f"families.{fam}.{rid}") for rid, r in fr.items()}
-        rep[fam] = {"status": "FAIL" if any(v.get("separated_worse") for v in rr.values()) else ("NOT-COMPUTABLE" if any(not v["ok"] for v in rr.values()) else "PASS"),
-                    "n_rows": len(rr), "rows": rr}
-    rep["STRATEGIC"] = {"status": "PAUSED", "reason": STRATEGIC_PAUSED, "rows": {}}
+        rr = {rid: _apply_fam1_margin(rid, row_read(r, None, f"families.{fam}.{rid}")) for rid, r in fr.items()}
+        fails = [k for k, v in rr.items() if v.get("separated_worse") and not v.get("forgiven")]
+        rep[fam] = {"status": "FAIL" if fails else ("NOT-COMPUTABLE" if any(not v["ok"] for v in rr.values()) else "PASS"), "n_rows": len(rr), "rows": rr}
+        forgiven = [k for k, v in rr.items() if v.get("forgiven")]
+        if forgiven:
+            rep[fam]["reason"] = "; ".join(rr[k]["margin_detail"] for k in forgiven)
+    rep["STRATEGIC"] = strategic_report(rows.get("STRATEGIC"))
     return rep
 
 
@@ -373,7 +416,7 @@ def planner_bars(seed: str, docs: dict) -> tuple[dict, dict]:
                                  P("compliance"), f"compliance.rows.{sub['key']}"))
     out["FAM-2"] = subs
     # FAM-1 + the four-family report
-    famrep = families_report(fam) if fam is not None else {f: {"status": "NOT-COMPUTABLE", "reason": "families input absent", "n_rows": 0, "rows": {}} for f in FAMILIES} | {"STRATEGIC": {"status": "PAUSED", "reason": STRATEGIC_PAUSED, "rows": {}}}
+    famrep = families_report(fam) if fam is not None else {f: {"status": "NOT-COMPUTABLE", "reason": "families input absent", "n_rows": 0, "rows": {}} for f in FAMILIES} | {"STRATEGIC": strategic_report(None)}
     ade = next((r for f in FAMILIES for rid, r in (_rows_of(fam).get(f) or {}).items() if rid == "ade_m"), None) if fam is not None else None
     parts = []
     for f in FAMILIES:
@@ -466,7 +509,7 @@ def build(inputs: dict) -> dict:
     nc = [b for b, v in req.items() if v["status"] == "NOT-COMPUTABLE"]
     verdict = "VOID" if kstat == "FALSE" else ("FAIL" if failing else ("INCOMPLETE" if nc or kstat == "OPEN" else "PASS"))
     return {"schema": SCHEMA, "verdict": verdict, "k_base": kstat, "failing_bars": [{"id": b, "next_lever": bars[b]["next_lever"]} for b in failing],
-            "not_computable_bars": nc, "bars": bars, "four_families": famrep, "strategic": STRATEGIC_PAUSED,
+            "not_computable_bars": nc, "bars": bars, "four_families": famrep, "strategic": STRATEGIC_REPORT_ONLY,
             "labels": f"{inputs.get('refcv9_label', 'refcv9')} (EMA-{SCORED_EMA_STEP}) vs {inputs.get('reference_label', 'refcv8')}",
             "split_policy": "perception, map and S6c bars on HOLD (eval139 odd half); four families and W1/W2/W4/W5 on all of eval139 (design 5.1); a DEV input is refused",
             "seeds": "planner bars at inference seeds 0 AND 1 (both must hold); perception read once (deterministic)", "estimator": "paired episode-cluster bootstrap B 2000 seed 0 over EPISODES (taniteval/ci.py); never overlapping_holdout_se",
