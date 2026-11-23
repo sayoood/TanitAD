@@ -2300,6 +2300,22 @@ def judge_rank_audit(calls: list, args, max_calls: int = 3) -> tuple:
     return reasons, det
 
 
+def _pdm_subscores(res, names: dict) -> dict:
+    """NAVSIM's pdm_score result -> {sub-score name: value}.  navsim 3e8291b (the pod) returns a PDMResults DATACLASS; other versions a one-row DataFrame (SFTT gate 2,
+    2026-11-23: `.iloc[0]` on the dataclass raised AttributeError, so L5 never compared a label)."""
+    if hasattr(res, "iloc"):
+        row = res.iloc[0]
+        return {nm: float(row[nm]) for nm in names.values()}
+    return {nm: float(getattr(res, nm)) for nm in names.values()}
+
+
+def identity_diff(navsim_value, label_value, label_dtype) -> float:
+    """|NAVSIM - label| at the LABEL's storage precision: NAVSIM's value (clipped to [0, 1]) is cast to the label array's dtype first.  MEASURED 2026-11-23 (l5probe, pod):
+    the only difference over 8 tokens x 6 sub-scores was ep 0.9281340780250414 (float64) vs the label 0.9281340837478638 == float32(NAVSIM) EXACTLY: the labeller stores
+    float32, so a float64 comparison at 1e-9 can never hold, and the identity is exact at float32."""
+    return abs(float(np.asarray(np.clip(float(navsim_value), 0.0, 1.0), dtype=label_dtype)) - float(label_value))
+
+
 def harness_identity_facts(cap, n_tokens: int = 8) -> dict:
     """L5 (DESIGN 3.3; closes the 1.5 UNVERIFIED): for up to 8 smoke tokens, the labeller's six labels of proposal 0 against NAVSIM's OWN `pdm_score` on the same pose array and the same cached parts.  Pod-only (needs
     NAVSIM and the D9 metric cache): a host without them returns {"ran": False, "why": ...}, which the judge FAILS (unproved).  The submits and the collected labels come from the SMOKE capture (`cap.lab_submits`)."""
@@ -2316,7 +2332,7 @@ def harness_identity_facts(cap, n_tokens: int = 8) -> dict:
     except Exception as e:                                                                    # noqa: BLE001
         return {"ran": False, "why": f"NAVSIM is not importable here ({type(e).__name__}: {e})"}
     root = (cap.args.metric_cache,)
-    worst, n = 0.0, 0
+    worst, worst64, n, diffs, dts = 0.0, 0.0, 0, [], set()
     names = {"nc": "no_at_fault_collisions", "dac": "drivable_area_compliance", "ep": "ego_progress", "ttc": "time_to_collision_within_bound", "c": "comfort", "ddc": "driving_direction_compliance"}
     try:
         for sb in subs[:n_tokens]:
@@ -2324,13 +2340,19 @@ def harness_identity_facts(cap, n_tokens: int = 8) -> dict:
             parts = OLm.load_parts(OLm.parts_path(root[0], meta["log_name"], meta["token"], meta.get("aug")))
             mc = NS(trajectory=parts[0], ego_state=parts[1], observation=parts[2], centerline=parts[3], route_lane_ids=parts[4], drivable_area_map=parts[5])
             plan8 = PT.executed_plans8(np.asarray(prop0)[None], repair=True)[0]
-            row = pdm_score(mc, Trajectory(np.asarray(plan8, dtype=np.float32), S["samp8"]), S["samp"], S["sim"], S["scorer"]).iloc[0]
+            row = _pdm_subscores(pdm_score(mc, Trajectory(np.asarray(plan8, dtype=np.float32), S["samp8"]), S["samp"], S["sim"], S["scorer"]), names)
+            lab_dt = np.asarray(lab0).dtype
+            dts.add(str(lab_dt))
             for k, c in enumerate(OLm.COMPONENTS):
-                worst = max(worst, abs(float(np.clip(row[names[c]], 0.0, 1.0)) - float(lab0[k])))
+                dk = identity_diff(row[names[c]], lab0[k], lab_dt)
+                worst = max(worst, dk)
+                worst64 = max(worst64, abs(float(np.clip(row[names[c]], 0.0, 1.0)) - float(lab0[k])))
+                if dk > 0.0:
+                    diffs.append({"token": meta.get("token"), "component": c, "navsim": float(row[names[c]]), "label": float(lab0[k])})
             n += 1
     except Exception as e:                                                                    # noqa: BLE001
         return {"ran": False, "why": f"the identity probe raised {type(e).__name__}: {e}"}
-    return {"ran": True, "tokens": n, "max_abs_diff": worst}
+    return {"ran": True, "tokens": n, "max_abs_diff": worst, "compared_at_dtype": sorted(dts), "max_abs_diff_float64": worst64, "diffs": diffs[:24]}
 
 
 def judge_harness_identity(f: dict, tol: float = 1e-9) -> list:

@@ -1,0 +1,531 @@
+{
+ "arm": null,
+ "binding": {
+  "argv_sha256": "9f35abe100450fa4f672edda0a20466dfe979f8a2f05d1f9b4d4c66d45ab37b3",
+  "commit": "95b3d1746ff02011dd5c6cf887890d8fbb015af1",
+  "profile": "refe_scorerft_t",
+  "tree_sha256": "81acd6bd246e3840e938a775774e94a71f951df15177b0f21a4ce29653ffdc3c"
+ },
+ "check": "G-LIVE",
+ "details": {
+  "ego_yaw_live": {
+   "col4_grad_abs_sum_max": 0.5338575570276021,
+   "ego4_abs_max_received": 2.377187728881836,
+   "finite": true,
+   "flag": true,
+   "other_cols_grad_abs_sum_max": 15.807703634379621,
+   "probe": {
+    "one": 38347.4500028193,
+    "ran": true,
+    "zero": 0.0
+   },
+   "steps_observed": 2
+  },
+  "frozen_control_exact_zero": true,
+  "groups": {
+   "backbone": {
+    "finite": true,
+    "grad_seen": 0,
+    "max_abs_sum": 0.0,
+    "n": 366,
+    "n_req": 0,
+    "numel": 303079424
+   },
+   "backbone.lora": {
+    "finite": true,
+    "grad_seen": 192,
+    "max_abs_sum": 6.236573901234457,
+    "n": 96,
+    "n_req": 96,
+    "numel": 3145728
+   },
+   "cmd_embed": {
+    "finite": true,
+    "grad_seen": 2,
+    "max_abs_sum": 0.21654222177994598,
+    "n": 1,
+    "n_req": 1,
+    "numel": 256
+   },
+   "dec": {
+    "finite": true,
+    "grad_seen": 144,
+    "max_abs_sum": 248.46323618417273,
+    "n": 72,
+    "n_req": 72,
+    "numel": 4213760
+   },
+   "ego_enc": {
+    "finite": true,
+    "grad_seen": 8,
+    "max_abs_sum": 74.64524383433738,
+    "n": 4,
+    "n_req": 4,
+    "numel": 84224
+   },
+   "pos3d_mlp": {
+    "finite": true,
+    "grad_seen": 8,
+    "max_abs_sum": 33.05889925210625,
+    "n": 4,
+    "n_req": 4,
+    "numel": 528896
+   },
+   "queries": {
+    "finite": true,
+    "grad_seen": 2,
+    "max_abs_sum": 5.011193917269683,
+    "n": 1,
+    "n_req": 1,
+    "numel": 16384
+   },
+   "reg_compress": {
+    "finite": true,
+    "grad_seen": 28,
+    "max_abs_sum": 180.0365980636167,
+    "n": 14,
+    "n_req": 14,
+    "numel": 6303744
+   },
+   "registers": {
+    "finite": true,
+    "grad_seen": 2,
+    "max_abs_sum": 2.817038191984004,
+    "n": 1,
+    "n_req": 1,
+    "numel": 65536
+   },
+   "scene_proj": {
+    "finite": true,
+    "grad_seen": 4,
+    "max_abs_sum": 28.22160628211951,
+    "n": 2,
+    "n_req": 2,
+    "numel": 262400
+   },
+   "score_dec": {
+    "finite": true,
+    "grad_seen": 144,
+    "max_abs_sum": 10.567972502570582,
+    "n": 72,
+    "n_req": 72,
+    "numel": 4213760
+   },
+   "score_head": {
+    "finite": true,
+    "grad_seen": 4,
+    "max_abs_sum": 0.06414251180372821,
+    "n": 2,
+    "n_req": 2,
+    "numel": 1542
+   },
+   "score_q_mlp": {
+    "finite": true,
+    "grad_seen": 8,
+    "max_abs_sum": 1.2299195591132388,
+    "n": 4,
+    "n_req": 4,
+    "numel": 81408
+   },
+   "traj_head": {
+    "finite": true,
+    "grad_seen": 8,
+    "max_abs_sum": 80.91980189629567,
+    "n": 4,
+    "n_req": 4,
+    "numel": 81212
+   }
+  },
+  "logged_step_rows": 2,
+  "p5c": {
+   "isolation": {
+    "control_traj_grad_diff_max": 0.0,
+    "control_traj_loss_diff": 0.0,
+    "forward_equal": true,
+    "item3_differs": 2,
+    "other_slots_equal": true,
+    "rows": 2,
+    "score_grad_diff_max": 0.0,
+    "score_loss_raw": 3.7485604286193848,
+    "score_loss_table": 3.7485604286193848,
+    "traj_grad_diff_max": 0.05000000074505806,
+    "traj_loss_diff": -0.03971371054649353,
+    "traj_loss_raw": 0.3033442497253418,
+    "traj_loss_table": 0.26363053917884827
+   },
+   "warm": {
+    "base_sha256": "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4",
+    "opt_state_entries": 0,
+    "tensors": 643
+   }
+  },
+  "rank": {
+   "audit": {
+    "call0": {
+     "ref_L": 0.325814206753687,
+     "ref_pairs": {
+      "ep": 2811,
+      "gate": 0
+     },
+     "trainer_L": 0.32581421732902527,
+     "trainer_pairs": {
+      "ep": 2811,
+      "gate": 0
+     }
+    },
+    "call1": {
+     "ref_L": 0.1850461508402693,
+     "ref_pairs": {
+      "ep": 2652,
+      "gate": 0
+     },
+     "trainer_L": 0.18504615128040314,
+     "trainer_pairs": {
+      "ep": 2652,
+      "gate": 0
+     }
+    },
+    "call2": {
+     "ref_L": 0.16465901975834252,
+     "ref_pairs": {
+      "ep": 1816,
+      "gate": 0
+     },
+     "trainer_L": 0.1646590232849121,
+     "trainer_pairs": {
+      "ep": 1816,
+      "gate": 0
+     }
+    },
+    "calls_audited": 3
+   },
+   "census": {
+    "facts": {
+     "NOT_A_DECISION": false,
+     "ep_gap": 0.02,
+     "gate_topk": 8,
+     "heads": [
+      "ep",
+      "gate"
+     ],
+     "init_from": "/workspace/data/refe_runs/p5c_c1/model_final.pt",
+     "label_backend": "pdm",
+     "labelled_sets": 32,
+     "path": "/workspace/data/refe_p5c/scorerft/weight_rule_rank.json",
+     "ran": true,
+     "rank_loss_file": "/workspace/data/refe_p5c/l5probe/code_95b3d174/refe/rank_loss.py",
+     "rank_loss_sha256": "c0e027d28291b55e5f76618084d084ebba59061e5b700e11b8ca5bd7b6227af7",
+     "rank_loss_why": null,
+     "rule_rank_w": 0.03125,
+     "sha256": "a9f13c78e987440c8255bff4910e2814c46bc85c0459caa7825cf99d745dc401"
+    },
+    "n_smoke_sets": null,
+    "p_zero_smoke": {
+     "gate": null
+    },
+    "verdict": {
+     "ep": {
+      "ok": true,
+      "source": "smoke"
+     },
+     "gate": {
+      "ok": true,
+      "source": "census"
+     }
+    }
+   },
+   "harness_identity": {
+    "diffs": [
+     {
+      "component": "ep",
+      "label": 0.9281340837478638,
+      "navsim": 0.9281340780250414,
+      "token": "8ad7da45e4385f23"
+     }
+    ],
+    "max_abs_diff": 5.722822327136612e-09,
+    "ran": true,
+    "tokens": 8
+   },
+   "pairs_logged": {
+    "ep": 6338,
+    "gate": 0
+   },
+   "rank_reach": {
+    "declared": {
+     "groups": {
+      "backbone": {
+       "abs_sum": 0.0,
+       "n": 366,
+       "n_none": 366
+      },
+      "backbone.lora": {
+       "abs_sum": 9.646020074974553,
+       "n": 96,
+       "n_none": 0
+      },
+      "cmd_embed": {
+       "abs_sum": 0.0,
+       "n": 1,
+       "n_none": 1
+      },
+      "dec": {
+       "abs_sum": 0.0,
+       "n": 72,
+       "n_none": 72
+      },
+      "ego_enc": {
+       "abs_sum": 0.0,
+       "n": 4,
+       "n_none": 4
+      },
+      "pos3d_mlp": {
+       "abs_sum": 78.14253975718069,
+       "n": 4,
+       "n_none": 0
+      },
+      "queries": {
+       "abs_sum": 0.0,
+       "n": 1,
+       "n_none": 1
+      },
+      "reg_compress": {
+       "abs_sum": 0.0,
+       "n": 14,
+       "n_none": 14
+      },
+      "registers": {
+       "abs_sum": 0.0,
+       "n": 1,
+       "n_none": 1
+      },
+      "scene_proj": {
+       "abs_sum": 165.7340026781451,
+       "n": 2,
+       "n_none": 0
+      },
+      "score_dec": {
+       "abs_sum": 361.46374323096495,
+       "n": 72,
+       "n_none": 0
+      },
+      "score_head": {
+       "abs_sum": 2.688715887872604,
+       "n": 2,
+       "n_none": 0
+      },
+      "score_q_mlp": {
+       "abs_sum": 36.997312196945884,
+       "n": 4,
+       "n_none": 0
+      },
+      "traj_head": {
+       "abs_sum": 0.0,
+       "n": 4,
+       "n_none": 4
+      }
+     },
+     "loss": 0.017004111781716347,
+     "score_head_rows": {
+      "c": 0.0,
+      "dac": 1.9617603084916482,
+      "ddc": 0.0,
+      "ep": 0.5155479445893434,
+      "nc": 0.20545542998115707,
+      "ttc": 0.0
+     }
+    },
+    "labelled": 1,
+    "ran": true,
+    "zero": {
+     "groups": {
+      "backbone": {
+       "abs_sum": 0.0,
+       "n": 366,
+       "n_none": 366
+      },
+      "backbone.lora": {
+       "abs_sum": 0.0,
+       "n": 96,
+       "n_none": 0
+      },
+      "cmd_embed": {
+       "abs_sum": 0.0,
+       "n": 1,
+       "n_none": 1
+      },
+      "dec": {
+       "abs_sum": 0.0,
+       "n": 72,
+       "n_none": 72
+      },
+      "ego_enc": {
+       "abs_sum": 0.0,
+       "n": 4,
+       "n_none": 4
+      },
+      "pos3d_mlp": {
+       "abs_sum": 0.0,
+       "n": 4,
+       "n_none": 0
+      },
+      "queries": {
+       "abs_sum": 0.0,
+       "n": 1,
+       "n_none": 1
+      },
+      "reg_compress": {
+       "abs_sum": 0.0,
+       "n": 14,
+       "n_none": 14
+      },
+      "registers": {
+       "abs_sum": 0.0,
+       "n": 1,
+       "n_none": 1
+      },
+      "scene_proj": {
+       "abs_sum": 0.0,
+       "n": 2,
+       "n_none": 0
+      },
+      "score_dec": {
+       "abs_sum": 0.0,
+       "n": 72,
+       "n_none": 0
+      },
+      "score_head": {
+       "abs_sum": 0.0,
+       "n": 2,
+       "n_none": 0
+      },
+      "score_q_mlp": {
+       "abs_sum": 0.0,
+       "n": 4,
+       "n_none": 0
+      },
+      "traj_head": {
+       "abs_sum": 0.0,
+       "n": 4,
+       "n_none": 4
+      }
+     },
+     "loss": 0.0,
+     "score_head_rows": {
+      "c": 0.0,
+      "dac": 0.0,
+      "ddc": 0.0,
+      "ep": 0.0,
+      "nc": 0.0,
+      "ttc": 0.0
+     }
+    }
+   },
+   "traj_reach": {
+    "abs_sum": 0.0,
+    "n": 4,
+    "n_none": 4
+   }
+  },
+  "scorer_cov_last": 1.0,
+  "terms_checked": [
+   "traj_L1",
+   "score",
+   "pos_L1",
+   "yaw_L1",
+   "bce_nc",
+   "bce_dac",
+   "bce_ep",
+   "bce_ttc",
+   "bce_c",
+   "bce_ddc",
+   "rank_L"
+  ],
+  "zero_loss_control": {
+   "ran": true,
+   "real": 39930893.612151146,
+   "zero": 0.0
+  }
+ },
+ "finished_utc": "2026-11-23T15:55:40Z",
+ "inputs_read": {
+  "--calib": {
+   "bytes": 2108538,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json",
+   "sha256": "cfa287b8c76ca3cd657392d56cdfbb23458d0a72c406db50022ffb8cc841138a"
+  },
+  "--ego-yaw-table": {
+   "bytes": 2018782,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz",
+   "sha256": "3a0873cc1302afa45a960235a063d20699608236669eced5d8074fae69215a55"
+  },
+  "--images": {
+   "bytes": 77507226902,
+   "kind": "dir",
+   "listing_sha256": "05231a36178681691eb689d374e6163626ad83fa4eda8a6e2986a0c2ab4a6538",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 372552,
+   "path": "/workspace/data/navtrain_pixels"
+  },
+  "--init-from": {
+   "bytes": 1288515000,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_runs/p5c_c1/model_final.pt",
+   "sha256": "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"
+  },
+  "--metric-cache": {
+   "bytes": 41047312372,
+   "kind": "dir",
+   "listing_sha256": "79c7ba964ccc3a7a1494112362dc7a9e928c3da033b27de9f15f04086186d100",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 112589,
+   "path": "/workspace/data/refe_navtrain/metric_cache"
+  },
+  "--targets": {
+   "bytes": 519051148,
+   "kind": "dir",
+   "listing_sha256": "804c80a42cb1b9a0d6697c535a9dec3ba8ca72116ceae91a6a4ff696ee7c40fc",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 3,
+   "path": "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7"
+  },
+  "--traj-label-table": {
+   "bytes": 94502145,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/p5c_label_a33/P5C_label_table_p5r-rj5_rank0.json.gz",
+   "sha256": "3b198314721fc7e75e6bd0ca9b569b5b0a56ba25178e4fb63a94b215995637a2"
+  },
+  "gate:egr_json": {
+   "bytes": 715,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p5c/evidence_sftt/egr/g_egr_result.json",
+   "sha256": "246d182bd560ca0f820e65e5ba032f07b32ed82bfe527a373eeb50c4ed6e93bb"
+  },
+  "gate:lab_json": {
+   "bytes": 370,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p5c/evidence_sftt/lab.json",
+   "sha256": "da4c62b09b2ecfb2e0bf321020841961da155172d4ecfb69046223e9556c3f00"
+  },
+  "gate:mem_metrics": {
+   "bytes": 5845,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p5c/evidence_sftt/mem_metrics.jsonl",
+   "sha256": "9e46ea5886ed22aebdef251479b3974bf94278d1c6aa96f8f23c0c8c916f7ffb"
+  }
+ },
+ "reasons": [
+  "L5 harness identity: the labeller's labels differ from NAVSIM's pdm_score by up to 5.722822327136612e-09 (tol 1e-09) on 8 tokens"
+ ],
+ "rehearsal": false,
+ "status": "FAIL"
+}
