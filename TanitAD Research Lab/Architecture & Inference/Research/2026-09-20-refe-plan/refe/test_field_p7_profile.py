@@ -20,7 +20,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import types
 from pathlib import Path
+from types import SimpleNamespace
 
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 HERE = Path(__file__).resolve().parent
@@ -28,6 +30,7 @@ sys.path.insert(0, str(HERE))
 
 import gate_token as GT  # noqa: E402
 import launch_gate as L  # noqa: E402
+import gate_checks as GC  # noqa: E402
 
 N = 0
 NAMES = {"F": "refe_field_p7", "C": "refe_field_p7_ctrl"}                      # the seed-0 arms (their PASS tokens bind them)
@@ -347,8 +350,76 @@ def chk_live_wiring():
     ok('required=bool(profile.get("p7_rules") or profile.get("p5c_rules") or profile.get("p7field_rules")))' in gsrc, "G-CLOCK requires the bank content pin for a field arm")
 
 
+def make_model(leaky=False):
+    import torch
+    nn = torch.nn
+
+    class Fake(nn.Module):
+        def __init__(self):
+            super().__init__()
+            torch.manual_seed(0)
+            self.backbone = nn.Module()
+            self.backbone.lo = nn.Module()
+            self.backbone.lo.A = nn.Parameter(torch.ones(1, 8) * 0.5)
+            self.scene_proj = nn.Linear(8, 8)
+            self.queries = nn.Parameter(torch.randn(16, 8) * 0.1)
+            self.dec = nn.Linear(8, 8)
+            self.traj_head = nn.Linear(8, 4)
+            self.score_q_mlp = nn.Sequential(nn.Linear(4, 8))
+            self.score_dec = nn.Linear(8, 8)
+            self.score_head = nn.Linear(8, 6)
+
+        def forward(self, img, ego, goal, calib=None, detach_scorer=True):
+            vis = self.scene_proj(img * self.backbone.lo.A)
+            h = self.dec(img[:, None, :] + self.queries[None])
+            traj = self.traj_head(h)
+            q = self.score_q_mlp((traj if (leaky or not detach_scorer) else traj.detach()))
+            s = self.score_head(torch.relu(q + self.score_dec(vis)[:, None, :]))
+            return traj, s
+    return Fake()
+
+
+def chk_field_reach_active_sample():
+    """SFTT launch gate 1b (MM 2026-11-23, Fs): `field_reach` probes the FIRST sample whose hinge loss is > 0, not idx[0].  A fake `field_loss` (hinge on a per-sample scalar 'sdf') stands in for the real one."""
+    import torch
+    mod = types.ModuleType("field_loss")
+
+    def field_loss(traj, sdf, margin=0.0, interp=None):                    # sum_b relu(margin - s_b) * mean(traj_b): exactly 0 (loss AND gradient) where s_b >= margin
+        s = sdf.reshape(sdf.shape[0], -1)[:, 0]
+        return (torch.relu(margin - s) * traj.reshape(traj.shape[0], -1).mean(1)).sum() / traj.shape[0]
+    mod.field_loss = field_loss
+    old = sys.modules.get("field_loss")
+    sys.modules["field_loss"] = mod
+    try:
+        def fcap(s_vals, valid=None):
+            B = len(s_vals)
+            sdf = torch.tensor(s_vals, dtype=torch.float32).reshape(B, 1, 1)
+            return SimpleNamespace(model=make_model(), first_batch=(torch.randn(B, 8), torch.zeros(B, 5), torch.zeros(B, 2), None), field_first=(sdf, valid),
+                                   args=SimpleNamespace(w_field=2.0, field_margin=0.5, field_interp="5hz"))
+        fr = GC.field_reach(fcap([5.0, 5.0, 0.1, 0.1]), None)                      # index 0 inactive (sdf 5 >= margin), index 2 the first active
+        ok(fr["active_index"] == 2 and fr["n_active"] == 2 and fr["losses"][0] == 0.0 and fr["losses"][1] == 0.0 and fr["losses"][2] > 0.0, fr.get("losses"))
+        ok(fr["declared"]["loss"] != 0.0 and fr["declared"]["groups"]["traj_head"]["abs_sum"] > 0.0 and fr["declared"]["groups"]["queries"]["abs_sum"] > 0.0, "an active sample reaches the groups")
+        ok(all(v["abs_sum"] == 0.0 for v in fr["zero"]["groups"].values()), "the weight-0 control reads exactly 0.0")
+        rs = GC.judge_field_reach(fr, 2.0)
+        ok(not any("EXACTLY zero on 'traj_head'" in x or "EXACTLY zero on 'queries'" in x or "UNPROVED" in x for x in rs), rs)
+        fr0 = GC.field_reach(fcap([0.1, 5.0, 5.0, 5.0]), None)                     # the old path: index 0 active
+        ok(fr0["active_index"] == 0 and fr0["n_active"] == 1 and fr0["declared"]["groups"]["traj_head"]["abs_sum"] > 0.0, "index 0 active: unchanged")
+        fr_n = GC.field_reach(fcap([5.0, 5.0, 5.0, 5.0]), None)                    # no labelled sample is active
+        ok(fr_n["ran"] and fr_n["labelled"] == 4 and fr_n["n_active"] == 0 and "declared" not in fr_n, fr_n)
+        rn = GC.judge_field_reach(fr_n, 2.0)
+        ok(len(rn) == 1 and "UNPROVED" in rn[0] and "every hinge loss is exactly 0.0" in rn[0] and "does not reach" not in rn[0], rn)
+        frv = GC.field_reach(fcap([0.1, 5.0, 0.1, 0.1], valid=torch.tensor([False, True, True, True])), None)   # an unlabelled sample is skipped; first ACTIVE labelled = 2
+        ok(frv["labelled"] == 3 and frv["active_index"] == 2, frv.get("active_index"))
+        ok(GC.judge_field_reach({"ran": True, "labelled": 0}, 2.0) != [] and GC.judge_field_reach({"ran": False}, 2.0) != [], "unchanged: unlabelled / not run")
+    finally:
+        if old is None:
+            sys.modules.pop("field_loss", None)
+        else:
+            sys.modules["field_loss"] = old
+
+
 CHECKS = {"registry": chk_registry, "argv_delta": chk_argv_delta, "clean": chk_clean, "levers": chk_levers, "pins": chk_pins, "fresh_out": chk_fresh_out, "untouched": chk_untouched, "unchanged": chk_unchanged,
-          "no_scipy": chk_no_scipy, "live_wiring": chk_live_wiring}
+          "no_scipy": chk_no_scipy, "live_wiring": chk_live_wiring, "field_reach_active": chk_field_reach_active_sample}
 
 # (file, old, new, the check that must go RED): ONE emitting line of a COPY of this tree is neutralised.
 MUTATIONS = [
@@ -382,6 +453,7 @@ MUTATIONS = [
     ("gate_checks.py", " or profile.get(\"p5c_rules\") or profile.get(\"p7field_rules\")))", " or profile.get(\"p5c_rules\")))", "live_wiring"),         # G-CLOCK skips the content pin
     ("launch_gate.py", "    need_b = need_b or bool(\"G-LIVE\" in want and prof.get(\"p7field_rules\"))", "    need_b = need_b", "live_wiring"),                  # no build capture for G-LIVE alone
     ("launch_gate.py", "        out.append(f\"{name}: --out {ow} already holds ckpt_last.pt: a field arm starts FRESH (fresh AdamW; a seeded checkpoint would resume an old optimiser)\")", "        pass", "fresh_out"),
+    ("gate_checks.py", "    out[\"active_index\"] = idx[active[0]]\n    sl = slice(idx[active[0]], idx[active[0]] + 1)", "    out[\"active_index\"] = idx[0]\n    sl = slice(idx[0], idx[0] + 1)", "field_reach_active"),   # always probe idx[0] (the Fs defect)
 ]
 
 
