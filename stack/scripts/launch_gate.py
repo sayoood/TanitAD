@@ -3662,6 +3662,45 @@ WCOST_REPLICATES: dict[str, dict[str, Any]] = {
 }
 
 
+#: SHARE-ALARM DOSE ARMS (PI 2026-11-22: "i approve it", then "Yes, use the clamp"): an arm DECLARED here is a pre-registered LOW-DOSE arm and is exempt from the
+#: share-alarm FLOOR comparison ONLY (`_R9F_SHARE["floor"]`, 0.05). WHY (MEASURED 2026-11-23, Thor gate3/K2DC02cl/FAIL_a4631f4a2b90.json): K2DC02cl
+#: (`--w-map-hires 3.0 --map-hires-w-bounds 2.5,3.5 --map-hires-share-target 0.02`) passed every check except G-LIVE: "SHARE-ALARM: the banded map takes 0.0018 of the
+#: trunk gradient (mean of 4 reading(s) [0.0054, 0.0097, -0.0061, -0.002] of gs_trunk_proj_map_hires), below the floor 0.05". Its PI-approved design dose is ~0.02, so it
+#: fails the floor BY CONSTRUCTION (K2DC / K2DC02 passed only because their controller runs steps 0-249 at w 25; the clamp's initial weight must lie inside [2.5, 3.5]).
+#: The dose is judged instead by the pre-registered in-training validity at the read (PREREG_K2DC02CL s2: >= 2 probes in [0.01, 0.03] at step >= 3000 AND mean late share
+#: in [0.01, 0.035], else DOSE-VOID / DOSE-OFF-TARGET via r9_e2_dose_verdict.py). Keyed by the basename of the launch argv's `--out` value (as WCOST_REPLICATES). The
+#: exemption applies only when the argv's `--map-hires-share-target` and `--map-hires-w-bounds` EQUAL the table's; a listed arm whose argv differs is REFUSED. The
+#: stop-gradient, terms-separation and no-readings branches still apply to a listed arm. Module-level, outside every profile dict: no profile fingerprint moves.
+SHARE_ALARM_DOSE_ARMS: dict[str, dict[str, Any]] = {
+    "r9e2-K2DC02cl": {
+        "prereg": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/e2/e2raw/PREREG_K2DC02CL_2026-11-22.md",
+        "share_target": 0.02,
+        "w_bounds": (2.5, 3.5),
+        "why": "PI 2026-11-22 'Yes, use the clamp'; design dose ~0.02 < floor 0.05 by construction; judged by the PREREG s2 in-training validity (DOSE-VOID / DOSE-OFF-TARGET)",
+    },
+}
+_SHARE_TARGET_FLAG, _W_BOUNDS_FLAG = "--map-hires-share-target", "--map-hires-w-bounds"
+
+
+def share_alarm_dose_arm_check(launch_argv: list[str]) -> tuple[dict | None, str | None]:
+    """(entry, None) when the launch argv's arm is in `SHARE_ALARM_DOSE_ARMS` and its target and bounds equal the entry's; (None, None) when the arm is not
+    listed; (None, reason) when it is listed but the argv does not match (never a silent pass)."""
+    name = wcost_out_name(launch_argv)
+    ent = SHARE_ALARM_DOSE_ARMS.get(name or "")
+    if ent is None:
+        return None, None
+    tv, bv = flag_values(launch_argv, _SHARE_TARGET_FLAG), flag_values(launch_argv, _W_BOUNDS_FLAG)
+    try:
+        tgt = float(tv[0]) if tv else None
+        bnd = tuple(float(x) for x in str(bv[0]).split(",")) if bv else None
+    except (TypeError, ValueError):
+        tgt = bnd = None
+    if tgt != float(ent["share_target"]) or bnd != tuple(float(x) for x in ent["w_bounds"]):
+        return None, (f"SHARE-ALARM: {name} is listed in SHARE_ALARM_DOSE_ARMS but its argv ({_SHARE_TARGET_FLAG} {tv}, {_W_BOUNDS_FLAG} {bv}) does not match "
+                      f"the pre-registered {_SHARE_TARGET_FLAG} {ent['share_target']} / {_W_BOUNDS_FLAG} {ent['w_bounds'][0]},{ent['w_bounds'][1]} -- the floor exemption is refused")
+    return ent, None
+
+
 def wcost_out_name(launch_argv: list[str]) -> str | None:
     """Basename of the argv's `--out` value (the key into `WCOST_REPLICATES`), or None."""
     ov = flag_values(launch_argv, "--out")
@@ -3889,6 +3928,11 @@ def full_profile_live_reasons(prof: dict, launch_argv: list[str], run_argv: list
         elif not vals:
             reasons.append(f"SHARE-ALARM: the smoke carries no `{sh['row_key']}` reading although the banded map head is ON "
                            f"({sh['flag']}) -- the alarm cannot be read (a missing alarm is a FAIL, never a pass)")
+        elif stat < float(sh["floor"]) and (_dose_ent := share_alarm_dose_arm_check(launch_argv))[0] is not None:
+            det["share_alarm"]["exempt"] = {"prereg": _dose_ent[0]["prereg"], "target": _dose_ent[0]["share_target"],
+                                            "bounds": list(_dose_ent[0]["w_bounds"]), "floor": sh["floor"], "mean": stat}
+        elif stat < float(sh["floor"]) and _dose_ent[1] is not None:
+            reasons.append(_dose_ent[1])
         elif stat < float(sh["floor"]):
             reasons.append(f"SHARE-ALARM: the banded map takes {stat:.4f} of the trunk gradient (mean of {len(vals)} reading(s) "
                            f"{[round(v, 4) for v in vals]} of `{sh['row_key']}`), below the floor "
