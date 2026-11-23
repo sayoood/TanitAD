@@ -58,6 +58,10 @@ DAGGER_DEFAULTS = {"p": 0.0, "seed": 0}          # the lever's OFF state: p is N
 #: PREREG_V8F_ROLLADD: ``--dagger-mode``. ``swap`` (the default, and cf27dbb7's only behaviour) overwrites the selected rows in place; ``add`` keeps the logged batch whole and APPENDS the swapped rows after it.
 #: Kept OUT of ``DAGGER_DEFAULTS`` and ``constants()`` on purpose: the bank header's ``constants_sha256`` is compared with this tree's, so no existing bank may change its hash.
 DAGGER_MODES = ("swap", "add")
+#: KINPUT (``--dagger-base``): ``own`` (the default, fde8b716 bit for bit) rebuilds O's prior path ``base`` of a swapped row from the OWN kinematic triple; ``logged`` keeps the LOGGED window's ``base`` at r'
+#: (``kdx_base`` of the logged kinematics at r', which is the batch row itself) and rebuilds everything else as before. Kept OUT of ``constants()`` for the same reason as ``DAGGER_MODES``.
+DAGGER_BASES = ("own", "logged")
+DEFAULT_BASE = "own"
 DEFAULT_MODE = "swap"
 
 
@@ -579,12 +583,17 @@ def kb5_combine(shard_records) -> dict:
 
 
 # ------------------------------------------------------------------------------------------------ the swap (section 2, the table)
-def swap_rows(batch: dict, rows, rec: dict) -> dict:
+def swap_rows(batch: dict, rows, rec: dict, base: str = DEFAULT_BASE) -> dict:
     """The swapped tensors for ``rows`` (LongTensor [N] of batch positions) from the bank records ``rec`` (``DaggerBank.gather``, N records, aligned): a dict with the full ``REBUILT`` tensors (rows replaced, the
     others as they were) and ``lab_s`` (``rc`` re-expressed). ``batch`` is not modified. The rebuild is ORC's (``EgoPerturb._rebuilt``): the same P10 spelling for the base (``kdx_base`` of the kinematic triple in
     the yaw units), the same real-frame rule (``_hist_valid``: a padded or row-0 frame is not a row and keeps its logged value), the same nav rule (``_nav_masks``: token and validity equal NOW's) -- with the
-    replacement taken from the own state instead of scaled from the logged one."""
+    replacement taken from the own state instead of scaled from the logged one.
+
+    KINPUT ``base``: ``own`` (default) = ``kdx_base`` of the own kinematic triple (today). ``logged`` = the swapped rows keep the LOGGED ``base`` at r' (the batch row IS the logged window at r', so its ``base`` is
+    ``kdx_base`` of the logged float64 kinematics at r'); ``p10f``, ``kin3``, ``p10_t``, the poses and ``nav`` stay the own state's, and no label moves."""
     import torch
+    if base not in DAGGER_BASES:
+        raise ValueError(f"dagger base {base!r} is not one of {DAGGER_BASES}")
     f64 = torch.float64
     dev, F, N = batch["p10f"].device, int(batch["p10f"].shape[1]), int(rows.numel())
     if int(rec["p10f"].shape[1]) != F:
@@ -598,7 +607,10 @@ def swap_rows(batch: dict, rows, rec: dict) -> dict:
     new["p10f"][rows] = torch.where(own_ok[..., None], torch.nan_to_num(P10, 0.0), batch["p10f"][rows])
     new["p10_t"][rows] = P10[:, -1].to(batch["p10_t"].dtype)                                              # p10_t is the p10f row at NOW (ORC: feat2[:, -1])
     new["kin3"][rows] = torch.from_numpy(rec["kin3"]).to(dev, batch["kin3"].dtype)
-    new["base"][rows] = torch.from_numpy(D.kdx_base(rec["kin3"], D.KIN_UNITS["yaw"])).to(dev, batch["base"].dtype)
+    if base == "own":
+        new["base"][rows] = torch.from_numpy(D.kdx_base(rec["kin3"], D.KIN_UNITS["yaw"])).to(dev, batch["base"].dtype)
+    else:                                                                                                  # KINPUT: the logged base at r' (the batch row's own), the ONLY input that stays logged
+        new["base"][rows] = batch["base"][rows]
     pose = batch["pose"]
     own_now = rec["pose"][:, -1]
     log_now = batch["pose_now"][rows].double().cpu().numpy()
@@ -636,12 +648,12 @@ def swap_rows(batch: dict, rows, rec: dict) -> dict:
     return new
 
 
-def swap_item(it: dict, rec1: dict) -> dict:
+def swap_item(it: dict, rec1: dict, base: str = DEFAULT_BASE) -> dict:
     """The swap of ONE own state (``rec1`` = ``DaggerBank.gather([i])``) into ONE logged training item (``V8FMiniWindows.item``): the item with the ``REBUILT`` ego tensors and ``lab_s.rc`` replaced. The same
     code as the batch path (``swap_rows``) on a batch of one."""
     import torch
     b = D.collate([it])
-    upd = swap_rows(b, torch.zeros(1, dtype=torch.long), rec1)
+    upd = swap_rows(b, torch.zeros(1, dtype=torch.long), rec1, base=base)
     out = dict(it)
     for k in REBUILT:
         out[k] = upd[k][0].numpy()
@@ -710,9 +722,10 @@ class DaggerSwap:
 
     PROBE_STEP = -1
 
-    def __init__(self, bank: DaggerBank | None = None, p: float = DAGGER_DEFAULTS["p"], seed: int = DAGGER_DEFAULTS["seed"], kin_mode: str = "yaw", bank_sha256: str | None = None, mode: str = DEFAULT_MODE):
+    def __init__(self, bank: DaggerBank | None = None, p: float = DAGGER_DEFAULTS["p"], seed: int = DAGGER_DEFAULTS["seed"], kin_mode: str = "yaw", bank_sha256: str | None = None, mode: str = DEFAULT_MODE, base: str = DEFAULT_BASE):
         self.bank, self.p, self.seed, self.kin_mode = bank, float(p), int(seed), str(kin_mode)
         self.mode = str(mode)                                                                        # PREREG_V8F_ROLLADD: "swap" (default) | "add"
+        self.base = str(base)                                                                        # KINPUT: "own" (default) | "logged"
         self.bank_sha256 = bank_sha256 if bank_sha256 is not None else (bank.sha256 if bank is not None else None)
         self.last = None
 
@@ -726,7 +739,7 @@ class DaggerSwap:
         gen = ({} if self.bank is None else (getattr(self.bank, "header", None) or {}).get("generator")) or {}
         return {"dagger_bank_readout": readout_token(gen.get("readout", "pinned"), gen.get("acc_gain"), bool(gen.get("path_exec", False))), "dagger_bank_kappa": str(gen.get("kappa_max", "none")),
                 "dagger_label": "human" if self.bank is None else self.bank.label_kind, "dagger_label_cache": (getattr(self.bank, "label_cache", None) or {}).get("path"),
-                "dagger_label_cache_sha256": (getattr(self.bank, "label_cache", None) or {}).get("sha256"), "dagger_kin_tb": 1.0 if self.bank is None else float(getattr(self.bank, "kin_tb", 1.0)), "dagger_mode": self.mode, "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
+                "dagger_label_cache_sha256": (getattr(self.bank, "label_cache", None) or {}).get("sha256"), "dagger_kin_tb": 1.0 if self.bank is None else float(getattr(self.bank, "kin_tb", 1.0)), "dagger_mode": self.mode, "dagger_base": self.base, "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
                 "bank_hmax": None if self.bank is None else self.bank.hmax, "rebuilt": list(REBUILT), "kept": list(KEPT), "record": list(RECORD), "labels_re_expressed": list(LABELS_RE_EXPRESSED),
                 "nav_rebuild_invalid": NAV_REBUILD_INVALID, "constants_sha256": constants_sha256()}
 
@@ -738,6 +751,10 @@ class DaggerSwap:
             bad.append(f"dagger_seed {self.seed!r} is negative")
         if self.mode not in DAGGER_MODES:
             bad.append(f"dagger_mode {self.mode!r} is not one of {DAGGER_MODES}")
+        if self.base not in DAGGER_BASES:
+            bad.append(f"dagger_base {self.base!r} is not one of {DAGGER_BASES}")
+        if self.base == "logged" and self.mode != "swap":
+            bad.append(f"dagger_base 'logged' needs --dagger-mode swap (this swap is {self.mode!r}): refused, not approximated")
         return bad
 
     def problems(self) -> list:
@@ -747,6 +764,8 @@ class DaggerSwap:
             bad.append(f"dagger_p {self.p} needs --kin-mode yaw; got {self.kin_mode!r}")
         if self.active and self.bank is None:
             bad.append(f"dagger_p {self.p} > 0 but no bank is loaded")
+        if self.base == "logged" and not self.active:
+            bad.append("dagger_base 'logged' is declared while dagger_p is 0: a lever that is declared and does nothing")
         if self.mode == "add" and not self.active:
             bad.append("dagger_mode 'add' is declared while dagger_p is 0: a lever that is declared and does nothing")
         if not self.active:
@@ -792,7 +811,8 @@ class DaggerSwap:
         if rows.numel():
             r = rows.cpu()
             idx = self.bank.pick(batch["ci"][r].cpu().numpy(), batch["t"][r].cpu().numpy(), u[1][r].numpy())
-            upd = swap_rows(batch, rows, self.bank.gather(idx))
+            kw = {} if self.base == DEFAULT_BASE else {"base": self.base}                  # KINPUT: the default call is today's three-argument call (the gate's probe hooks wrap exactly that signature)
+            upd = swap_rows(batch, rows, self.bank.gather(idx), **kw)
             self.last["dagger_nav_kept"] = upd.pop("_nav_kept")
             self.last["n_label_replaced"] = upd.pop("_rl_n", 0)                       # rows whose gt / s_h came from the speed_v1 label (exactly 0 under --dagger-label human)
             self.last["n_label_kin"] = upd.pop("_rl_kin_n", 0)                        # rows whose gt / s_h came from a kin_v1 label (exactly 0 under human and speed_v1)

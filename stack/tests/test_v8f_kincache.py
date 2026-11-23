@@ -371,6 +371,7 @@ def test_no_flag_is_the_0ca6f49d_behaviour_labeller_bytes_golden_dagger_module_a
         for step in (0, 5):
             assert _same(G.DaggerSwap(bn, p=1.0, seed=3).apply(batch, step), gold.DaggerSwap(bg, p=1.0, seed=3).apply(batch, step)), (kind, step)
         lv_n, lv_g = G.DaggerSwap(bn, p=1.0, seed=3).built_levers(), gold.DaggerSwap(bg, p=1.0, seed=3).built_levers()
+        assert lv_n.pop("dagger_base") == "own"                                                      # KINPUT: the one new key since fde8b716 (this golden is 0ca6f49d's)
         assert lv_n.pop("dagger_kin_tb") == 1.0 and lv_n.pop("dagger_label_cache") is None and lv_n.pop("dagger_label_cache_sha256") is None and lv_n == lv_g, "no flag: the two new levers read None, every other lever is 0ca6f49d's"
     # the trainer with no flag: labeller runs once, nothing is written, the ctl record has no cache key, and a cache lying beside the bank is NOT read
     n = _count_labellers(monkeypatch)

@@ -107,6 +107,9 @@ FLAG_CHECKS = {
     # KINTB: `dagger:dagger_kin_tb` = equals the BUILT bank's kin_v1 blend horizon T_B in s (DaggerSwap.built_levers()["dagger_kin_tb"]; 1.0 when no kin_v1 bank is built). argv -> load_dagger_bank (DR.kin_label_bank(tb=) + the cache header) -> DaggerBank.kin_tb -> built_levers.
     # Valid only with --dagger-label kin_v1 (a non-default value elsewhere is refused), finite, 0.2 <= T_B <= 3.0.
     "dagger_kin_tb": "dagger:dagger_kin_tb",
+    # KINPUT: `dagger:dagger_base` = equals the BUILT swap's prior-path source (DaggerSwap.built_levers()["dagger_base"]): `own` = kdx_base of the own kinematics (fde8b716), `logged` = the logged window's base at r' kept in the swapped rows.
+    # argv -> make_dagger (DaggerSwap(base=)) -> DaggerSwap.apply -> swap_rows (the `base` line) -> model.loss (P10Prior: base + MLP(p10f)). Valid only with --dagger-p > 0 and --dagger-mode swap (refused otherwise).
+    "dagger_base": "dagger:dagger_base",
     # PREREG_V8F_ROLLADD (arm RA): `dagger:dagger_mode` = equals the BUILT swap's mode (DaggerSwap.built_levers()["dagger_mode"]). argv -> make_dagger (DaggerSwap(mode=)) -> DaggerSwap.apply -> append_rows (B logged rows + N swapped rows)
     # -> model.loss on B + N rows -> backward. Default swap = cf27dbb7 bit for bit. Refused at --dagger-p 0, and beside every stage that assumes B rows (bad_dagger).
     "dagger_mode": "dagger:dagger_mode",
@@ -268,6 +271,10 @@ def build_parser():
                     help="PREREG_V8F_ROLLADD (arm RA): swap (default) = the selected logged rows are overwritten by the own states, cf27dbb7 bit for bit. add = the logged batch is kept whole and the N swapped rows are APPENDED "
                          "after it (the step trains on B + N rows; same selection, same generator). Must equal the BUILT swap's mode or the launch gate refuses; refused at --dagger-p 0 and with --launch-intent-w / --level-head on / "
                          "--lead-head on / --ego-perturb-p > 0 / --ego-perturb-with-dagger / --recover-p > 0 / --t2-bank-p > 0 / --encoder lora / --wm-only / --wm-windows wmonly (each assumes a row count of B)")
+    ap.add_argument("--dagger-base", dest="dagger_base", choices=DG.DAGGER_BASES, default=DG.DEFAULT_BASE,
+                    help="KINPUT (the input-side lever of the KINLAB card): own (default) = in a swapped own sample O's prior path `base` is kdx_base of the OWN kinematics at the clock row, fde8b716 bit for bit. logged = the swapped rows keep the "
+                         "LOGGED window's `base` at the matched row r' (kdx_base of the logged kinematics at r'); the own pose / kin history (p10f, p10_t, kin3, poses, nav) and every label stay as today. Valid only with --dagger-p > 0 and "
+                         "--dagger-mode swap (refused otherwise). Training-only: T0 and T1 evaluation never read it. Must equal the BUILT swap's value or the launch gate refuses")
     ap.add_argument("--ego-perturb-with-dagger", dest="ego_perturb_with_dagger", action="store_true", default=False,
                     help="AMEND1 section 1: lift the exclusivity of --dagger-p and --ego-perturb-p for THIS arm and compose them. The DAgger swap is drawn first; the ego perturbation is then drawn (its own p, its own seeded "
                          "generator) ONLY on the samples the swap did not replace, so no sample is both swapped and perturbed (the run record carries ego_dagger_overlap_n, exactly 0). REFUSED unless --dagger-p > 0 AND "
@@ -626,6 +633,9 @@ def load_dagger_bank(a, J, wins, clips, info, store=None) -> tuple:
     _tb_msg = kin_tb_refusal(a)
     if _tb_msg:
         raise DG.BankRefused(_tb_msg)
+    _base_msg = dagger_base_refusal(a)
+    if _base_msg:
+        raise DG.BankRefused(_base_msg)
     bank0 = DG.DaggerBank.load(a.dagger_bank, expect_sha256=a.dagger_bank_sha256 or None)         # the declared --dagger-bank-sha256: a bank whose manifest hashes otherwise is refused here, before any control is read
     if bank0.manifest is None:
         raise DG.BankRefused(f"{a.dagger_bank}: a bare shard, not a merged bank (no bank.json): the bank's identity is the manifest's sha256")
@@ -691,14 +701,26 @@ def make_dagger(a, J, wins, clips, info, store=None):
         except Exception as e:                                       # noqa: BLE001  a missing / foreign / corrupt bank is a REFUSAL, not a crash
             raise SystemExit(f"ZZDVB-REFUSEDZZ dagger-bank {a.dagger_bank}: {type(e).__name__}: {str(e)[:600]}")
         info["dagger"] = ctl                                         # selfcheck.json carries the controls that were read
-    return DG.DaggerSwap(bank, p=a.dagger_p, seed=a.dagger_seed, kin_mode=a.kin_mode, mode=a.dagger_mode)
+    return DG.DaggerSwap(bank, p=a.dagger_p, seed=a.dagger_seed, kin_mode=a.kin_mode, mode=a.dagger_mode, base=a.dagger_base)
+
+
+def dagger_base_refusal(a):
+    """KINPUT: the reason ``--dagger-base`` is refused for this argv, or None. ``logged`` is valid only with --dagger-p > 0 and --dagger-mode swap."""
+    base = getattr(a, "dagger_base", DG.DEFAULT_BASE)
+    if base == DG.DEFAULT_BASE:
+        return None
+    if a.dagger_p <= 0:
+        return f"--dagger-base {base!r} is declared while --dagger-p is {a.dagger_p}: a lever that is declared and does nothing (DAG-0 names only --dagger-p 0)"
+    if getattr(a, "dagger_mode", "swap") != "swap":
+        return f"--dagger-base {base!r} is valid only with --dagger-mode swap (this run has {a.dagger_mode!r}): refused, not approximated"
+    return None
 
 
 def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
     """The DAgger half of the launch gate (G-DVB). Empty = pass. Every flag is read back from the BUILT swap (``dag``); with no swap built every one must be at its default (a flag that builds nothing is
     refused, not ignored). Beyond the flags: the bank's path and sha256 against the declaration (the file on disk is re-hashed), K-B2 / K-B3 / COVERAGE were read (the record exists and says so), the bank's
     generating configuration equals PREREG section 1's and this model's, the exclusivity with --ego-perturb-p, and a lever declared without an effect (DAG-only flags at p = 0) is refused."""
-    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed", "dagger_bank_readout", "dagger_bank_kappa", "dagger_label", "dagger_mode", "dagger_label_cache", "dagger_kin_tb")}
+    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed", "dagger_bank_readout", "dagger_bank_kappa", "dagger_label", "dagger_mode", "dagger_label_cache", "dagger_kin_tb", "dagger_base")}
     declared = {k: getattr(a, k) for k in dfl}
     if dag is None:
         moved = sorted(k for k in dfl if declared[k] != dfl[k])
@@ -718,6 +740,11 @@ def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
     _tb_msg = kin_tb_refusal(a)
     if _tb_msg:
         bad.append(_tb_msg)
+    if lv.get("dagger_base") != a.dagger_base:                                                   # KINPUT: the prior-path source against the built swap's
+        bad.append(f"lever dagger_base: declared {a.dagger_base!r} but built {lv.get('dagger_base')!r}")
+    _base_msg = dagger_base_refusal(a)
+    if _base_msg:
+        bad.append(_base_msg)
     if a.dagger_p <= 0 and float(a.dagger_kin_tb) != 1.0:
         bad.append(f"--dagger-kin-tb {a.dagger_kin_tb!r} is declared while --dagger-p is {a.dagger_p}: a lever that is declared and does nothing (DAG-0 names only --dagger-p 0)")
     want_c = os.path.normcase(os.path.abspath(a.dagger_label_cache)) if a.dagger_label_cache else None                     # KINCACHE: the path and the sha256 of the cache file as loaded
@@ -2948,6 +2975,7 @@ def dagger_probe(model, batch, cfg, dag) -> dict:
         raise AssertionError("dagger probe: a selected row was swapped for a record that is not its window's own matched, uncut state (clip, r' = t, reason ok)")
     if not bool((pert["kin3"][sel_rows] == torch.from_numpy(rec["kin3"]).to(batch["kin3"].dtype)).all()):
         raise AssertionError("dagger probe: the swapped kin3 of a selected row is not the bank record's own kin3: the swap does not write the bank's state into the batch")
+    logged_base = getattr(dag, "base", "own") == "logged"                                            # KINPUT: under --dagger-base logged `base` is the ONE rebuilt tensor that stays the logged window's
     identical = sel & ~torch.stack([ch[k] for k in ("p10f", "base", "kin3", "p10_t")]).any(0)          # selected rows whose own ego equals the logged one bit for bit
     need = sel & ~identical
     res["selected_rows_bit_identical_exempt"] = int(identical.sum())
@@ -2955,7 +2983,13 @@ def dagger_probe(model, batch, cfg, dag) -> dict:
         raise AssertionError(f"dagger probe: all {n_sel} selected rows carry an own ego state bit-identical to the logged one: the swap cannot be seen")
     base_rest = (need & (batch["kin3"][:, 0] == 0.0) & (pert["kin3"][:, 0] == 0.0) & (batch["base"].reshape(B, -1) == 0.0).all(1) & (pert["base"].reshape(B, -1) == 0.0).all(1))
     res["base_rows_at_rest_exempt"] = int(base_rest.sum())
+    if logged_base:                                                                                   # KINPUT: the logged base at r' is kept on every selected row; it must equal the window's own (unswapped) base exactly
+        if bool(ch["base"].any()):
+            raise AssertionError(f"dagger probe: --dagger-base logged but base changed on {int(ch['base'].sum())} rows: the logged base at r' must be kept bit for bit")
+        res["base_source"] = "logged"
     for k in ("p10f", "base", "kin3", "p10_t"):
+        if k == "base" and logged_base:
+            continue
         req = need & ~base_rest if k == "base" else need
         if not bool(ch[k][req].all()):
             raise AssertionError(f"dagger probe: {k} is unchanged on {int((~ch[k][req]).sum())} of {int(req.sum())} selected rows: the swap did not reach it")

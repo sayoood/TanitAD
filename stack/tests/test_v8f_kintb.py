@@ -156,6 +156,7 @@ def test_default_swap_and_built_levers_equal_1a8b11a1s_apart_from_the_new_key(fx
         for step in (0, 5):
             assert _same(G.DaggerSwap(bn, p=1.0, seed=3).apply(batch, step), gd.DaggerSwap(bg, p=1.0, seed=3).apply(batch, step)), (kind, step)
         lv_n, lv_g = G.DaggerSwap(bn, p=1.0, seed=3).built_levers(), gd.DaggerSwap(bg, p=1.0, seed=3).built_levers()
+        assert lv_n.pop("dagger_base") == "own" and "dagger_base" not in lv_g, kind                  # KINPUT: the one new key since fde8b716 (this golden is 1a8b11a1's)
         assert lv_n.pop("dagger_kin_tb") == 1.0 and "dagger_kin_tb" not in lv_g and lv_n == lv_g, kind
     assert G.DaggerSwap().built_levers()["dagger_kin_tb"] == 1.0
 
