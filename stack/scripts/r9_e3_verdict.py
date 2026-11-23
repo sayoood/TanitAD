@@ -345,14 +345,23 @@ def strategic_report(sr) -> dict:
     """STRATEGIC family: REPORT-ONLY (dict-valued rows read with the SAME `row_read`, shown beside FAM-1, never inside it) or NOT-SUPPLIED.  A stamp such as
     {"status": ..., "reason": ...} is not a row (its values are not dicts) and reads NOT-SUPPLIED."""
     got = {k: v for k, v in sr.items() if isinstance(v, dict)} if isinstance(sr, dict) else {}
+    # A NOT-* stamp entry (e.g. S-DEC NOT-COMPUTABLE: the E3 recipe trains --no-strategic, taniteval/tools/strategic_paired.py) is not a row: it has
+    # no delta and no per-window arrays.  It is carried VERBATIM under "not_computable" with its reason, n and tier -- never read as a row, never
+    # dropped into "unreadable_rows" (which would lose the reason), never a pass.
+    stamps = {k: {kk: v.get(kk) for kk in ("status", "reason", "n", "tier")} for k, v in got.items()
+              if str(v.get("status", "")).startswith("NOT-") and "delta" not in v and "a" not in v}
+    got = {k: v for k, v in got.items() if k not in stamps}
     if not got:
-        return {"status": "NOT-SUPPLIED", "reason": STRATEGIC_NOT_SUPPLIED, "rows": {}}
+        rep = {"status": "NOT-SUPPLIED", "reason": STRATEGIC_NOT_SUPPLIED, "rows": {}}
+        if stamps:
+            rep["not_computable"] = stamps
+        return rep
     out = {rid: row_read(r, None, f"families.STRATEGIC.{rid}") for rid, r in got.items()}
     worse = [rid for rid, v in out.items() if v.get("separated_worse")]
     for rid in worse:
         out[rid]["report_only_note"] = STRATEGIC_WORSE
     return {"status": "REPORT-ONLY", "reason": STRATEGIC_REPORT_ONLY, "rows": out, "separated_worse_rows": worse,
-            "unreadable_rows": [rid for rid, v in out.items() if not v["ok"]]}
+            "unreadable_rows": [rid for rid, v in out.items() if not v["ok"]], "not_computable": stamps}
 
 
 def _apply_fam1_margin(rid, rr):

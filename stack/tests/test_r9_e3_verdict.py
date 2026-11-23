@@ -298,6 +298,26 @@ def test_strategic_rows_are_read_beside_fam1_and_never_change_it(tmp_path):
         assert "estimator" in st["rows"]["route_acc"] and st["status"] != "PASS"
 
 
+def test_strategic_not_computable_stamp_keeps_its_reason_and_is_not_a_row(tmp_path):
+    sdec = {"status": "NOT-COMPUTABLE", "reason": "E3 trains --no-strategic (r9e3_K2DC02.argv.json): no strategic head", "n": 0, "tier": "T1*"}
+    D = good()
+    both(D, "families", lambda d: d["rows"].__setitem__("STRATEGIC", {"S-DEC": dict(sdec), "S-GOAL.plan.nav_true": prec(0.02, True, "higher")}))
+    rc, v, md = run(tmp_path, D)
+    assert rc == 0 and v["bars"]["FAM-1"]["status"] == "PASS"                                                   # the stamp never touches FAM-1
+    for s in ("0", "1"):
+        st = v["four_families"][s]["STRATEGIC"]
+        assert st["status"] == "REPORT-ONLY" and "S-DEC" not in st["rows"] and "S-DEC" not in st["unreadable_rows"]
+        assert st["not_computable"]["S-DEC"] == sdec                                                           # carried verbatim, reason kept
+        assert st["rows"]["S-GOAL.plan.nav_true"]["ok"]
+    (tmp_path / "only").mkdir()
+    D2 = good()
+    both(D2, "families", lambda d: d["rows"].__setitem__("STRATEGIC", {"S-DEC": dict(sdec)}))
+    rc, v, md = run(tmp_path / "only", D2)
+    for s in ("0", "1"):
+        st = v["four_families"][s]["STRATEGIC"]
+        assert st["status"] == "NOT-SUPPLIED" and st["rows"] == {} and st["not_computable"]["S-DEC"]["reason"] == sdec["reason"]
+
+
 def test_no_emitted_value_is_PAUSED(tmp_path):
     for D in (good(), _mk(lambda d: d["rows"].__setitem__("STRATEGIC", {"r": prec(0.5, True, "lower")}))):
         (tmp_path / str(id(D))).mkdir()
