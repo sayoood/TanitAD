@@ -447,3 +447,12 @@ def test_t4_takes_the_record_key_and_the_five_names_of_the_fit_tool():
     rec2 = dict(rec, module_values_changed=rec["module_values_changed"] + [{"name": "CARD_HPARAMS"}])
     r = TG.ctl_t4(P4, rec2)
     assert r["pass"] is False and any("CARD_HPARAMS" in x for x in r["failures"])
+
+
+def test_t5_row_clause_of_note_n3_marked_rows_pass_unmarked_rows_fail():
+    base = {"n_rows": 96, "n_t3_rows": 100, "n_marked_dropped": 4, "n_unmarked_not_finite": 0, "const": 30.0, "const_source": "x", "E_fp": 9.9, "E_const": 10.0}
+    assert TG.ctl_t5(base)["pass"] is True
+    r = TG.ctl_t5(dict(base, n_rows=95, n_unmarked_not_finite=1))
+    assert r["pass"] is False and any("neither marked nor finite" in x for x in r["failures"])
+    old = {"n_rows": 99, "n_t3_rows": 100, "const": 30.0, "const_source": "x", "E_fp": 9.9, "E_const": 10.0}
+    assert TG.ctl_t5(old)["pass"] is False

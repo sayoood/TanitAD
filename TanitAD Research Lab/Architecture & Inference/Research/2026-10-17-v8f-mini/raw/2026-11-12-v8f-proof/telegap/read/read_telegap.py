@@ -248,7 +248,11 @@ def compute_values(LK, RL, J, L, box, n_boot=N_BOOT, seed=BOOT_SEED):
             const, src = L["FP_0"]["const_gap"], "dump key const_gap of FP_0"
         else:
             const, src = float(np.median(lab_all[t3])) if t3.any() else None, "median label gap of the evaluation frames (t3 rows)"
-        P["t5"] = {"n_rows": int(fm.sum()), "n_t3_rows": int(t3.sum()), "E_fp": mean_abs(L, "FP_0", fm), "const": const, "const_source": src,
+        fp_drop = L["FP_0"].get("tele_dropped")                                                     # note N3 of card ADD122: rows the head does not hold
+        n_marked = int((t3 & fp_drop).sum()) if fp_drop is not None else 0
+        n_unmarked_bad = int((t3 & ~np.isfinite(L["FP_0"]["gap"]) & ~(fp_drop if fp_drop is not None else np.zeros_like(t3))).sum())
+        P["t5"] = {"n_rows": int(fm.sum()), "n_t3_rows": int(t3.sum()), "n_marked_dropped": n_marked, "n_unmarked_not_finite": n_unmarked_bad,
+                   "E_fp": mean_abs(L, "FP_0", fm), "const": const, "const_source": src,
                    "E_const": fnum(np.abs(lab_all[fm] - const).mean()) if (fm.any() and const is not None) else None}
     else:
         P["t5"] = None
@@ -533,8 +537,9 @@ def ctl_t5(P5):
     bad = []
     if P5["E_fp"] < PERM_MIN * P5["E_const"]:
         bad.append("E(FP_0) %.4f below %.2f of the constant read's %.4f" % (P5["E_fp"], PERM_MIN, P5["E_const"]))
-    if P5.get("n_rows") != P5.get("n_t3_rows"):
-        bad.append("FP_0 has %s finite rows of the %s rows" % (P5.get("n_rows"), P5.get("n_t3_rows")))
+    if P5.get("n_unmarked_not_finite", (P5.get("n_t3_rows") or 0) - (P5.get("n_rows") or 0)) != 0:      # note N3: rows marked as dropped for a missing tele frame are not asked for
+        bad.append("FP_0 has %s finite rows of the %s rows, %s marked as dropped, %s neither marked nor finite"
+                   % (P5.get("n_rows"), P5.get("n_t3_rows"), P5.get("n_marked_dropped"), P5.get("n_unmarked_not_finite")))
     return _res(bad, const_source=P5.get("const_source"))
 
 
