@@ -286,8 +286,8 @@ class DaggerBank:
         self._ok_idx, self._ok_key = ok[order], key[order]
         self._uniq, self._start, self._count = np.unique(self._ok_key, return_index=True, return_counts=True)
 
-    def attach_recovery(self, slot, label, status_counts=None):
-        """``--dagger-label speed_v1`` (``v8f_recovery.label_bank``): ``slot`` [N] int32 (-1 = no speed-consistent label: refused, or not an ok record) indexes ``label`` [n, 30, 2] float64 (the sample's ego frame = the
+    def attach_recovery(self, slot, label, status_counts=None, kin=None):
+        """``--dagger-label speed_v1`` (``v8f_recovery.label_bank``) or ``kin_v1`` (``v8f_recovery.kin_label_bank``; ``kin`` [N] bool = the record's label is a kin_v1 one, the rest are the speed_v1 labels of its fallback or identity rule): ``slot`` [N] int32 (-1 = no speed-consistent label: refused, or not an ok record) indexes ``label`` [n, 30, 2] float64 (the sample's ego frame = the
         human's frame at r'). ELIGIBILITY IS NOT TOUCHED: the eligible index is ``reason == ok`` under both label kinds; only ok records can carry a label."""
         slot = np.asarray(slot, np.int32)
         if slot.shape != self.reason.shape:
@@ -295,11 +295,15 @@ class DaggerBank:
         has = slot >= 0
         if bool((has & (self.reason != OK)).any()):
             raise ValueError("a speed-consistent label on a record the matcher did not pass (reason != ok)")
-        self.rl = {"slot": slot, "label": np.asarray(label, np.float64), "has": has, "status_counts": dict(status_counts or {})}
+        if kin is not None:
+            kin = np.asarray(kin, bool)
+            if kin.shape != self.reason.shape or bool((kin & ~has).any()):
+                raise ValueError(f"kin flags {kin.shape} != the bank's records {self.reason.shape}, or a kin_v1 flag on a record with no label")
+        self.rl = {"slot": slot, "label": np.asarray(label, np.float64), "has": has, "status_counts": dict(status_counts or {}), "kin": kin}
 
     @property
     def label_kind(self) -> str:
-        return "human" if self.rl is None else "speed_v1"
+        return "human" if self.rl is None else ("speed_v1" if self.rl.get("kin") is None else "kin_v1")
 
     # -- header facts ---------------------------------------------------------------------------------------------
     @property
@@ -341,6 +345,8 @@ class DaggerBank:
             lab = np.zeros((len(idx), 30, 2), np.float64)
             lab[has] = self.rl["label"][sl[has]]
             rec["rl_has"], rec["rl_label"] = has, lab
+            if self.rl.get("kin") is not None:                                         # kin_v1 only: which of the swapped labels are kin_v1 ones (the speed_v1 key set is unchanged)
+                rec["rl_kin"] = self.rl["kin"][idx]
         return rec
 
     def coverage(self, wins) -> dict:
@@ -622,6 +628,8 @@ def swap_rows(batch: dict, rows, rec: dict) -> dict:
         sh[rows[hm]] = torch.from_numpy(RV.arc_from_label(lab)).to(dev).to(sh.dtype)                   # s_h re-derived from the same waypoints
         new["gt"], new["s_h"] = gt, sh
         new["_rl_n"] = int(has.sum())
+        if "rl_kin" in rec:                                                                              # --dagger-label kin_v1: the rows whose label is a kin_v1 one (not the speed_v1 fallback / identity)
+            new["_rl_kin_n"] = int(np.asarray(rec["rl_kin"], bool).sum())
     new["_nav_kept"] = int(nav_boundary.sum() + (nav_same & ~own_ok).sum())                              # real frames left as logged: across a manoeuvre boundary (ORC's count), or with no own row
     return new
 
@@ -762,7 +770,7 @@ class DaggerSwap:
         p = self.p if p is None else float(p)
         elig = self.eligible(batch)
         if not p > 0.0:
-            self.last = {"step": int(step), "p": 0.0, "n_rows": int(elig.numel()), "n_eligible": int(elig.sum()), "n_selected": 0, "dagger_nav_kept": 0, "n_label_replaced": 0, "n_appended": 0, "n_rows_out": int(elig.numel())}
+            self.last = {"step": int(step), "p": 0.0, "n_rows": int(elig.numel()), "n_eligible": int(elig.sum()), "n_selected": 0, "dagger_nav_kept": 0, "n_label_replaced": 0, "n_label_kin": 0, "n_appended": 0, "n_rows_out": int(elig.numel())}
             return batch
         bad = self.law_problems()
         if self.kin_mode != "yaw":
@@ -776,7 +784,7 @@ class DaggerSwap:
         u = torch.rand(2, B, generator=g, dtype=torch.float64)                       # selection, which of the window's own states
         sel = (u[0] < p).to(dev) & elig
         rows = sel.nonzero(as_tuple=True)[0]
-        self.last = {"step": int(step), "p": p, "n_rows": B, "n_eligible": int(elig.sum()), "n_selected": int(rows.numel()), "dagger_nav_kept": 0, "n_label_replaced": 0, "n_appended": 0, "n_rows_out": B, "sel": sel.detach().cpu().clone()}      # n_appended: PREREG_V8F_ROLLADD, exactly 0 under swap; under add counted from the batch that is returned (below), never from n_selected
+        self.last = {"step": int(step), "p": p, "n_rows": B, "n_eligible": int(elig.sum()), "n_selected": int(rows.numel()), "dagger_nav_kept": 0, "n_label_replaced": 0, "n_label_kin": 0, "n_appended": 0, "n_rows_out": B, "sel": sel.detach().cpu().clone()}      # n_appended: PREREG_V8F_ROLLADD, exactly 0 under swap; under add counted from the batch that is returned (below), never from n_selected
         out = dict(batch)
         if rows.numel():
             r = rows.cpu()
@@ -784,6 +792,7 @@ class DaggerSwap:
             upd = swap_rows(batch, rows, self.bank.gather(idx))
             self.last["dagger_nav_kept"] = upd.pop("_nav_kept")
             self.last["n_label_replaced"] = upd.pop("_rl_n", 0)                       # rows whose gt / s_h came from the speed_v1 label (exactly 0 under --dagger-label human)
+            self.last["n_label_kin"] = upd.pop("_rl_kin_n", 0)                        # rows whose gt / s_h came from a kin_v1 label (exactly 0 under human and speed_v1)
             self.last["record_idx"] = idx
             if self.mode == "add":
                 out = append_rows(batch, rows, upd)                                       # the ONE line that applies `add`: delete it and `out` is `batch` (no row is appended)

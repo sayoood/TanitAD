@@ -246,8 +246,9 @@ def build_parser():
     ap.add_argument("--dagger-label", dest="dagger_label", choices=DR.DAGGER_LABELS, default="human",
                     help="PREREG_V8F_ROLLHIST (arm RL): the label a swapped own state carries. human (default) = today's swap bit for bit: the human's GT at the matched route point r'. speed_v1 = the SPEED-consistent label "
                          "(v8f_recovery.speed_label, labelled once at bank load, matcher-ok records only): the human polyline from r' sampled at the human arc plus the integrated speed deficit of V1's rate-limited speed profile "
-                         "started from the OWN speed; gt and s_h of the swapped rows come from it; a record the labeller refuses keeps the human label; the eligible index is unchanged. Must equal the built bank's label kind or "
-                         "the launch gate refuses; refused when non-default at --dagger-p 0")
+                         "started from the OWN speed; gt and s_h of the swapped rows come from it; a record the labeller refuses keeps the human label; the eligible index is unchanged. kin_v1 = the KINEMATIC label (KINLAB, "
+                         "v8f_recovery.kin_label_bank): a unicycle integration from the record's own (v, a, kappa) at NOW that blends over 1 s into the speed_v1 reference and merges into the human path; a record it refuses keeps its speed_v1 "
+                         "label (else the human label). Must equal the built bank's label kind or the launch gate refuses; refused when non-default at --dagger-p 0")
     ap.add_argument("--dagger-mode", dest="dagger_mode", choices=DG.DAGGER_MODES, default=DG.DEFAULT_MODE,
                     help="PREREG_V8F_ROLLADD (arm RA): swap (default) = the selected logged rows are overwritten by the own states, cf27dbb7 bit for bit. add = the logged batch is kept whole and the N swapped rows are APPENDED "
                          "after it (the step trains on B + N rows; same selection, same generator). Must equal the BUILT swap's mode or the launch gate refuses; refused at --dagger-p 0 and with --launch-intent-w / --level-head on / "
@@ -605,14 +606,18 @@ def load_dagger_bank(a, J, wins, clips, info, store=None) -> tuple:
     kb2 = bank0.check_on_policy(init["sha256"])
     bank = DG.DaggerBank(bank0.a, bank0.header, clip_names=J["clip"], manifest=bank0.manifest, sha256=bank0.sha256, path=bank0.path)
     rl_ctl = None
-    if a.dagger_label == "speed_v1":                                                             # --dagger-label speed_v1: the speed-consistent labeller, once, at load (the logged grid and speed of each clip from the trainer's own store)
+    if a.dagger_label in ("speed_v1", "kin_v1"):                                                 # --dagger-label speed_v1 / kin_v1: the labeller, once, at load (the logged grid and speed of each clip from the trainer's own store)
         if store is None:
-            raise DG.BankRefused("--dagger-label speed_v1 needs the trainer's clip store (the logged grid and speed of each bank clip)")
+            raise DG.BankRefused(f"--dagger-label {a.dagger_label} needs the trainer's clip store (the logged grid and speed of each bank clip)")
         t_rl = time.time()
         n_el0 = int(len(bank._ok_idx))
-        res = DR.label_bank(bank.a, bank.ci, J["clip"], getattr(store, "get_kin", None) or store.get, log=print)
-        bank.attach_recovery(res["slot"], res["label"], res["status_counts"])                     # the line that attaches the labels (the eligible index is unchanged)
-        rl_ctl = {"labeller_module": "tanitad/data/v8f_recovery.py", "label": "speed_v1", "status_counts": res["status_counts"], "n_labelled": res["n_labelled"], "n_emitted": int(len(res["label"])),
+        if a.dagger_label == "kin_v1":                                                           # KINLAB: the kinematic labeller (own v, a, kappa at NOW -> the speed_v1 reference); a refused record keeps its speed_v1 label
+            res = DR.kin_label_bank(bank.a, bank.ci, J["clip"], getattr(store, "get_kin", None) or store.get, log=print)
+            bank.attach_recovery(res["slot"], res["label"], res["status_counts"], kin=res["is_kin"])
+        else:
+            res = DR.label_bank(bank.a, bank.ci, J["clip"], getattr(store, "get_kin", None) or store.get, log=print)
+            bank.attach_recovery(res["slot"], res["label"], res["status_counts"])                 # the line that attaches the labels (the eligible index is unchanged)
+        rl_ctl = {"labeller_module": "tanitad/data/v8f_recovery.py", "label": a.dagger_label, "status_counts": res["status_counts"], "n_labelled": res["n_labelled"], "n_emitted": int(len(res["label"])),
                   "n_eligible": n_el0, "n_eligible_after": int(len(bank._ok_idx)), "census": res["census"], "wall_s": round(time.time() - t_rl, 1)}
     cov = bank.coverage(wins)
     if cov["blocked"]:
@@ -2883,7 +2888,7 @@ def dagger_probe(model, batch, cfg, dag) -> dict:
         req = need & ~base_rest if k == "base" else need
         if not bool(ch[k][req].all()):
             raise AssertionError(f"dagger probe: {k} is unchanged on {int((~ch[k][req]).sum())} of {int(req.sum())} selected rows: the swap did not reach it")
-    rl_keys = ("gt", "s_h") if dag.bank.label_kind == "speed_v1" else ()                          # speed_v1: the two waypoint-derived labels are the ONLY targets the swap may replace
+    rl_keys = ("gt", "s_h") if dag.bank.label_kind in ("speed_v1", "kin_v1") else ()              # speed_v1 / kin_v1: the two waypoint-derived labels are the ONLY targets the swap may replace
     kept_moved = sorted(k for k in batch if k not in DG.REBUILT and k != "lab_s" and k not in rl_keys and pert[k] is not batch[k])
     if rl_keys:
         for k in rl_keys:
@@ -2891,7 +2896,12 @@ def dagger_probe(model, batch, cfg, dag) -> dict:
                 raise AssertionError(f"dagger probe: {k} changed on a row the swap did not select")
         res["rl_label_rows_changed"] = int(changed(pert["gt"], batch["gt"]).sum())
         if not (dag.last.get("n_label_replaced", 0) > 0 and res["rl_label_rows_changed"] > 0):
-            raise AssertionError(f"dagger probe: --dagger-label speed_v1 replaced {dag.last.get('n_label_replaced')} labels and gt changed on {res['rl_label_rows_changed']} rows: the speed-consistent label does not reach the batch")
+            raise AssertionError(f"dagger probe: --dagger-label {dag.bank.label_kind} replaced {dag.last.get('n_label_replaced')} labels and gt changed on {res['rl_label_rows_changed']} rows: the label does not reach the batch")
+        if dag.bank.label_kind == "kin_v1":                                      # KINLAB: the per-reason refusal counters of the bank, and the rows of THIS probe batch whose label is a kin_v1 one
+            res["n_label_kin"] = int(dag.last.get("n_label_kin", 0))
+            res["kin_status_counts"] = dict(dag.bank.rl["status_counts"])
+            if not res["n_label_kin"] > 0:
+                raise AssertionError("dagger probe: --dagger-label kin_v1 put 0 kin_v1 labels into the probe batch: every selected row kept a speed_v1 / human label (the kinematic label does not reach the batch)")
     if kept_moved:
         raise AssertionError(f"dagger probe: {kept_moved} are not the same objects after the swap: targets, labels and kept inputs must not be touched")
     ls0, ls1 = batch["lab_s"], pert["lab_s"]
@@ -3736,8 +3746,10 @@ def main(argv=None):
                     if dag.mode == "add":                                                        # --dagger-mode add only (a swap run keeps today's key set): appended rows, counted from the returned batch, and the step's row count
                         c_["appended"] += dag.last["n_appended"]
                         c_["rows_out"] += dag.last["n_rows_out"]
-                    if dag.bank is not None and dag.bank.label_kind == "speed_v1":               # --dagger-label speed_v1 only: rows whose gt / s_h came from the speed-consistent label (a human run keeps today's key set)
+                    if dag.bank is not None and dag.bank.label_kind in ("speed_v1", "kin_v1"):   # --dagger-label speed_v1 / kin_v1 only: rows whose gt / s_h came from the speed-consistent label (a human run keeps today's key set)
                         c_["label_replaced"] = c_.get("label_replaced", 0) + dag.last["n_label_replaced"]
+                    if dag.bank is not None and dag.bank.label_kind == "kin_v1":                 # kin_v1 only: of those, the rows whose label is a kin_v1 one
+                        c_["label_kin"] = c_.get("label_kin", 0) + dag.last["n_label_kin"]
                 if launch_on:                                          # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["launch"]
                     b["launch"] = lmask
                     for c_ in (launch_int, launch_tot):                # the control counts: rows seen, GT-valid rows (the along-track label exists), GT-launch rows
@@ -3793,9 +3805,11 @@ def main(argv=None):
                     rec["dagger_n"], rec["dagger_eligible"], rec["dagger_rows"], rec["dagger_nav_kept"] = dag_int["n"], dag_int["eligible"], dag_int["rows"], dag_int["nav_kept"]          # per log interval
                 if "label_replaced" in dag_int:
                     rec["dagger_label_replaced"] = dag_int["label_replaced"]
+                if "label_kin" in dag_int:
+                    rec["dagger_label_kin"] = dag_int["label_kin"]
                 if "appended" in dag_int:
                     rec["dagger_appended"], rec["dagger_rows_out"] = dag_int["appended"], dag_int["rows_out"]
-                dag_int.update(rows=0, eligible=0, n=0, nav_kept=0, **({"label_replaced": 0} if "label_replaced" in dag_int else {}), **({"appended": 0, "rows_out": 0} if "appended" in dag_int else {}))
+                dag_int.update(rows=0, eligible=0, n=0, nav_kept=0, **({"label_replaced": 0} if "label_replaced" in dag_int else {}), **({"label_kin": 0} if "label_kin" in dag_int else {}), **({"appended": 0, "rows_out": 0} if "appended" in dag_int else {}))
                 if comp.on:
                     rec["ego_dagger_overlap_n"] = ov_int["n"]               # AMEND1 section 1: per log interval (exactly 0)
                 ov_int.update(n=0)
@@ -3830,7 +3844,7 @@ def main(argv=None):
                "seconds": time.time() - t0, "argv_sha": argv_sha(argv), "levers": levers,
                "selfcheck": "selfcheck.json",
                "ego_perturb_n": ego_tot["n"], "ego_perturb_eligible": ego_tot["eligible"], "ego_perturb_rows": ego_tot["rows"], "ego_perturb_nav_kept": ego_tot["nav_kept"],
-               "dagger_n": dag_tot["n"], "dagger_eligible": dag_tot["eligible"], "dagger_rows": dag_tot["rows"], "dagger_nav_kept": dag_tot["nav_kept"], **({"dagger_label_replaced": dag_tot["label_replaced"]} if "label_replaced" in dag_tot else {}), **({"dagger_appended": dag_tot["appended"], "dagger_rows_out": dag_tot["rows_out"]} if "appended" in dag_tot else {})}      # PREREG_V8F_DAGGER run totals: exactly 0 swapped at p = 0; swapped == eligible at p = 1      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
+               "dagger_n": dag_tot["n"], "dagger_eligible": dag_tot["eligible"], "dagger_rows": dag_tot["rows"], "dagger_nav_kept": dag_tot["nav_kept"], **({"dagger_label_replaced": dag_tot["label_replaced"]} if "label_replaced" in dag_tot else {}), **({"dagger_label_kin": dag_tot["label_kin"]} if "label_kin" in dag_tot else {}), **({"dagger_appended": dag_tot["appended"], "dagger_rows_out": dag_tot["rows_out"]} if "appended" in dag_tot else {})}      # PREREG_V8F_DAGGER run totals: exactly 0 swapped at p = 0; swapped == eligible at p = 1      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
     summary["recover_p"], summary["recover_n"], summary["recover_eligible"], summary["recover_rows"], summary["recover_changed"] = rcv.p, rec_tot["n"], rec_tot["eligible"], rec_tot["rows"], rec_tot["changed"]
     summary["t2_bank_p"], summary["t2_bank_n"], summary["t2_bank_rows"] = t2b.p, t2_tot["n"], t2_tot["rows"]
     summary["recover_share"] = (rec_tot["n"] / rec_tot["eligible"]) if rec_tot["eligible"] else None        # PREREG_RECOVER_FT: the card's KR1 reads n_selected / n_eligible: [0.25, 0.35] for R, exactly 0 (n) for C0 / C0rep

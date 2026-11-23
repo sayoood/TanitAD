@@ -246,7 +246,7 @@ def gate_violation_count(label_own, v_own, upto: int) -> int:
 
 
 # ================================================================================================ INTEGRATION (new; the labeller above is verbatim)
-DAGGER_LABELS = ("human", "speed_v1")           # the ``--dagger-label`` choices; "human" is the default and is today's swap bit for bit
+DAGGER_LABELS = ("human", "speed_v1", "kin_v1")  # the ``--dagger-label`` choices; "human" is the default and is today's swap bit for bit; "kin_v1" = KINLAB (section at the end of this file)
 EMITTED = (STATUS_EMITTED, STATUS_IDENTITY)
 _OK = 0                                         # v8f_dagger.OK (not imported: this module stays numpy-only)
 SPEED_STATUSES = (STATUS_EMITTED, STATUS_IDENTITY, "no_logged_future", "nonfinite", "path_exhausted", "arcs_decreasing", "refused_infeasible")
@@ -393,4 +393,274 @@ def speed_census(reason, tick, st, dsp, d30, vt=None) -> dict:
     out["abs_delta30"] = pct(d30[ok & np.isfinite(d30)])
     n_ok = int(ok.sum())
     out["relabelled_share_of_ok"] = (int((ok & (st == E)).sum()) / n_ok) if n_ok else None
+    return out
+
+
+# ================================================================================================ KINLAB (``--dagger-label kin_v1``)
+"""KINLAB: the KINEMATIC label (MM design, BRIEF_BUILD_KINLAB 2026-11-23, binding; every constant below is that brief's, none is fitted to data).
+
+WHY. In an own-state sample the model READS the own kinematics (kin3 = (v, a, kappa), ``p10f`` derived from it, ``base`` = O's prior path), but ``gt`` follows the human path with the human's heading and curvature from NOW (``speed_v1`` changes only the arc
+timing). MEASURED (phase 1, RH bank s0 shard 0, n = 372,791): own-vs-human yaw-rate gap p50 1.84 / p95 23.5 deg/s (human-to-human p95 1.78), acceleration gap p50 1.55 / p95 6.42 m/s2 (human-to-human p95 0.58). The label contradicts the prior path the model
+is given. ``kin_v1`` makes the label START where the inputs say the car is going and then merge into the human's path.
+
+THE LABEL (per matcher-ok record; the sample frame = the human's frame at r', origin = NOW, heading 0):
+  1. own start (v_o, a_o, kappa_o) = ``p10f[-1, 0:3]`` of the record (the exact values the model reads);
+  2. reference = the record's ``speed_v1`` label (its step speeds u_l[k] and the human polyline P it samples); if ``speed_label`` refuses the record, ``kin_v1`` refuses it too (reason ``speed_<status>``);
+  3. unicycle integration, sub-step H_SUB = 0.05 s for T_END = 6.0 s (120 sub-steps), output every 0.2 s (30 points) = ``gt``; ``s_h`` is re-derived by ``arc_from_label`` exactly as under speed_v1.
+     blend w(t) = min(1, t / T_B), T_B = 1.0 s.  Longitudinal a(t) = (1 - w) a_o + w a_rule(t), |a| <= A_LIM, v >= 0, where a_rule(t) = clip((u_h(t) - v(t)) / DT, +-A_LABEL) is the speed_v1 RULE evaluated on the INTEGRATED state v(t)
+     (u_h(t) = the human's step speed, linearly interpolated between the 0.2 s knots; knot k = u_h[k], knot 0 = u_h[1]). [PHASE 3 (MM construction fix, BRIEF_BUILD_KINLAB3 2026-11-23): phase 2 used the speed_v1 per-step accelerations, which never pull the
+     integrated speed back to the reference, so the merge tail jumped the speed (98.6 % of the acceleration refusals sat on the merge step).]
+     Lateral kappa(t) = (1 - w) kappa_o + w kappa_pp(t): pure pursuit to P, lookahead at arc s* + L_d from the closest point s*, L_d = max(LD_MIN, LD_GAIN * v), kappa_pp = 2 sin(alpha) / L_d; |kappa| <= K_LIM, and hypot(a, v^2 kappa) <= F_LIM by scaling kappa down first.
+  4. merge: at the first output point with w = 1, lateral distance to P < MERGE_LAT_M, heading error to P's tangent < MERGE_HEAD_RAD AND |v - u_h| <= MERGE_SPEED_MS (all at the same output point), the remaining points are P at the cumulative arc
+     s*_m + sum of the step speeds of the speed_v1 rule started from the merged v (``label_steps(v_m, u_h[k_m:])``: toward u_h[k] by at most A_LABEL * DT per step, then u_h once equal; no step changes v by more than A_LABEL * DT).
+  5. refusal (the caller keeps the speed_v1 label of that record, else the human label), each counted: ``refused_nonfinite``; ``refused_not_merged`` (not merged by t = 6.0 s); ``refused_path_exhausted`` (a lookahead or the merged arc runs past P's end);
+     ``refused_infeasible`` (``violations`` of the final label, from v_o); ``speed_<status>`` (the reference itself was refused).
+  6. identity rule: |kappa_o - kappa_ref0| <= IDENT_TOL and |a_o - a_ref0| <= IDENT_TOL -> the record's label is the speed_v1 label bit for bit. a_ref0 = (u_l[1] - u_l[0]) / DT; kappa_ref0 = the reference label's first-step path curvature
+     (the turn between its chords 0->p1 and p1->p2 over their mean length; 0 when a chord is shorter than STOP_STEP_M).
+"""
+T_B = 1.0               # s, the blend horizon
+LD_MIN = 4.0            # m, the lookahead floor
+LD_GAIN = 1.0           # s, the lookahead's speed gain (L_d = max(LD_MIN, LD_GAIN * v))
+MERGE_LAT_M = 0.10      # m
+MERGE_HEAD_RAD = math.radians(1.0)
+MERGE_SPEED_MS = 0.05   # m/s, the merge's speed condition |v - u_h| (phase 3)
+H_SUB = 0.05            # s, the integration sub-step (DT / H_SUB = 4 sub-steps per output point)
+T_END = 6.0             # s = H * DT
+IDENT_TOL = 1e-6        # the identity rule's tolerance on kappa and a
+SUB_PER_STEP = int(round(DT / H_SUB))
+KIN_REFUSALS = ("refused_nonfinite", "refused_not_merged", "refused_path_exhausted", "refused_infeasible")
+KIN_STATUSES = ("kin_emitted", "identity_rule") + KIN_REFUSALS + tuple("speed_" + s for s in ("no_logged_future", "nonfinite", "path_exhausted", "arcs_decreasing", "refused_infeasible"))
+assert abs(SUB_PER_STEP * H_SUB - DT) < 1e-12 and int(round(T_END / H_SUB)) == H * SUB_PER_STEP
+
+
+def _wrap(x: float) -> float:
+    return math.atan2(math.sin(x), math.cos(x))
+
+
+def _closest(Pl, sl, q, i0: int):
+    """Closest point of the polyline (lists ``Pl`` [(x, y)], ``sl`` arc) to q = (x, y), searching forward from segment i0 (monotone: the pursuit never goes back along the path) and stopping 3 segments past the best one.
+    Returns (segment, arc s*, distance, segment heading)."""
+    n = len(Pl) - 1
+    best = None
+    i = i0
+    qx, qy = q
+    while i < n:
+        ax, ay = Pl[i]
+        dx, dy = Pl[i + 1][0] - ax, Pl[i + 1][1] - ay
+        d2 = dx * dx + dy * dy
+        t = 0.0 if d2 < 1e-18 else min(1.0, max(0.0, ((qx - ax) * dx + (qy - ay) * dy) / d2))
+        fx, fy = ax + t * dx, ay + t * dy
+        dist = math.hypot(qx - fx, qy - fy)
+        if best is None or dist < best[2] - 1e-12:
+            best = (i, sl[i] + t * math.sqrt(d2), dist)
+        elif i > best[0] + 3:
+            break
+        i += 1
+    if best is None:                                   # a one-point polyline: nothing to follow
+        return i0, sl[-1], math.hypot(qx - Pl[-1][0], qy - Pl[-1][1]), 0.0
+    j = best[0]
+    hd = None
+    for jj in list(range(j, n)) + list(range(j - 1, -1, -1)):          # the heading of the nearest non-degenerate segment
+        dx, dy = Pl[jj + 1][0] - Pl[jj][0], Pl[jj + 1][1] - Pl[jj][1]
+        if dx * dx + dy * dy > 1e-18:
+            hd = math.atan2(dy, dx)
+            break
+    return best[0], best[1], best[2], (0.0 if hd is None else hd)
+
+
+def _point_at(Pl, sl, s):
+    """The polyline point at arc s (clamped), linear interpolation."""
+    import bisect
+    i = min(max(bisect.bisect_right(sl, s) - 1, 0), len(Pl) - 2)
+    d = sl[i + 1] - sl[i]
+    t = 0.0 if d < 1e-18 else (s - sl[i]) / d
+    return Pl[i][0] + t * (Pl[i + 1][0] - Pl[i][0]), Pl[i][1] + t * (Pl[i + 1][1] - Pl[i][1])
+
+
+def ref_start(label, u_l):
+    """(a_ref0, kappa_ref0): the reference's first-step acceleration and curvature (the identity rule's comparison values)."""
+    a_ref0 = (float(u_l[1]) - float(u_l[0])) / DT
+    p = np.concatenate([[[0.0, 0.0]], np.asarray(label, np.float64)[:2]])
+    d = p[1:] - p[:-1]
+    c = np.hypot(d[:, 0], d[:, 1])
+    if c[0] < STOP_STEP_M or c[1] < STOP_STEP_M:
+        return a_ref0, 0.0
+    return a_ref0, _wrap(math.atan2(d[1, 1], d[1, 0]) - math.atan2(d[0, 1], d[0, 0])) / (0.5 * (c[0] + c[1]))
+
+
+def kin_label(grid, r: int, kin_own, *, check: bool = True, _speed=None):
+    """The KINEMATIC label (``--dagger-label kin_v1``) of an own state matched (ok) to logged row ``r``; ``kin_own`` = (v_o, a_o, kappa_o) = ``p10f[-1, 0:3]``. ``grid`` [T, >=3] the logged (x, y, yaw) on the 0.2 s grid.
+    Returns dict(status, label [30, 2] | None, speed_status, speed_label [30, 2] | None (the fallback), t_merge | None, max_dev | None (max over the output points of the distance to the human polyline), viol | None).
+    ``status`` is one of KIN_STATUSES: kin_emitted / identity_rule carry ``label``; a refusal carries ``label`` None and the caller keeps ``speed_label`` (else the human label)."""
+    G = np.asarray(grid, np.float64)
+    r = int(r)
+    v_o, a_o, k_o = (float(kin_own[0]), float(kin_own[1]), float(kin_own[2]))
+    out = {"status": None, "label": None, "speed_status": None, "speed_label": None, "t_merge": None, "max_dev": None, "viol": None}
+    sp = speed_label(G, r, v_o) if _speed is None else _speed
+    out["speed_status"], out["speed_label"] = sp["status"], sp["label"]
+    if sp["status"] not in EMITTED:
+        out["status"] = "speed_" + sp["status"]
+        out["speed_label"] = None
+        return out
+    if not (math.isfinite(v_o) and math.isfinite(a_o) and math.isfinite(k_o)):
+        out["status"] = "refused_nonfinite"
+        return out
+    Gp = G[r:]
+    P = to_ego(Gp[:, :2], (Gp[0, 0], Gp[0, 1], Gp[0, 2]))                            # the reference polyline, as speed_label builds it
+    s = _polyline(P)
+    uh = np.concatenate([[0.0], (s[1:H + 1] - s[:H]) / DT])
+    ul = label_steps(v_o, uh)
+    a_ref0, k_ref0 = ref_start(sp["label"], ul)
+    if abs(k_o - k_ref0) <= IDENT_TOL and abs(a_o - a_ref0) <= IDENT_TOL:             # the identity rule: the label IS the speed_v1 label
+        out.update(status="identity_rule", label=sp["label"])
+        return out
+    uh_k = uh.copy()
+    uh_k[0] = uh[1]                                                                   # knot 0 of the interpolated human step speed (u_h[0] is unused: the first step's speed stands there)
+    Pl, sl = [(float(x), float(y)) for x, y in P], [float(x) for x in s]
+    s_end = sl[-1]
+    x = y = th = 0.0
+    v = v_o
+    seg = 0
+    pts = np.empty((H, 2))
+    max_dev = 0.0
+    merged_k = None
+    s_m = v_m = 0.0
+    for n in range(H * SUB_PER_STEP):
+        t = n * H_SUB
+        w = min(1.0, t / T_B)
+        k = n // SUB_PER_STEP
+        fr = (n % SUB_PER_STEP) / SUB_PER_STEP
+        u_h_t = (1.0 - fr) * float(uh_k[k]) + fr * float(uh_k[k + 1])                 # the human step speed at t, linear between the 0.2 s knots
+        a_rule = min(max((u_h_t - v) / DT, -A_LABEL), A_LABEL)                        # the speed_v1 rule on the integrated state
+        a = min(max((1.0 - w) * a_o + w * a_rule, -A_LIM), A_LIM)
+        if w > 0.0:
+            seg, s_star, _, _ = _closest(Pl, sl, (x, y), seg)
+            Ld = max(LD_MIN, LD_GAIN * v)
+            if s_star + Ld > s_end:                                                   # the lookahead runs past the logged path
+                out["status"] = "refused_path_exhausted"
+                return out
+            lx, ly = _point_at(Pl, sl, s_star + Ld)
+            kpp = 2.0 * math.sin(_wrap(math.atan2(ly - y, lx - x) - th)) / Ld
+        else:
+            kpp = 0.0
+        kap = min(max((1.0 - w) * k_o + w * kpp, -K_LIM), K_LIM)
+        if math.hypot(a, v * v * kap) > F_LIM:                                        # the friction circle: kappa gives way first
+            kap = math.copysign(math.sqrt(max(F_LIM * F_LIM - a * a, 0.0)) / (v * v), kap)
+        v1 = max(0.0, v + a * H_SUB)
+        vm = 0.5 * (v + v1)
+        th1 = th + vm * kap * H_SUB
+        thm = 0.5 * (th + th1)
+        x += vm * math.cos(thm) * H_SUB
+        y += vm * math.sin(thm) * H_SUB
+        v, th = v1, th1
+        if (n + 1) % SUB_PER_STEP == 0:
+            kk = (n + 1) // SUB_PER_STEP                                              # output point kk (1..30)
+            pts[kk - 1] = (x, y)
+            seg, s_star, dist, hd = _closest(Pl, sl, (x, y), seg)
+            max_dev = max(max_dev, dist)
+            if (n + 1) * H_SUB >= T_B and dist < MERGE_LAT_M and abs(_wrap(th - hd)) < MERGE_HEAD_RAD and abs(v - float(uh_k[kk])) <= MERGE_SPEED_MS:
+                merged_k, s_m, v_m = kk, s_star, v
+                break
+    if not (np.isfinite(pts[:max(merged_k or 0, 1)]).all() and math.isfinite(max_dev)):
+        out["status"] = "refused_nonfinite"
+        return out
+    if merged_k is None:
+        out["status"] = "refused_not_merged"
+        return out
+    out["t_merge"] = merged_k * DT
+    ul_t = label_steps(v_m, uh_k[merged_k:])                                          # the speed_v1 rule from the merged v: ul_t[j] = the step speed of output point merged_k + j
+    arc = s_m
+    for kk in range(merged_k + 1, H + 1):                                             # P at the cumulative arc (position- and speed-continuous)
+        arc += float(ul_t[kk - merged_k]) * DT
+        if arc > s_end + 1e-9:
+            out["status"] = "refused_path_exhausted"
+            return out
+        pts[kk - 1] = _point_at(Pl, sl, arc)
+    if not np.isfinite(pts).all():
+        out["status"] = "refused_nonfinite"
+        return out
+    out["max_dev"] = float(max_dev)
+    if check:
+        vv = violations(pts, v_o, H)
+        out["viol"] = vv
+        if vv["any"]:
+            out["status"] = "refused_infeasible"
+            return out
+    out.update(status="kin_emitted", label=pts)
+    return out
+
+
+def kin_label_bank(arrays: dict, ci, clip_names, read_clip, *, log=None, check: bool = True) -> dict:
+    """``kin_label`` for every bank record whose matcher reason is ok (once, at bank load; deterministic float64, no RNG). Off-route / end_edge / nonfinite records get no label (they stay cut, exactly as under speed_v1: the eligible index is equal under
+    all three label kinds).
+
+    Same arguments as ``label_bank``. The own state is ``p10f[:, -1, 0:3]``. A refused record keeps its ``speed_v1`` label (when the reference itself was not refused), else the human label (slot -1).
+    Returns ``{"slot": int32 [N] (-1 = none), "label": float64 [n_emit, 30, 2], "is_kin": bool [N] (the record's label is a kin_v1 one: status kin_emitted), "status_counts", "n_labelled", "census"}``."""
+    reason = np.asarray(arrays["reason"])
+    p10f, rr = arrays["p10f"], np.asarray(arrays["r"], np.int64)
+    tick = np.asarray(arrays["tick"], np.int64) if "tick" in arrays else np.zeros(len(reason), np.int64)
+    ci = np.asarray(ci, np.int64)
+    todo = np.flatnonzero(reason == _OK)
+    order = todo[np.argsort(ci[todo], kind="stable")]
+    N = len(reason)
+    slot = np.full(N, -1, np.int32)
+    is_kin = np.zeros(N, bool)
+    st = np.full(N, -1, np.int8)
+    t_merge, max_dev = np.full(N, np.nan), np.full(N, np.nan)
+    d30, d5, a30 = np.full(N, np.nan), np.full(N, np.nan), np.full(N, np.nan)
+    vt = np.zeros(N, np.int8)                                                         # checker terms of a refused_infeasible record: 1 accel, 2 curv, 4 fric (bit set)
+    labels, counts, n_done = [], {}, 0
+    cur, grid = None, None
+    for i in order:
+        c = int(ci[i])
+        if c != cur:
+            d = read_clip(str(clip_names[c]))
+            pg = np.asarray(d["pose"], np.float64)
+            grid, cur = pg[:, :3], c
+        res = kin_label(grid, int(rr[i]), np.asarray(p10f[i, -1, :3], np.float64), check=check)
+        counts[res["status"]] = counts.get(res["status"], 0) + 1
+        st[i] = KIN_STATUSES.index(res["status"])
+        if res["status"] == "refused_infeasible":
+            vt[i] = (1 if res["viol"]["accel"] else 0) | (2 if res["viol"]["curv"] else 0) | (4 if res["viol"]["fric"] else 0)
+        if res["status"] in ("kin_emitted", "identity_rule"):
+            slot[i] = len(labels)
+            labels.append(res["label"])
+            is_kin[i] = res["status"] == "kin_emitted"
+        elif res["speed_label"] is not None:                                          # the fallback: today's speed_v1 label of this record
+            slot[i] = len(labels)
+            labels.append(res["speed_label"])
+        if res["status"] == "kin_emitted":
+            sl_ = res["speed_label"]
+            t_merge[i], max_dev[i] = res["t_merge"], res["max_dev"]
+            d30[i] = float(np.hypot(*(res["label"][H - 1] - sl_[H - 1])))
+            d5[i] = float(np.hypot(*(res["label"][4] - sl_[4])))
+            a30[i] = float(arc_from_label(res["label"][None])[0, H - 1] - arc_from_label(sl_[None])[0, H - 1])
+        n_done += 1
+        if log is not None and n_done % 50000 == 0:
+            log(f"[kin_v1] labelled {n_done}/{len(order)}")
+    lab = np.stack(labels).astype(np.float64) if labels else np.zeros((0, H, 2))
+    return {"slot": slot, "label": lab, "is_kin": is_kin, "status_counts": counts, "n_labelled": int(n_done), "census": kin_census(reason, tick, st, t_merge, max_dev, d30, d5, a30, vt)}
+
+
+def kin_census(reason, tick, st, t_merge, max_dev, d30, d5, a30, vt=None) -> dict:
+    """The bank census of ``--dagger-label kin_v1``: per tick and pooled, counts of ok records, relabelled (kin_emitted), identity (the identity rule), refused by reason; the relabelled share of ok; and over the relabelled records the merge time (s), the max
+    deviation of the label from the human polyline (m), |P_kin[30] - P_speed[30]| and |P_kin[5] - P_speed[5]| (m; point distance), and the arc difference at knot 30 (m, absolute)."""
+    ok = np.asarray(reason) == _OK
+    tick = np.asarray(tick)
+    pct = lambda a: ({"p50": float(np.percentile(a, 50)), "p95": float(np.percentile(a, 95)), "p99": float(np.percentile(a, 99)), "n": int(len(a))} if len(a) else {"p50": None, "p95": None, "p99": None, "n": 0})
+    E, I = KIN_STATUSES.index("kin_emitted"), KIN_STATUSES.index("identity_rule")
+    out = {"per_tick": {}}
+    for t in sorted(set(int(x) for x in tick[ok])) + ["pooled"]:
+        m = ok if t == "pooled" else ok & (tick == t)
+        row = {"ok": int(m.sum()), "relabelled": int((m & (st == E)).sum()), "identity": int((m & (st == I)).sum())}
+        row["refused"] = {k: int((m & (st == i)).sum()) for i, k in enumerate(KIN_STATUSES) if i not in (E, I) and (m & (st == i)).any()}
+        if vt is not None:                                                            # refused_infeasible by checker term (not exclusive)
+            row["refused_infeasible_by_term"] = {"accel": int((m & (vt & 1 > 0)).sum()), "curv": int((m & (vt & 2 > 0)).sum()), "fric": int((m & (vt & 4 > 0)).sum())}
+        out["per_tick"][str(t)] = row
+    k = ok & (st == E)
+    out["merge_time_s"], out["max_dev_m"] = pct(t_merge[k]), pct(max_dev[k])
+    out["abs_dpoint30_kin_vs_speed_m"], out["abs_dpoint5_kin_vs_speed_m"] = pct(d30[k]), pct(d5[k])
+    out["abs_darc30_kin_vs_speed_m"] = pct(np.abs(a30[k]))
+    n_ok = int(ok.sum())
+    out["relabelled_share_of_ok"] = (int(k.sum()) / n_ok) if n_ok else None
     return out
