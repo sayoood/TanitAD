@@ -24,3 +24,16 @@ Made and landed BEFORE any refcv8 HOLD number was read, before E2 was read, and 
 **What sealing strictly needs from HOLD.** Only MAP-1 names a refcv8 re-read on HOLD before sealing. The other perception bars are absolute values plus a paired refcv9-against-refcv8 comparison made at the E3 final read, on inputs that exist. MAP-1's ≤ 9.8 % stays as written whatever the HOLD read shows; if refcv8's HOLD rate makes that bar inconsistent with its "≥ 50 % of the gap" wording, the discrepancy is reported at sealing and resolved toward the stricter value.
 
 **Evidence classes.** Numbers quoted above are MEASURED on the artifact named or INHERITED where stated. Tier: perception T0 label level; planner T1 self-action open loop on logged eval139 frames, not driving performance. Estimator for every interval: paired episode-cluster bootstrap over EPISODES, B 2000, seed 0.
+
+## PI amendment, 2026-11-23: FAM-1 carries the accepted E2 cost as margins (written before any E3 data)
+
+**PI, verbatim (chat, 2026-11-23):** "accept the 7mm", then, asked whether the acceptance covers all of K2DC02s1's failing E2 clause (d) rows so E3 can go: "Yes, all, start E3" (`Project Steering/PI_DECISION_QUEUE.md` D-R9-E2-ACCEPT-D / D-R9-E3-START).
+
+* **The margins.** FAM-1 (E3 against refcv8, inference seeds 0 and 1, paired episode-cluster bootstrap over episodes). For the three rows below, a row that is separated worse does NOT fail FAM-1 when its point delta is at or below the amount the PI accepted at E2. A larger delta FAILS FAM-1. Each amount is the larger of K2DC02s1's two inference seeds on its tail read (`.../e2/e2raw/k2dc02s1tail/result/read/E2_VERDICT.json`):
+  * `LAT_cross_mae_m`: +0.0074 m
+  * `LAT_cross_abs_final_m`: +0.0165 m
+  * `LON_dk_headway_abs_err_m`: +0.0416 m
+* **Every other FAM-1 row keeps the rule as written** (no row separated worse at seeds 0 and 1). The other bars do not change.
+* **Transfer, stated.** At E2 the reference was K0 (refcv8's recipe continued 6,000 steps); at E3 it is refcv8. A margin carries over as an AMOUNT on the paired delta, not as a reference value.
+* ⚠ **Not an expectation.** The E3 recipe's own seed-0 E2 tail (K2DC02) read +0.0083 / +0.0198 / +0.0486 at its worst inference seed, above all three margins. The margins are what the PI accepted. A miss is reported FAILED as written, and section 5.4's FAM-1 lever runs.
+* **Sealing.** With this note and the 2026-11-08 decisions above, section 5 is sealed before E3 fires (insert-only seal note in `REFCV9_DESIGN.md` section 5). MAP-1's refcv8 HOLD re-read runs before the E3 final read. Its value (<= 9.8 %) is fixed, and the re-read can only resolve toward the stricter value, as the 2026-11-08 note states.

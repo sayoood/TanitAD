@@ -370,6 +370,8 @@ items (E0, the eval batteries, W4 / W5, R9-PF stage 2) run in parallel at 0 Thor
 
 ## 5. Pre-registered bars for the full refcv9 (DRAFT — sealed by the Master Mind after E2, before E3 fires)
 
+> **SEALED 2026-11-23 (Master Mind), before any E3 data (insert-only; no bar below is edited).** The bars are section 5.2 as written plus `e3/SEAL_DECISIONS_PRE_DATA_2026-11-08.md`, including the PI amendments of 2026-11-08 (MAP-2 5-10 / 10-20 m >= 0.90) and 2026-11-23 (FAM-1 margins for `LAT_cross_mae_m` +0.0074 m, `LAT_cross_abs_final_m` +0.0165 m, `LON_dk_headway_abs_err_m` +0.0416 m). E2 stands NO-GO as written; E3 fires by PI acceptance (`Project Steering/PI_DECISION_QUEUE.md` D-R9-E2-ACCEPT-D / D-R9-E3-START, register `H-R9-E2-ACCEPT`). MAP-1's refcv8 HOLD re-read runs before the E3 final read and can only make that bar stricter.
+
 ### 5.1 Protocol
 
 * **Reference:** refcv8 EMA-48,852 + the shipped H2cn stage; its banked registered table (`REGISTERED_PF_TABLE.sha256`) must
