@@ -1,0 +1,39 @@
+--- /tmp/g_old.py	2026-11-23 18:13:29.737480900 +0100
++++ gate_checks.py	2026-11-23 18:13:54.000000000 +0100
+@@ -1953,11 +1953,24 @@
+     idx = [k for k in range(sdf.shape[0]) if valid is None or bool(valid[k])]
+     if not idx:
+         return {"ran": True, "labelled": 0}
+-    sl = slice(idx[0], idx[0] + 1)
+     dev = next(m.parameters()).device
+-    cal = calib[sl].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+     m.train()
+-    out = {"ran": True, "labelled": len(idx)}
++    # SFTT launch gate 1b (MM 2026-11-23, Fs): the field loss is a HINGE, exactly 0 on a sample whose plan never violates the field, so a backward through ONE sample (idx[0]) can read exactly zero on a healthy
++    # model.  Evaluate the (unscaled: the hinge's activity does not depend on the weight) field loss forward-only on EACH labelled sample of the first micro-batch in index order, and use the FIRST ACTIVE one.
++    losses = []
++    with torch.no_grad():
++        for k in idx:
++            s1 = slice(k, k + 1)
++            c1 = calib[s1].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
++            tr1 = m(img[s1].to(dev), ego[s1].to(dev), goal[s1].to(dev), calib=c1)[0]
++            losses.append(float(field_loss(tr1.float(), sdf[s1].to(dev), margin=cap.args.field_margin, interp=cap.args.field_interp)))
++    active = [i for i, v in enumerate(losses) if v > 0.0]
++    out = {"ran": True, "labelled": len(idx), "losses": losses, "n_active": len(active)}
++    if not active:
++        return out
++    out["active_index"] = idx[active[0]]
++    sl = slice(idx[active[0]], idx[active[0]] + 1)
++    cal = calib[sl].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+     w = 0.0 if arm_is("field_weight_zero", arm) else float(cap.args.w_field)         # arm: a trainer that ignored --w-field would read all-zero
+     for tag, scale in (("declared", w), ("zero", 0.0)):
+         m.zero_grad(set_to_none=True)
+@@ -1984,6 +1997,8 @@
+         return ["L_field reach probe could not run (no model / first batch / recorded label): the reach is unproved"]
+     if not fr.get("labelled"):
+         return ["L_field reach probe: no labelled sample in the first micro-batch -- the term was not exercised"]
++    if not fr.get("n_active", 1) or "declared" not in fr:
++        return ["L_field reach probe: no labelled sample of the first micro-batch activates the term (every hinge loss is exactly 0.0): the reach is UNPROVED on this smoke"]
+     out = []
+     g, g0 = fr["declared"]["groups"], fr["zero"]["groups"]
+     for grp in FIELD_REACH_GROUPS:
