@@ -1,0 +1,51 @@
+--- F:/TanitAD-scratch/rollhist/read/rh_t0.py.bk_s3	2026-11-23 17:18:15.792428200 +0100
++++ F:/TanitAD-scratch/rollhist/read/rh_t0.py	2026-11-23 17:23:00.246314100 +0100
+@@ -47,11 +47,13 @@
+     return rc
+ 
+ 
+-def guard(seeds, t0dir, boot=None):
++def guard(seeds, t0dir, boot=None, bar=None, beside_bar=None):
++    """bar None = the card's F_T0 (0.0705, unchanged output).  SEED3: bar = 0.1174 and beside_bar = 0.0705 (printed beside, decides nothing)."""
++    fbar = C.F_T0 if bar is None else float(bar)
+     sys.path.insert(0, C.TREE + "/taniteval")
+     sys.path.insert(0, C.TREE + "/stack")
+     from taniteval.ci import paired_episode_cluster_bootstrap as pb
+-    out = {"instrument": "T0 E0 eval (--project --families) `ade6` per window, the DSCALE instrument", "tier": "T0", "F_T0_m": C.F_T0, "evidence_F": "abs(UE_s1.A - UE_s0.A) = abs(2.0376 - 1.9671), FACTS E3, INHERITED; one seed pair, a weak floor",
++    out = {"instrument": "T0 E0 eval (--project --families) `ade6` per window, the DSCALE instrument", "tier": "T0", "F_T0_m": fbar, "evidence_F": "abs(UE_s1.A - UE_s0.A) = abs(2.0376 - 1.9671), FACTS E3, INHERITED; one seed pair, a weak floor",
+            "estimator": "taniteval.ci.paired_episode_cluster_bootstrap B 2,000 seed 0", "per_seed": {}, "holds_at": []}
+     for s in seeds:
+         fa, fb = f"{t0dir}/eval_{C.A_KIND}_s{s}.npz", f"{t0dir}/eval_B0_s{s}.npz"            # P03: the treated arm is RHp3 under RH_AKIND=RHp3 (default RH: unchanged)
+@@ -64,9 +66,14 @@
+             continue
+         r = pb(A["ade6"], B["ade6"], A["eid"], n_boot=2000, seed=0)
+         hi = float(r["hi"])
+-        holds = bool(hi <= C.F_T0)
++        holds = bool(hi <= fbar)
+         out["per_seed"][str(s)] = {"status": "HOLDS" if holds else "FAILS", "point_m": float(r["delta"]), "lo": float(r["lo"]), "hi": hi, "mean_ade6_RH": float(np.mean(A["ade6"])),
+                                    "mean_ade6_B0": float(np.mean(B["ade6"])), "n_windows": 2399, "n_episodes": int(len(np.unique(A["eid"])))}
++        if beside_bar is not None:
++            out["per_seed"][str(s)]["beside_bar_m"] = float(beside_bar)
++            out["per_seed"][str(s)]["beside_status"] = "HOLDS" if hi <= float(beside_bar) else "FAILS"
++    if bar is not None:
++        out["evidence_F"] = "SEED3 card (sha256 75f3b191) section 3: the largest pairwise |UE_si.A - UE_sj.A| over the four stage-A seeds at T0 ADE6 = 0.1174 m (s1-s2), MEASURED; the full value, not half"
+     out["holds"] = None if any(v["status"] == "NOT COMPUTABLE" for v in out["per_seed"].values()) else all(v["status"] == "HOLDS" for v in out["per_seed"].values())
+     out["fails_at_all_seeds"] = None if out["holds"] is None else all(v["status"] == "FAILS" for v in out["per_seed"].values())
+     return out
+@@ -79,13 +86,15 @@
+     ap.add_argument("--seeds", default="0,1")
+     ap.add_argument("--t0", default=T0DIR)
+     ap.add_argument("--out", default=C.OUT + "/read/GT0_ROLLHIST.json")
++    ap.add_argument("--bar", type=float, default=None, help="SEED3: the G-T0 bar in m (default: the card's 0.0705)")
++    ap.add_argument("--beside-bar", type=float, default=None, help="SEED3: a second bar printed beside, deciding nothing")
+     a = ap.parse_args()
+     if a.cmd == "argv":
+         print(" ".join(argv_t0(a.arms[0])))
+         return 0
+     if a.cmd == "run":
+         return run(a.arms or [f"{k}_s{s}" for k in C.KINDS for s in C.SEEDS])
+-    r = guard([int(x) for x in a.seeds.split(",")], a.t0)
++    r = guard([int(x) for x in a.seeds.split(",")], a.t0, bar=a.bar, beside_bar=a.beside_bar)
+     os.makedirs(os.path.dirname(a.out), exist_ok=True)
+     json.dump(r, open(a.out, "w", encoding="utf-8"), indent=1)
+     print(json.dumps({k: r[k] for k in ("holds", "fails_at_all_seeds")}), flush=True)

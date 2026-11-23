@@ -1,0 +1,544 @@
+{
+ "declared_vs_built": "PASS",
+ "live": {
+  "terms": {
+   "ckpt": 1.663546085357666,
+   "goal": 0.10306497663259506,
+   "lat": 0.07861796766519547,
+   "lon": 0.3231085538864136,
+   "cons": 0.17935031652450562,
+   "ade": 2.273090124130249,
+   "fde": 6.4127655029296875,
+   "acc": 0.005936366505920887,
+   "pen_SPEED": 0.04147603362798691,
+   "pens_SPEED": 0.18547296524047852,
+   "pen_STOP": 0.2065902054309845,
+   "pens_STOP": 0.0,
+   "pen_TURN": 0.015584593638777733,
+   "pens_TURN": 0.6506486535072327,
+   "pen_LEAD": 0.06652682274580002,
+   "pens_LEAD": 0.10212521255016327,
+   "wm": 155.07113647460938,
+   "total": 19.551025390625
+  },
+  "missing_terms": [],
+  "unexpected_terms": [],
+  "dead_params": [],
+  "declared_dead": [],
+  "unexpected_dead": [],
+  "declared_dead_but_alive": [],
+  "control_prior_grad_sum": 0.0,
+  "head_o_grad_step0": 539.110986828804,
+  "n_trainable": 252,
+  "groups_grad": {
+   "adapter": 7586.576647281647,
+   "S": 1787.2708848156035,
+   "T": 467.6686935685575,
+   "O": 4248.00250454247,
+   "head_s": 905.1102572083473,
+   "head_o": 1848.4582023620605,
+   "wm": 7071.947592731216
+  },
+  "pass": true
+ },
+ "code_mix_probe": {
+  "code_mix": "whole",
+  "p_gt": 0.5,
+  "n_labelled": 64,
+  "n_draws_samples": 256,
+  "n_partial": 0,
+  "n_all_gt": 118,
+  "n_all_own": 138,
+  "unit_gt_rate": {
+   "decisions": 0.4609375,
+   "speed": 0.4609375,
+   "angle": 0.4609375,
+   "tte": 0.4609375,
+   "timegap": 0.4609375,
+   "geom": 0.4609375,
+   "leadgap": 0.4609375
+  },
+  "pass": true
+ },
+ "o_interface_probe": {
+  "o_interface": "full",
+  "shift": 2.5,
+  "n_windows": 64,
+  "perturbations": {
+   "donor_code": {
+    "max_abs_dtraj60": 21.24334716796875,
+    "o_read_code_abs_max": 8.41388988494873,
+    "o_read_ck_minus_nominal_abs_max": 86.9064712524414,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "gt_code": {
+    "max_abs_dtraj60": 7.5784454345703125,
+    "o_read_code_abs_max": 7.085379600524902,
+    "o_read_ck_minus_nominal_abs_max": 86.9064712524414,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "random_code": {
+    "max_abs_dtraj60": 20.109405517578125,
+    "o_read_code_abs_max": 0.9999334216117859,
+    "o_read_ck_minus_nominal_abs_max": 86.9064712524414,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "shifted_checkpoints": {
+    "max_abs_dtraj60": 10.665058135986328,
+    "o_read_code_abs_max": 7.156743049621582,
+    "o_read_ck_minus_nominal_abs_max": 84.55694580078125,
+    "o_read_ck_ok_abs_max": 1.0,
+    "max_abs_d_ckpt": 2.500001907348633,
+    "t_reads_s_max_abs_dgoal_logits": 13.952790260314941
+   }
+  },
+  "pass": true
+ },
+ "acc_probe": {
+  "w_acc_declared": 49.6969,
+  "w_probe": 49.6969,
+  "acc": 0.008382990024983883,
+  "acc_at_zero_weight": 0.008382990024983883,
+  "total_w": 22.75394630432129,
+  "total_0": 22.337337493896484,
+  "contribution": 0.4166088104248047,
+  "w_x_acc": 0.4166086169726215,
+  "head_o_grad_diff": 248.04087829589844,
+  "read_o_grad_diff": 471.8583068847656,
+  "control_repeat_total_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "pass": true
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "whole",
+  "o_interface": "full",
+  "w_acc": 49.6969,
+  "launch_intent_w": 0.0,
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 0.2,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 16,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": false,
+  "params": {
+   "adapter": 275712,
+   "cond": 25088,
+   "S": 1321737,
+   "T": 1463868,
+   "O": 2120216,
+   "WM": 2007874
+  },
+  "n_params_trainable": 7214495,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  },
+  "ego_perturb": {
+   "ego_perturb_p": 0.0,
+   "ego_perturb_vscale": [
+    0.5,
+    1.0
+   ],
+   "ego_perturb_vmax": 8.0,
+   "ego_perturb_adrop": 1.5,
+   "ego_perturb_yawrate_std": 0.0,
+   "ego_perturb_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ]
+  },
+  "dagger": {
+   "dagger_bank_readout": "causal_g1x",
+   "dagger_bank_kappa": "0.2",
+   "dagger_label": "human",
+   "dagger_label_cache": null,
+   "dagger_label_cache_sha256": null,
+   "dagger_kin_tb": 1.0,
+   "dagger_mode": "swap",
+   "dagger_base": "logged",
+   "dagger_p": 0.1,
+   "dagger_seed": 0,
+   "dagger_bank": "/root/rollhist/bank/s0/bank.json",
+   "dagger_bank_sha256": "e5e44c0156ebc774e3551a54f589dc4fec19a68dc85c2c9838f7ecc0592662cf",
+   "kin_mode": "yaw",
+   "bank_hmax": 16,
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ],
+   "labels_re_expressed": [
+    "lab_s.rc"
+   ],
+   "nav_rebuild_invalid": false,
+   "constants_sha256": "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf"
+  },
+  "dagger_p": 0.1,
+  "dagger_bank_sha256": "e5e44c0156ebc774e3551a54f589dc4fec19a68dc85c2c9838f7ecc0592662cf",
+  "dagger_bank_sha256_declared": "e5e44c0156ebc774e3551a54f589dc4fec19a68dc85c2c9838f7ecc0592662cf",
+  "recover": {
+   "recover_p": 0.0,
+   "recover_dev_law": "empirical",
+   "recover_dev_shape": "constant",
+   "recover_dev_bank": null,
+   "recover_dev_bank_sha256": null,
+   "recover_target": "rejoin",
+   "recover_rejoin_steps": 10,
+   "recover_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav",
+    "pose_now"
+   ],
+   "retargeted": [
+    "gt",
+    "lab_s.rc"
+   ]
+  },
+  "recover_table": null,
+  "ego_perturb_with_dagger": false,
+  "ego_perturb_stream": 0,
+  "ego_dagger_overlap_n": 0,
+  "launch_intent": {
+   "launch_intent_w": 0.0,
+   "v0_max": 6.0,
+   "dv": 1.0,
+   "dt": 0.2,
+   "knots": [
+    1,
+    12
+   ],
+   "axis": "along (x of the ego frame at NOW)",
+   "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"
+  },
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "init_ckpt": {
+   "path": "/root/dscale10k/runs/UE_s0/A/ckpt_last.pt",
+   "sha256": "2fd4b747532f55b24523c578948cb713fb80fa0e698586c329dd23ba6e6df914",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 61568,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "23ba3ecdf581a4e7"
+  },
+  "lr_schedule": {
+   "lr": 0.0001,
+   "warmup": 100,
+   "total": 3000
+  }
+ },
+ "steps_total": 3000,
+ "S_steps_per_epoch_100pct": 15392,
+ "info": {
+  "batch": 64,
+  "md5_overridden": false,
+  "n_clips": 14512,
+  "n_clips_expected": 14512,
+  "n_clips_all": 14512,
+  "n_excluded": 0,
+  "n_excluded_declared": 0,
+  "excluded_in_train": 0,
+  "excluded_sha256": null,
+  "train_sha256": "9844151fcb15504fe9e729fdc6235aebd3e31bfd363cb362994852931ada60f4",
+  "lru": 174,
+  "kin_mode": "yaw",
+  "n_windows_all_clips": 985048,
+  "n_windows": 985048,
+  "window_start": 3,
+  "window_t_min": 3,
+  "train_window_list_sha256": "c13477163d6515f75bbe8c18f64ff45b0dc33ae356706efa33df0b2f74448e60",
+  "p10_units": "pose_kappa",
+  "ds_window_start": 3,
+  "init_ckpt": {
+   "path": "/root/dscale10k/runs/UE_s0/A/ckpt_last.pt",
+   "sha256": "2fd4b747532f55b24523c578948cb713fb80fa0e698586c329dd23ba6e6df914",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 61568,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "23ba3ecdf581a4e7"
+  },
+  "dagger": {
+   "bank_path": "/root/rollhist/bank/s0/bank.json",
+   "bank_sha256": "e5e44c0156ebc774e3551a54f589dc4fec19a68dc85c2c9838f7ecc0592662cf",
+   "n_records": 1970096,
+   "reason_counts": {
+    "ok": 1490036,
+    "off_lat": 76963,
+    "off_head": 13290,
+    "end_edge": 389807,
+    "nonfinite": 0
+   },
+   "coverage": {
+    "n_windows": 985048,
+    "n_eligible": 784954,
+    "fraction": 0.7968687820288961,
+    "min": 0.5,
+    "blocked": false
+   },
+   "kb2": {
+    "ckpt_sha256": "2fd4b747532f55b24523c578948cb713fb80fa0e698586c329dd23ba6e6df914",
+    "init_ckpt_sha256": "2fd4b747532f55b24523c578948cb713fb80fa0e698586c329dd23ba6e6df914"
+   },
+   "kb3": {
+    "n_bank_clips": 14512,
+    "n_train_clips": 14512,
+    "n_eval_clips": 141,
+    "overlap_with_eval": 0,
+    "window_list_sha256": "c13477163d6515f75bbe8c18f64ff45b0dc33ae356706efa33df0b2f74448e60",
+    "eval_sources": {
+     "grid": 141,
+     "bank_header": 141
+    },
+    "n_eval_clips_checked": 141
+   }
+  }
+ },
+ "argv_sha": "a0d9130dfe25fb81",
+ "ego_perturb_probe": {
+  "ego_perturb": "off",
+  "pass": true,
+  "skipped": "--ego-perturb-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "dagger_probe": {
+  "p_declared": 0.1,
+  "n_rows": 64,
+  "n_eligible": 46,
+  "n_selected_at_p1": 46,
+  "keys_read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "rows_changed": {
+   "p10f": 46,
+   "base": 0,
+   "kin3": 46,
+   "p10_t": 46,
+   "pose": 46,
+   "pose_t": 32,
+   "pose_s": 44,
+   "nav": 29
+  },
+  "selected_rows_bit_identical_exempt": 0,
+  "base_rows_at_rest_exempt": 0,
+  "base_source": "logged",
+  "rc_max_abs_err": 0.0,
+  "live_swapped": {
+   "pass": true,
+   "terms": {
+    "ckpt": 1.8616746664047241,
+    "goal": 0.16007152199745178,
+    "lat": 0.19058546423912048,
+    "lon": 0.6559580564498901,
+    "cons": 0.2155076265335083,
+    "ade": 4.369431495666504,
+    "fde": 12.33260440826416,
+    "acc": 0.08615166693925858,
+    "pen_SPEED": 1.6377167701721191,
+    "pens_SPEED": 1.8267569541931152,
+    "pen_STOP": 0.7274395227432251,
+    "pens_STOP": 0.0,
+    "pen_TURN": 0.04111705720424652,
+    "pens_TURN": 0.56448894739151,
+    "pen_LEAD": 1.0413329601287842,
+    "pens_LEAD": 0.07848557829856873,
+    "wm": 155.30865478515625,
+    "total": 27.19053840637207
+   },
+   "control_prior_grad_sum": 0.0,
+   "groups_grad": {
+    "adapter": 7952.679090976715,
+    "S": 3226.318976972252,
+    "T": 892.1844965852797,
+    "O": 9734.72160333395,
+    "head_s": 819.0034279078245,
+    "head_o": 7169.949536442757,
+    "wm": 7019.59806784743
+   }
+  },
+  "total_logged": 23.056324005126953,
+  "total_swapped": 35.75824737548828,
+  "loss_diff": 12.701923370361328,
+  "grad_diff_all": 12279.44921875,
+  "grad_diff_by_group": {
+   "adapter": 995.0997314453125,
+   "e_ego": 168.86895751953125,
+   "read_s": 1100.76123046875,
+   "read_t": 446.1234130859375,
+   "read_o": 4596.41357421875,
+   "head_s": 293.25555419921875,
+   "head_o": 3853.26318359375,
+   "wm.": 0.0
+  },
+  "control_repeat_loss_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_p0_same_object": true,
+  "control_p0_loss_diff": 0.0,
+  "control_p0_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "loss_diff_replacing_only": {
+   "p10f": 12.712268829345703,
+   "base": 0.0,
+   "pose_t": 0.000423431396484375,
+   "pose_s": 0.010454177856445312,
+   "kin3": 0.0,
+   "p10_t": 0.0
+  },
+  "pass": true
+ },
+ "ego_dagger_compose_probe": {
+  "ego_dagger_compose": "off",
+  "pass": true,
+  "overlap": 0,
+  "skipped": "--ego-perturb-with-dagger not named: the two levers are not composed (the default run is the pre-change run)"
+ },
+ "recover_probe": {
+  "recover": "off",
+  "pass": true,
+  "skipped": "--recover-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "t2bank_probe": {
+  "t2_bank": "off",
+  "pass": true,
+  "skipped": "--t2-bank-p 0: no row is swapped; the default run is the pre-change run"
+ },
+ "launch_intent_probe": {
+  "launch_intent": "off",
+  "pass": true,
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "skipped": "--launch-intent-w not named: the term is not in the loss (the default run is the pre-change run)"
+ },
+ "otband_probe": {
+  "otband": "detach-only",
+  "stok_dim": 0,
+  "detach_upper": true,
+  "purity": {
+   "upper_grad_abs_sum": 0.0,
+   "head_o": 4.99107303423807,
+   "by_term": {
+    "ade": {
+     "upper_grad_abs_sum": 0.0,
+     "head_o": 188.6765275001526
+    },
+    "fde": {
+     "upper_grad_abs_sum": 0.0,
+     "head_o": 864.4601166248322
+    },
+    "acc": {
+     "upper_grad_abs_sum": 0.0,
+     "head_o": 4.99107303423807
+    }
+   }
+  },
+  "code_edge_max_dknot": 42.67332458496094,
+  "pass": true
+ }
+}

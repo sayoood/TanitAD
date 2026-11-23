@@ -1,0 +1,11 @@
+--- F:/TanitAD-scratch/rollhist/read/rh_roll.py.bk_s3	2026-11-23 17:18:15.759736100 +0100
++++ F:/TanitAD-scratch/rollhist/read/rh_roll.py	2026-11-23 17:23:00.246314100 +0100
+@@ -28,7 +28,7 @@
+     ap = argparse.ArgumentParser()
+     ap.add_argument("kind", choices=("RH", "B0", "UEA", "RHp3", "RHK", "RL", "RA", "RK", "KI"))
+     ap.add_argument("form", choices=list(C.FORMS))
+-    ap.add_argument("seed", type=int, choices=(0, 1))
++    ap.add_argument("seed", type=int, choices=(0, 1, 2))      # 2: the SEED3 card (B0_s2 / RH_s2 / KI_s2)
+     ap.add_argument("--dry", action="store_true")
+     ap.add_argument("--max-windows", type=int, default=0)
+     ap.add_argument("--ckpt", default="")
