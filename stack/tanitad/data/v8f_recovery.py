@@ -418,7 +418,9 @@ THE LABEL (per matcher-ok record; the sample frame = the human's frame at r', or
   6. identity rule: |kappa_o - kappa_ref0| <= IDENT_TOL and |a_o - a_ref0| <= IDENT_TOL -> the record's label is the speed_v1 label bit for bit. a_ref0 = (u_l[1] - u_l[0]) / DT; kappa_ref0 = the reference label's first-step path curvature
      (the turn between its chords 0->p1 and p1->p2 over their mean length; 0 when a chord is shorter than STOP_STEP_M).
 """
-T_B = 1.0               # s, the blend horizon
+T_B = 1.0               # s, the blend horizon (the DEFAULT; KINTB: ``kin_label(tb=...)`` / ``kin_label_bank(tb=...)`` / the trainer's ``--dagger-kin-tb`` override it per run)
+KIN_TB_MIN = 0.2        # s, the smallest admissible blend horizon (KINTB)
+KIN_TB_MAX = 3.0        # s, the largest (the label spans T_END = 6 s)
 LD_MIN = 4.0            # m, the lookahead floor
 LD_GAIN = 1.0           # s, the lookahead's speed gain (L_d = max(LD_MIN, LD_GAIN * v))
 MERGE_LAT_M = 0.10      # m
@@ -431,6 +433,16 @@ SUB_PER_STEP = int(round(DT / H_SUB))
 KIN_REFUSALS = ("refused_nonfinite", "refused_not_merged", "refused_path_exhausted", "refused_infeasible")
 KIN_STATUSES = ("kin_emitted", "identity_rule") + KIN_REFUSALS + tuple("speed_" + s for s in ("no_logged_future", "nonfinite", "path_exhausted", "arcs_decreasing", "refused_infeasible"))
 assert abs(SUB_PER_STEP * H_SUB - DT) < 1e-12 and int(round(T_END / H_SUB)) == H * SUB_PER_STEP
+
+
+def check_kin_tb(tb) -> float:
+    """KINTB: the blend horizon T_B (s) of a kin_v1 run, validated: a real number (not a bool), finite, KIN_TB_MIN <= tb <= KIN_TB_MAX. Returns float(tb); raises ValueError naming the value."""
+    if isinstance(tb, bool) or not isinstance(tb, (int, float, np.integer, np.floating)):
+        raise ValueError(f"kin_v1 blend horizon T_B must be a number of seconds, got {tb!r}")
+    tb = float(tb)
+    if not math.isfinite(tb) or tb < KIN_TB_MIN or tb > KIN_TB_MAX:
+        raise ValueError(f"kin_v1 blend horizon T_B {tb!r} s is outside [{KIN_TB_MIN}, {KIN_TB_MAX}] s (or not finite)")
+    return tb
 
 
 def _wrap(x: float) -> float:
@@ -488,10 +500,12 @@ def ref_start(label, u_l):
     return a_ref0, _wrap(math.atan2(d[1, 1], d[1, 0]) - math.atan2(d[0, 1], d[0, 0])) / (0.5 * (c[0] + c[1]))
 
 
-def kin_label(grid, r: int, kin_own, *, check: bool = True, _speed=None):
+def kin_label(grid, r: int, kin_own, *, check: bool = True, _speed=None, tb=None):
     """The KINEMATIC label (``--dagger-label kin_v1``) of an own state matched (ok) to logged row ``r``; ``kin_own`` = (v_o, a_o, kappa_o) = ``p10f[-1, 0:3]``. ``grid`` [T, >=3] the logged (x, y, yaw) on the 0.2 s grid.
     Returns dict(status, label [30, 2] | None, speed_status, speed_label [30, 2] | None (the fallback), t_merge | None, max_dev | None (max over the output points of the distance to the human polyline), viol | None).
-    ``status`` is one of KIN_STATUSES: kin_emitted / identity_rule carry ``label``; a refusal carries ``label`` None and the caller keeps ``speed_label`` (else the human label)."""
+    ``status`` is one of KIN_STATUSES: kin_emitted / identity_rule carry ``label``; a refusal carries ``label`` None and the caller keeps ``speed_label`` (else the human label).
+    ``tb`` (KINTB) = the blend horizon T_B in s (default None = the module constant T_B = 1.0 = the labeller of 1a8b11a1 bit for bit): the blend weight w = min(1, t / tb) and the earliest merge time (t >= tb) both use it."""
+    tb = check_kin_tb(T_B if tb is None else tb)                                       # None = the module default T_B (looked up at the call, so a test may patch the constant)
     G = np.asarray(grid, np.float64)
     r = int(r)
     v_o, a_o, k_o = (float(kin_own[0]), float(kin_own[1]), float(kin_own[2]))
@@ -527,7 +541,7 @@ def kin_label(grid, r: int, kin_own, *, check: bool = True, _speed=None):
     s_m = v_m = 0.0
     for n in range(H * SUB_PER_STEP):
         t = n * H_SUB
-        w = min(1.0, t / T_B)
+        w = min(1.0, t / tb)
         k = n // SUB_PER_STEP
         fr = (n % SUB_PER_STEP) / SUB_PER_STEP
         u_h_t = (1.0 - fr) * float(uh_k[k]) + fr * float(uh_k[k + 1])                 # the human step speed at t, linear between the 0.2 s knots
@@ -558,7 +572,7 @@ def kin_label(grid, r: int, kin_own, *, check: bool = True, _speed=None):
             pts[kk - 1] = (x, y)
             seg, s_star, dist, hd = _closest(Pl, sl, (x, y), seg)
             max_dev = max(max_dev, dist)
-            if (n + 1) * H_SUB >= T_B and dist < MERGE_LAT_M and abs(_wrap(th - hd)) < MERGE_HEAD_RAD and abs(v - float(uh_k[kk])) <= MERGE_SPEED_MS:
+            if (n + 1) * H_SUB >= tb and dist < MERGE_LAT_M and abs(_wrap(th - hd)) < MERGE_HEAD_RAD and abs(v - float(uh_k[kk])) <= MERGE_SPEED_MS:
                 merged_k, s_m, v_m = kk, s_star, v
                 break
     if not (np.isfinite(pts[:max(merged_k or 0, 1)]).all() and math.isfinite(max_dev)):
@@ -590,12 +604,13 @@ def kin_label(grid, r: int, kin_own, *, check: bool = True, _speed=None):
     return out
 
 
-def kin_label_bank(arrays: dict, ci, clip_names, read_clip, *, log=None, check: bool = True) -> dict:
+def kin_label_bank(arrays: dict, ci, clip_names, read_clip, *, log=None, check: bool = True, tb=None) -> dict:
     """``kin_label`` for every bank record whose matcher reason is ok (once, at bank load; deterministic float64, no RNG). Off-route / end_edge / nonfinite records get no label (they stay cut, exactly as under speed_v1: the eligible index is equal under
     all three label kinds).
 
     Same arguments as ``label_bank``. The own state is ``p10f[:, -1, 0:3]``. A refused record keeps its ``speed_v1`` label (when the reference itself was not refused), else the human label (slot -1).
     Returns ``{"slot": int32 [N] (-1 = none), "label": float64 [n_emit, 30, 2], "is_kin": bool [N] (the record's label is a kin_v1 one: status kin_emitted), "status_counts", "n_labelled", "census"}``."""
+    tb = check_kin_tb(T_B if tb is None else tb)                                      # KINTB: the blend horizon of this run (default T_B = 1.0)
     reason = np.asarray(arrays["reason"])
     p10f, rr = arrays["p10f"], np.asarray(arrays["r"], np.int64)
     tick = np.asarray(arrays["tick"], np.int64) if "tick" in arrays else np.zeros(len(reason), np.int64)
@@ -617,7 +632,7 @@ def kin_label_bank(arrays: dict, ci, clip_names, read_clip, *, log=None, check: 
             d = read_clip(str(clip_names[c]))
             pg = np.asarray(d["pose"], np.float64)
             grid, cur = pg[:, :3], c
-        res = kin_label(grid, int(rr[i]), np.asarray(p10f[i, -1, :3], np.float64), check=check)
+        res = kin_label(grid, int(rr[i]), np.asarray(p10f[i, -1, :3], np.float64), check=check, tb=tb)
         counts[res["status"]] = counts.get(res["status"], 0) + 1
         st[i] = KIN_STATUSES.index(res["status"])
         if res["status"] == "refused_infeasible":

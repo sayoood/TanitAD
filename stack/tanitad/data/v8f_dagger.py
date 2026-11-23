@@ -274,6 +274,7 @@ class DaggerBank:
             self.ci = lut[self.ci]
         self.reason = np.asarray(arrays["reason"])
         self.rl = None                                                                 # the speed-consistent labels (``attach_recovery``); None = the human label everywhere (today's bank, bit for bit)
+        self.kin_tb = 1.0                                                              # KINTB: the blend horizon T_B (s) the kin_v1 labels were computed under (``--dagger-kin-tb``; 1.0 = 1a8b11a1's); set by the trainer
         self.label_cache = None                                                        # KINCACHE: {"path", "sha256"} of the ``--dagger-label-cache`` file the labels were READ from / WRITTEN to; None = no cache
         self._index(self.reason == OK)
 
@@ -725,7 +726,7 @@ class DaggerSwap:
         gen = ({} if self.bank is None else (getattr(self.bank, "header", None) or {}).get("generator")) or {}
         return {"dagger_bank_readout": readout_token(gen.get("readout", "pinned"), gen.get("acc_gain"), bool(gen.get("path_exec", False))), "dagger_bank_kappa": str(gen.get("kappa_max", "none")),
                 "dagger_label": "human" if self.bank is None else self.bank.label_kind, "dagger_label_cache": (getattr(self.bank, "label_cache", None) or {}).get("path"),
-                "dagger_label_cache_sha256": (getattr(self.bank, "label_cache", None) or {}).get("sha256"), "dagger_mode": self.mode, "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
+                "dagger_label_cache_sha256": (getattr(self.bank, "label_cache", None) or {}).get("sha256"), "dagger_kin_tb": 1.0 if self.bank is None else float(getattr(self.bank, "kin_tb", 1.0)), "dagger_mode": self.mode, "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
                 "bank_hmax": None if self.bank is None else self.bank.hmax, "rebuilt": list(REBUILT), "kept": list(KEPT), "record": list(RECORD), "labels_re_expressed": list(LABELS_RE_EXPRESSED),
                 "nav_rebuild_invalid": NAV_REBUILD_INVALID, "constants_sha256": constants_sha256()}
 
@@ -824,8 +825,9 @@ def _hash_array(h, a) -> None:
     h.update(a.tobytes())
 
 
-def label_cache_identity(bank: "DaggerBank", clip_names, read_clip, *, label_kind: str, labeller_path, dagger_path) -> dict:
-    """The header the cache must carry for THIS bank, store and code: every field computed now (``read_clip(name)["pose"]`` = ``ClipStore.get_kin``: the logged grid and speed of the clip)."""
+def label_cache_identity(bank: "DaggerBank", clip_names, read_clip, *, label_kind: str, labeller_path, dagger_path, kin_tb: float = 1.0) -> dict:
+    """The header the cache must carry for THIS bank, store and code: every field computed now (``read_clip(name)["pose"]`` = ``ClipStore.get_kin``: the logged grid and speed of the clip).
+    KINTB: a kin_v1 header also carries ``kin_tb`` (the blend horizon the labels were computed under); a speed_v1 header does not (its labels do not depend on it). A header with no ``kin_tb`` (written at 1a8b11a1) reads as 1.0."""
     if label_kind not in LABEL_CACHE_KINDS:
         raise BankRefused(f"label cache: label kind {label_kind!r} is not one of {LABEL_CACHE_KINDS}")
     reason = np.asarray(bank.reason)
@@ -841,8 +843,11 @@ def label_cache_identity(bank: "DaggerBank", clip_names, read_clip, *, label_kin
         nm = str(clip_names[int(c)])
         st.update(f"{int(c)}|{nm}|".encode())
         _hash_array(st, np.asarray(read_clip(nm)["pose"], np.float64))
-    return {"label_kind": str(label_kind), "bank_json_sha256": bank.sha256, "labeller_sha256": sha256_file(labeller_path), "dagger_sha256": sha256_file(dagger_path), "n_records": int(bank.n),
+    out = {"label_kind": str(label_kind), "bank_json_sha256": bank.sha256, "labeller_sha256": sha256_file(labeller_path), "dagger_sha256": sha256_file(dagger_path), "n_records": int(bank.n),
             "eligible_index_sha256": sha256_bytes(np.ascontiguousarray(bank._ok_idx, np.int64).tobytes()), "records_sha256": rec.hexdigest(), "clip_store_sha256": st.hexdigest()}
+    if label_kind == "kin_v1":
+        out["kin_tb"] = float(kin_tb)
+    return out
 
 
 def _cache_arrays_sha256(arrays: dict) -> str:
@@ -888,6 +893,10 @@ def read_label_cache(path, ident: dict) -> tuple:
     if header.get("version") != LABEL_CACHE_VERSION:
         raise BankRefused(f"{tag}: [version] the cache is {header.get('version')!r}, this code reads {LABEL_CACHE_VERSION!r}")
     diff = [k for k in LABEL_CACHE_FIELDS if header.get(k) != ident.get(k)]
+    if ident["label_kind"] == "kin_v1":                                                      # KINTB: the blend horizon; a header without the field (a 1a8b11a1 cache) is a T_B = 1.0 cache
+        h_tb = header.get("kin_tb", 1.0)
+        if isinstance(h_tb, bool) or not isinstance(h_tb, (int, float)) or float(h_tb) != float(ident["kin_tb"]):
+            raise BankRefused(f"{tag}: [kin_tb] the cache was labelled at T_B {h_tb!r} s (a header without the field reads 1.0), this run asks {ident['kin_tb']!r} s (--dagger-kin-tb)" + ("; also differing: " + ", ".join(diff) if diff else ""))
     if diff:
         raise BankRefused(f"{tag}: [{', '.join(diff)}] header field(s) differ from the value computed now: " + "; ".join(f"{k}: cache {str(header.get(k))[:16]} != now {str(ident.get(k))[:16]}" for k in diff))
     need = {"slot", "label", "status_counts_json", "census_json"} | ({"is_kin"} if ident["label_kind"] == "kin_v1" else set())

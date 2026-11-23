@@ -353,7 +353,7 @@ def test_reachability_trainer_argv_cache_written_then_read_gt_and_the_plan_loss_
 
 
 def test_no_flag_is_the_0ca6f49d_behaviour_labeller_bytes_golden_dagger_module_and_the_labeller_runs(fx10, banks, pack, tmp_path, monkeypatch):
-    assert hashlib.sha256(Path(RV.__file__).read_bytes()).hexdigest() == LABELLER_0CA6F49D_SHA256, "this change must not touch the labeller (its bytes are the cache's identity)"
+    # KINTB (2026-11-23) edited the labeller (v8f_recovery.py: T_B became a parameter), so its bytes are no longer 0ca6f49d's; test_v8f_kintb.py pins its behaviour at the default against golden_v8f_recovery_1a8b11a1.py.
     assert hashlib.sha256(GOLD_D.read_bytes()).hexdigest() == GOLD_D_SHA256
     spec = importlib.util.spec_from_file_location("golden_v8f_dagger_0ca6f49d", GOLD_D)
     gold = importlib.util.module_from_spec(spec)
@@ -371,7 +371,7 @@ def test_no_flag_is_the_0ca6f49d_behaviour_labeller_bytes_golden_dagger_module_a
         for step in (0, 5):
             assert _same(G.DaggerSwap(bn, p=1.0, seed=3).apply(batch, step), gold.DaggerSwap(bg, p=1.0, seed=3).apply(batch, step)), (kind, step)
         lv_n, lv_g = G.DaggerSwap(bn, p=1.0, seed=3).built_levers(), gold.DaggerSwap(bg, p=1.0, seed=3).built_levers()
-        assert lv_n.pop("dagger_label_cache") is None and lv_n.pop("dagger_label_cache_sha256") is None and lv_n == lv_g, "no flag: the two new levers read None, every other lever is 0ca6f49d's"
+        assert lv_n.pop("dagger_kin_tb") == 1.0 and lv_n.pop("dagger_label_cache") is None and lv_n.pop("dagger_label_cache_sha256") is None and lv_n == lv_g, "no flag: the two new levers read None, every other lever is 0ca6f49d's"
     # the trainer with no flag: labeller runs once, nothing is written, the ctl record has no cache key, and a cache lying beside the bank is NOT read
     n = _count_labellers(monkeypatch)
     stray = Path(pack.bank) / "label_cache.npz"      # the place a "default path" mutant would look

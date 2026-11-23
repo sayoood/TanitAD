@@ -104,6 +104,9 @@ FLAG_CHECKS = {
     # KINCACHE: `dagger:dagger_label_cache` = equals the BUILT bank's cache path (DaggerSwap.built_levers()["dagger_label_cache"]; None = no cache) and, beside it, `dagger_label_cache_sha256` = the sha256 of the cache file AS LOADED
     # (bad_dagger re-hashes the file from disk). argv -> make_dagger -> load_dagger_bank (read_label_cache | labeller + write_label_cache) -> DaggerBank.label_cache -> built_levers. Refused without --dagger-label speed_v1 | kin_v1 and at --dagger-p 0.
     "dagger_label_cache": "dagger:dagger_label_cache",
+    # KINTB: `dagger:dagger_kin_tb` = equals the BUILT bank's kin_v1 blend horizon T_B in s (DaggerSwap.built_levers()["dagger_kin_tb"]; 1.0 when no kin_v1 bank is built). argv -> load_dagger_bank (DR.kin_label_bank(tb=) + the cache header) -> DaggerBank.kin_tb -> built_levers.
+    # Valid only with --dagger-label kin_v1 (a non-default value elsewhere is refused), finite, 0.2 <= T_B <= 3.0.
+    "dagger_kin_tb": "dagger:dagger_kin_tb",
     # PREREG_V8F_ROLLADD (arm RA): `dagger:dagger_mode` = equals the BUILT swap's mode (DaggerSwap.built_levers()["dagger_mode"]). argv -> make_dagger (DaggerSwap(mode=)) -> DaggerSwap.apply -> append_rows (B logged rows + N swapped rows)
     # -> model.loss on B + N rows -> backward. Default swap = cf27dbb7 bit for bit. Refused at --dagger-p 0, and beside every stage that assumes B rows (bad_dagger).
     "dagger_mode": "dagger:dagger_mode",
@@ -257,6 +260,10 @@ def build_parser():
                          "after its header (label kind, bank.json sha256, v8f_recovery.py sha256, v8f_dagger.py sha256, record count, eligible-index sha256, record-array sha256, clip-store sha256) is checked field by field against the value computed now "
                          "(a mismatch is refused with the field named); if PATH does not exist the labeller runs as today and PATH is then written atomically (.part, then rename). `--selfcheck-only` with an absent PATH is the precompute. "
                          "The path and the file's sha256 are recorded as levers.dagger.dagger_label_cache / dagger_label_cache_sha256. Default \"\" = none = the labeller runs at every load, bit for bit as before")
+    ap.add_argument("--dagger-kin-tb", dest="dagger_kin_tb", type=float, default=1.0, metavar="SECONDS",
+                    help="KINTB: the blend horizon T_B (s) of the kin_v1 label: the label blends from the own (v, a, kappa) into the reference over T_B seconds and may merge no earlier than T_B. Default 1.0 = the kin_v1 of commit 1a8b11a1 bit for bit "
+                         "(labels, cache files' arrays, every built lever apart from the new dagger_kin_tb). Valid only with --dagger-label kin_v1 (a non-default value with speed_v1 / human is refused); finite, 0.2 <= T_B <= 3.0 (the label spans 6 s). "
+                         "The kin_v1 label cache header carries it (a cache labelled at another T_B is refused; a header without it reads 1.0). Must equal the built bank's value or the launch gate refuses")
     ap.add_argument("--dagger-mode", dest="dagger_mode", choices=DG.DAGGER_MODES, default=DG.DEFAULT_MODE,
                     help="PREREG_V8F_ROLLADD (arm RA): swap (default) = the selected logged rows are overwritten by the own states, cf27dbb7 bit for bit. add = the logged batch is kept whole and the N swapped rows are APPENDED "
                          "after it (the step trains on B + N rows; same selection, same generator). Must equal the BUILT swap's mode or the launch gate refuses; refused at --dagger-p 0 and with --launch-intent-w / --level-head on / "
@@ -592,6 +599,18 @@ def dagger_eval_clips(a, header) -> tuple:
     return sorted(set().union(*map(set, src.values()))), {k: len(v) for k, v in src.items()}
 
 
+def kin_tb_refusal(a):
+    """KINTB: the reason ``--dagger-kin-tb`` is refused for this argv, or None. A non-default value is valid only with --dagger-label kin_v1; any value must be finite and in [DR.KIN_TB_MIN, DR.KIN_TB_MAX]."""
+    tb = getattr(a, "dagger_kin_tb", 1.0)
+    try:
+        DR.check_kin_tb(tb)
+    except ValueError as e:
+        return f"--dagger-kin-tb {tb!r}: {e}"
+    if float(tb) != 1.0 and a.dagger_label != "kin_v1":
+        return f"--dagger-kin-tb {tb!r} is valid only with --dagger-label kin_v1 (this run has {a.dagger_label!r}): a lever that is declared and does nothing"
+    return None
+
+
 def load_dagger_bank(a, J, wins, clips, info, store=None) -> tuple:
     """``--dagger-bank`` -> (the bank re-indexed to this trainer's join, the controls record). The PREREG's controls, each refusing with its own message (``DG.BankRefused``):
 
@@ -604,6 +623,9 @@ def load_dagger_bank(a, J, wins, clips, info, store=None) -> tuple:
     """
     if (getattr(a, "dagger_label_cache", "") or "") and a.dagger_label not in ("speed_v1", "kin_v1"):
         raise DG.BankRefused(f"--dagger-label-cache {a.dagger_label_cache!r} is valid only with --dagger-label speed_v1 | kin_v1 (this run has {a.dagger_label!r}): a lever that is declared and does nothing")
+    _tb_msg = kin_tb_refusal(a)
+    if _tb_msg:
+        raise DG.BankRefused(_tb_msg)
     bank0 = DG.DaggerBank.load(a.dagger_bank, expect_sha256=a.dagger_bank_sha256 or None)         # the declared --dagger-bank-sha256: a bank whose manifest hashes otherwise is refused here, before any control is read
     if bank0.manifest is None:
         raise DG.BankRefused(f"{a.dagger_bank}: a bare shard, not a merged bank (no bank.json): the bank's identity is the manifest's sha256")
@@ -624,19 +646,20 @@ def load_dagger_bank(a, J, wins, clips, info, store=None) -> tuple:
         read_clip = getattr(store, "get_kin", None) or store.get
         cache_path, cache_hit, cache_sha, cache_ident = getattr(a, "dagger_label_cache", "") or "", None, None, None
         if cache_path:                                                                           # KINCACHE: the labeller's outputs, read back from PATH (header checked field by field) or computed below and then written to PATH atomically
-            cache_ident = DG.label_cache_identity(bank, J["clip"], read_clip, label_kind=a.dagger_label, labeller_path=DR.__file__, dagger_path=DG.__file__)
+            cache_ident = DG.label_cache_identity(bank, J["clip"], read_clip, label_kind=a.dagger_label, labeller_path=DR.__file__, dagger_path=DG.__file__, kin_tb=a.dagger_kin_tb)
             cache_hit = os.path.exists(cache_path)
         if cache_hit:
             res, cache_sha = DG.read_label_cache(cache_path, cache_ident)
             print(f"[label-cache] {a.dagger_label}: read {cache_path} (sha256 {cache_sha[:12]}), header checked; the labeller did not run")
         elif a.dagger_label == "kin_v1":                                                         # KINLAB: the kinematic labeller (own v, a, kappa at NOW -> the speed_v1 reference); a refused record keeps its speed_v1 label
-            res = DR.kin_label_bank(bank.a, bank.ci, J["clip"], read_clip, log=print)
+            res = DR.kin_label_bank(bank.a, bank.ci, J["clip"], read_clip, log=print, tb=a.dagger_kin_tb)
         else:
             res = DR.label_bank(bank.a, bank.ci, J["clip"], read_clip, log=print)
         if cache_path and not cache_hit:
             cache_sha = DG.write_label_cache(cache_path, cache_ident, res)
             print(f"[label-cache] {a.dagger_label}: wrote {cache_path} (sha256 {cache_sha[:12]})")
         if a.dagger_label == "kin_v1":
+            bank.kin_tb = float(a.dagger_kin_tb)
             bank.attach_recovery(res["slot"], res["label"], res["status_counts"], kin=res["is_kin"])
         else:
             bank.attach_recovery(res["slot"], res["label"], res["status_counts"])                 # the line that attaches the labels (the eligible index is unchanged)
@@ -675,7 +698,7 @@ def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
     """The DAgger half of the launch gate (G-DVB). Empty = pass. Every flag is read back from the BUILT swap (``dag``); with no swap built every one must be at its default (a flag that builds nothing is
     refused, not ignored). Beyond the flags: the bank's path and sha256 against the declaration (the file on disk is re-hashed), K-B2 / K-B3 / COVERAGE were read (the record exists and says so), the bank's
     generating configuration equals PREREG section 1's and this model's, the exclusivity with --ego-perturb-p, and a lever declared without an effect (DAG-only flags at p = 0) is refused."""
-    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed", "dagger_bank_readout", "dagger_bank_kappa", "dagger_label", "dagger_mode", "dagger_label_cache")}
+    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed", "dagger_bank_readout", "dagger_bank_kappa", "dagger_label", "dagger_mode", "dagger_label_cache", "dagger_kin_tb")}
     declared = {k: getattr(a, k) for k in dfl}
     if dag is None:
         moved = sorted(k for k in dfl if declared[k] != dfl[k])
@@ -690,6 +713,13 @@ def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
             bad.append(f"lever {k}: declared {declared[k]!r} but the loaded bank's header says {lv.get(k)!r} (a header without the field reads {dfl[k]!r})")
         if a.dagger_p <= 0 and declared[k] != dfl[k]:
             bad.append(f"--{k.replace('_', '-')} {declared[k]!r} is declared while --dagger-p is {a.dagger_p}: a lever that is declared and does nothing (DAG-0 names only --dagger-p 0)")
+    if lv.get("dagger_kin_tb") != float(a.dagger_kin_tb):                                        # KINTB: the blend horizon against the built bank's
+        bad.append(f"lever dagger_kin_tb: declared {a.dagger_kin_tb!r} but built {lv.get('dagger_kin_tb')!r}")
+    _tb_msg = kin_tb_refusal(a)
+    if _tb_msg:
+        bad.append(_tb_msg)
+    if a.dagger_p <= 0 and float(a.dagger_kin_tb) != 1.0:
+        bad.append(f"--dagger-kin-tb {a.dagger_kin_tb!r} is declared while --dagger-p is {a.dagger_p}: a lever that is declared and does nothing (DAG-0 names only --dagger-p 0)")
     want_c = os.path.normcase(os.path.abspath(a.dagger_label_cache)) if a.dagger_label_cache else None                     # KINCACHE: the path and the sha256 of the cache file as loaded
     got_c = os.path.normcase(os.path.abspath(str(lv.get("dagger_label_cache")))) if lv.get("dagger_label_cache") is not None else None
     if want_c != got_c:
