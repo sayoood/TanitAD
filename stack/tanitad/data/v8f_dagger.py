@@ -274,6 +274,7 @@ class DaggerBank:
             self.ci = lut[self.ci]
         self.reason = np.asarray(arrays["reason"])
         self.rl = None                                                                 # the speed-consistent labels (``attach_recovery``); None = the human label everywhere (today's bank, bit for bit)
+        self.label_cache = None                                                        # KINCACHE: {"path", "sha256"} of the ``--dagger-label-cache`` file the labels were READ from / WRITTEN to; None = no cache
         self._index(self.reason == OK)
 
     def _index(self, eligible):
@@ -723,7 +724,8 @@ class DaggerSwap:
         (written by ``v8f_dagger_bank.py``); a header without it (every bank made before the field existed) reads ``pinned`` / ``none``, and so does no bank."""
         gen = ({} if self.bank is None else (getattr(self.bank, "header", None) or {}).get("generator")) or {}
         return {"dagger_bank_readout": readout_token(gen.get("readout", "pinned"), gen.get("acc_gain"), bool(gen.get("path_exec", False))), "dagger_bank_kappa": str(gen.get("kappa_max", "none")),
-                "dagger_label": "human" if self.bank is None else self.bank.label_kind, "dagger_mode": self.mode, "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
+                "dagger_label": "human" if self.bank is None else self.bank.label_kind, "dagger_label_cache": (getattr(self.bank, "label_cache", None) or {}).get("path"),
+                "dagger_label_cache_sha256": (getattr(self.bank, "label_cache", None) or {}).get("sha256"), "dagger_mode": self.mode, "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
                 "bank_hmax": None if self.bank is None else self.bank.hmax, "rebuilt": list(REBUILT), "kept": list(KEPT), "record": list(RECORD), "labels_re_expressed": list(LABELS_RE_EXPRESSED),
                 "nav_rebuild_invalid": NAV_REBUILD_INVALID, "constants_sha256": constants_sha256()}
 
@@ -801,3 +803,102 @@ class DaggerSwap:
             else:
                 out.update(upd)                                                       # the ONE line that applies the swap: delete it and `out` is `batch`
         return out
+
+
+# ================================================================================================ KINCACHE (``--dagger-label-cache PATH``)
+"""KINCACHE: the labeller's outputs for one bank, computed once OUTSIDE the GPU lock and read back by every later trainer load (MM design, BRIEF_BUILD_KINCACHE 2026-11-23, binding).
+
+``kin_label_bank`` / ``label_bank`` are deterministic functions of (the bank's records, the logged grid of each clip, the labeller's code). The cache stores their outputs (``slot``, ``label``, ``is_kin`` for kin_v1,
+``status_counts``, ``n_labelled``, ``census``) in an uncompressed, fixed-timestamp ``.npz`` (no pickle) with a header; a load is refused, naming the field, unless EVERY header field equals the value computed now:
+``label_kind``, ``bank_json_sha256``, ``labeller_sha256`` (the bytes of ``v8f_recovery.py`` as loaded), ``dagger_sha256`` (the bytes of this file), ``n_records``, ``eligible_index_sha256``, ``clip_store_sha256``;
+plus two fields the brief did not list and that only make it stricter: ``records_sha256`` (the record arrays the labeller reads) and ``arrays_sha256`` (the cache's own arrays, so a flipped byte is refused).
+A cache is written ATOMICALLY: ``<path>.part`` is written, flushed and fsynced, then renamed; nothing ever reads ``<path>.part``."""
+LABEL_CACHE_VERSION = "v8f-label-cache-1"
+LABEL_CACHE_FIELDS = ("label_kind", "bank_json_sha256", "labeller_sha256", "dagger_sha256", "n_records", "eligible_index_sha256", "records_sha256", "clip_store_sha256")
+LABEL_CACHE_KINDS = ("speed_v1", "kin_v1")
+
+
+def _hash_array(h, a) -> None:
+    a = np.ascontiguousarray(a)
+    h.update(str(a.dtype).encode() + b"|" + str(a.shape).encode() + b"|")
+    h.update(a.tobytes())
+
+
+def label_cache_identity(bank: "DaggerBank", clip_names, read_clip, *, label_kind: str, labeller_path, dagger_path) -> dict:
+    """The header the cache must carry for THIS bank, store and code: every field computed now (``read_clip(name)["pose"]`` = ``ClipStore.get_kin``: the logged grid and speed of the clip)."""
+    if label_kind not in LABEL_CACHE_KINDS:
+        raise BankRefused(f"label cache: label kind {label_kind!r} is not one of {LABEL_CACHE_KINDS}")
+    reason = np.asarray(bank.reason)
+    a = bank.a
+    rec = hashlib.sha256()
+    for name, arr in (("reason", reason), ("r", np.asarray(a["r"])), ("tick", np.asarray(a["tick"]) if "tick" in a else np.zeros(len(reason), np.int8)), ("ci", np.asarray(bank.ci, np.int64)),
+                      ("own", np.asarray(a["p10f"])[:, -1, :3])):
+        rec.update(name.encode() + b":")
+        _hash_array(rec, arr)
+    st = hashlib.sha256()
+    todo = np.flatnonzero(reason == OK)
+    for c in np.unique(np.asarray(bank.ci, np.int64)[todo]):
+        nm = str(clip_names[int(c)])
+        st.update(f"{int(c)}|{nm}|".encode())
+        _hash_array(st, np.asarray(read_clip(nm)["pose"], np.float64))
+    return {"label_kind": str(label_kind), "bank_json_sha256": bank.sha256, "labeller_sha256": sha256_file(labeller_path), "dagger_sha256": sha256_file(dagger_path), "n_records": int(bank.n),
+            "eligible_index_sha256": sha256_bytes(np.ascontiguousarray(bank._ok_idx, np.int64).tobytes()), "records_sha256": rec.hexdigest(), "clip_store_sha256": st.hexdigest()}
+
+
+def _cache_arrays_sha256(arrays: dict) -> str:
+    h = hashlib.sha256()
+    for k in sorted(arrays):
+        h.update(k.encode() + b":")
+        _hash_array(h, arrays[k])
+    return h.hexdigest()
+
+
+def write_label_cache(path, ident: dict, res: dict) -> str:
+    """Write ``res`` (the labeller's return value) with header ``ident`` to ``path`` atomically; returns the file's sha256. A truncated ``<path>.part`` left by a killed writer is overwritten, never read."""
+    path = str(path)
+    kind = ident["label_kind"]
+    arrays = {"slot": np.asarray(res["slot"], np.int32), "label": np.asarray(res["label"], np.float64),
+              "status_counts_json": np.frombuffer(json.dumps(res["status_counts"], separators=(",", ":")).encode("utf-8"), np.uint8),
+              "census_json": np.frombuffer(json.dumps(res["census"], separators=(",", ":")).encode("utf-8"), np.uint8)}
+    if kind == "kin_v1":
+        arrays["is_kin"] = np.asarray(res["is_kin"], bool)
+    header = {**ident, "version": LABEL_CACHE_VERSION, "n_labelled": int(res["n_labelled"]), "arrays_sha256": _cache_arrays_sha256(arrays)}
+    out = {**arrays, "header_json": np.frombuffer(canon(header), np.uint8)}
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    part = path + ".part"
+    _save_npz_det(part, out)
+    with open(part, "rb+") as fh:
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(part, path)
+    return sha256_file(path)
+
+
+def read_label_cache(path, ident: dict) -> tuple:
+    """-> (the labeller's return value as stored, the file's sha256). Refused (``BankRefused``, the reason named in square brackets) when the file is unreadable / not this format / a header field differs from ``ident`` / its arrays do not match their hash."""
+    path = str(path)
+    tag = f"--dagger-label-cache {path}"
+    sha = sha256_file(path)
+    try:
+        with open(path, "rb") as fh, np.load(fh, allow_pickle=False) as z:                     # our own handle: a truncated file must not leave one open (Windows cannot rename over it)
+            header = json.loads(bytes(z["header_json"]).decode("utf-8"))
+            arrays = {k: np.array(z[k]) for k in z.files if k != "header_json"}
+    except Exception as e:                                                                    # noqa: BLE001  a truncated / foreign file is a REFUSAL, not a crash
+        raise BankRefused(f"{tag}: [unreadable] {type(e).__name__}: {str(e)[:200]}") from e
+    if header.get("version") != LABEL_CACHE_VERSION:
+        raise BankRefused(f"{tag}: [version] the cache is {header.get('version')!r}, this code reads {LABEL_CACHE_VERSION!r}")
+    diff = [k for k in LABEL_CACHE_FIELDS if header.get(k) != ident.get(k)]
+    if diff:
+        raise BankRefused(f"{tag}: [{', '.join(diff)}] header field(s) differ from the value computed now: " + "; ".join(f"{k}: cache {str(header.get(k))[:16]} != now {str(ident.get(k))[:16]}" for k in diff))
+    need = {"slot", "label", "status_counts_json", "census_json"} | ({"is_kin"} if ident["label_kind"] == "kin_v1" else set())
+    if set(arrays) != need:
+        raise BankRefused(f"{tag}: [arrays] members {sorted(arrays)} != {sorted(need)}")
+    if header.get("arrays_sha256") != _cache_arrays_sha256(arrays):
+        raise BankRefused(f"{tag}: [arrays_sha256] the stored arrays do not hash to the header's arrays_sha256: the file is corrupt")
+    if arrays["slot"].shape != (ident["n_records"],) or arrays["label"].ndim != 3:
+        raise BankRefused(f"{tag}: [arrays] slot {arrays['slot'].shape} / label {arrays['label'].shape} do not fit {ident['n_records']} records")
+    res = {"slot": arrays["slot"], "label": arrays["label"], "status_counts": json.loads(bytes(arrays["status_counts_json"]).decode("utf-8")),
+           "n_labelled": int(header["n_labelled"]), "census": json.loads(bytes(arrays["census_json"]).decode("utf-8"))}
+    if "is_kin" in arrays:
+        res["is_kin"] = arrays["is_kin"]
+    return res, sha
