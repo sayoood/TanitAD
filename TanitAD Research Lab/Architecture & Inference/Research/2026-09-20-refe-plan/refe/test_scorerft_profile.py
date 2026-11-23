@@ -572,9 +572,120 @@ def chk_no_scipy():
         ok("text=True" not in call or "encoding=" in call, "subprocess.run with text=True and no encoding=")
 
 
+def chk_census_l2():
+    """SFTT launch gate G-LIVE L2 (MM 2026-11-23): a head the smoke leaves at ZERO pairs passes iff the registered, hash-pinned census proves pairs > 0 under the DECLARED rule.  Fixtures are built in a tmp dir and the pin
+    is the fixture's own sha (profile['rank_census']); the imported rank_loss is a fake module whose __file__ is a fixture."""
+    import json
+    install_fake_rank_module()
+    FakeRank.mutate = None
+    pr = L.scorerft_profile("T")
+    ok(pr.get("rank_census") == L.SCORERFT_RANK_CENSUS and all(len(L.SCORERFT_RANK_CENSUS[k]) == 64 for k in ("sha256", "rank_loss_sha256")), "the profile of a ranking arm carries the pin")
+    ok("rank_census" not in L.scorerft_profile("C") and "rank_census" not in L.scorerft_profile("Cs"), "a control arm carries no census")
+    ok(L.SCORERFT_RANK_CENSUS["sha256"].startswith("a9f13c78") and L.SCORERFT_RANK_CENSUS["rank_loss_sha256"].startswith("c0e027d2"), "the pins are the MM's")
+    INIT = "/workspace/data/refe_runs/p5c_c1/model_final.pt"
+    base = {"heads": ["ep", "gate"], "ep_gap": 0.02, "gate_topk": 8, "label_backend": "pdm", "NOT_A_DECISION": False, "init_from": INIT, "rule": {"status": "SELECT", "rank_w": W_FIX},
+            "pairs_by_head": {"ep": 100, "gate": 5}, "sets_with_pairs_by_head": {"ep": 20, "gate": 2}, "labelled_sets": 32}
+    td = Path(tempfile.mkdtemp(prefix="sftcen_"))
+    try:
+        rl = td / "rank_loss.py"
+        rl.write_bytes(b"# fixture rank_loss\r\nx = 1\r\n")
+        rl_sha = hashlib.sha256(b"# fixture rank_loss\nx = 1\n").hexdigest()
+        rl2 = td / "rank_loss_other.py"
+        rl2.write_bytes(b"# a different rank_loss\n")
+
+        def case(over=None, rank_loss_file=rl, pin_over=None, write=True, smoke_gate=0, drop_msk=False):
+            d = json.loads(json.dumps(base))
+            d.update(over or {})
+            path = td / f"census_{len(list(td.iterdir()))}.json"
+            if write:
+                path.write_text(json.dumps(d), encoding="utf-8")
+            pin = {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest() if write else "00" * 32, "rank_loss_sha256": rl_sha}
+            pin.update(pin_over or {})
+            profile = {"rank_census": pin}
+            sys.modules["rank_loss"].__file__ = str(rank_loss_file)
+            cap = reach_cap()
+            cap.args.init_from = INIT
+            cap.metrics = [{"event": "rank"}] + [{"step": i, "traj_L1": 1.0, "rank_L": 0.4, "rank_pairs_ep": 4, "rank_pairs_gate": smoke_gate} for i in range(2)]
+            cap.rank_calls = [audit_call(None)]
+            if drop_msk:                                       # a 4th call: the trainer keeps the mask of the first 3 calls only
+                cap.rank_calls += [dict(cap.rank_calls[0]) for _ in range(3)]
+                for c_ in cap.rank_calls[3:]:
+                    c_.pop("msk")
+            cap.lab_submits = []
+            r, det = GC.rank_live_rows(cap, profile, None)
+            return [x for x in r if x.startswith("L2")], [x for x in r if not x.startswith("L2")], det
+
+        # PASS (a): zero smoke gate pairs + a valid census
+        l2, rest, det = case()
+        ok(l2 == [] and len(rest) == 1 and "L5" in rest[0], (l2, rest))
+        ok(det["census"]["verdict"]["gate"] == {"source": "census", "ok": True} and det["census"]["verdict"]["ep"] == {"source": "smoke", "ok": True}, det["census"]["verdict"])
+        ok(det["census"]["n_smoke_sets"] == 3 and abs(det["census"]["p_zero_smoke"]["gate"] - (1 - 2 / 32) ** 3) < 1e-12, det["census"])
+        ok(det["census"]["facts"]["sha256"] and det["census"]["facts"]["rank_loss_sha256"] == rl_sha, "the facts record both shas")
+        ok(case(drop_msk=True)[2]["census"]["n_smoke_sets"] is None and case(drop_msk=True)[2]["census"]["p_zero_smoke"]["gate"] is None, "an unrecoverable smoke set count is None, never invented")
+        # PASS (b): smoke pairs > 0 and NO census file: the old path, untouched
+        l2, rest, det = case(write=False, smoke_gate=3)
+        ok(l2 == [] and "census" not in det and det["pairs_logged"]["gate"] == 6, (l2, det.get("census")))
+        # FAIL (c)-(k): each ONE reason, the original L2 text verbatim + the census clause
+        fails = {"c_no_census_file": dict(write=False), "d_sha_mismatch": dict(pin_over={"sha256": "ab" * 32}), "e_census_gate_pairs_zero": dict(over={"pairs_by_head": {"ep": 100, "gate": 0}}),
+                 "e2_census_gate_sets_zero": dict(over={"sets_with_pairs_by_head": {"ep": 20, "gate": 0}}), "f_gate_topk_16": dict(over={"gate_topk": 16}), "g_init_from_differs": dict(over={"init_from": "/x/other.pt"}),
+                 "h_rank_loss_sha_differs": dict(rank_loss_file=rl2), "i_not_a_decision": dict(over={"NOT_A_DECISION": True}), "j_synthetic": dict(over={"label_backend": "synthetic"}),
+                 "k_heads_ep_only": dict(over={"heads": ["ep"]}), "l_ep_gap": dict(over={"ep_gap": 0.05}), "m_rank_w": dict(over={"rule": {"status": "SELECT", "rank_w": 0.5}}),
+                 "n_pin_rank_loss_sha": dict(pin_over={"rank_loss_sha256": "cd" * 32}), "o_no_pin": dict(pin_over={"sha256": ""})}
+        for nm, kw in fails.items():
+            l2, rest, det = case(**kw)
+            ok(len(l2) == 1 and l2[0].startswith("L2 head 'gate' formed ZERO pairs over the whole smoke (structurally dead: the 'built, tested, unreachable' class); the registered census does not prove it: "), (nm, l2))
+            ok(det["census"]["verdict"]["gate"] == {"source": "census", "ok": False}, nm)
+        # judge / facts never raise
+        ok(GC.rank_census_facts({}) ["ran"] is False and GC.rank_census_facts(None)["ran"] is False and GC.rank_census_facts({"rank_census": {"path": str(td / "nope.json")}})["ran"] is False, "facts: never raise")
+        (td / "bad.json").write_text("{not json", encoding="utf-8")
+        ok(GC.rank_census_facts({"rank_census": {"path": str(td / "bad.json")}})["ran"] is False, "facts: a corrupt file")
+        ok(GC.judge_census_head("gate", {"ran": False, "why": "x"}, SimpleNamespace(), {}) != [], "judge: an unrun census")
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+
+
+def chk_field_reach_active_sample():
+    """SFTT launch gate 1b (MM 2026-11-23, Fs): `field_reach` probes the FIRST sample whose hinge loss is > 0, not idx[0].  A fake `field_loss` (hinge on a per-sample scalar 'sdf') stands in for the real one."""
+    import torch
+    mod = types.ModuleType("field_loss")
+
+    def field_loss(traj, sdf, margin=0.0, interp=None):                    # sum_b relu(margin - s_b) * mean(traj_b): exactly 0 (loss AND gradient) where s_b >= margin
+        s = sdf.reshape(sdf.shape[0], -1)[:, 0]
+        return (torch.relu(margin - s) * traj.reshape(traj.shape[0], -1).mean(1)).sum() / traj.shape[0]
+    mod.field_loss = field_loss
+    old = sys.modules.get("field_loss")
+    sys.modules["field_loss"] = mod
+    try:
+        def fcap(s_vals, valid=None):
+            B = len(s_vals)
+            sdf = torch.tensor(s_vals, dtype=torch.float32).reshape(B, 1, 1)
+            return SimpleNamespace(model=make_model(), first_batch=(torch.randn(B, 8), torch.zeros(B, 5), torch.zeros(B, 2), None), field_first=(sdf, valid),
+                                   args=SimpleNamespace(w_field=2.0, field_margin=0.5, field_interp="5hz"))
+        fr = GC.field_reach(fcap([5.0, 5.0, 0.1, 0.1]), None)                      # index 0 inactive (sdf 5 >= margin), index 2 the first active
+        ok(fr["active_index"] == 2 and fr["n_active"] == 2 and fr["losses"][0] == 0.0 and fr["losses"][1] == 0.0 and fr["losses"][2] > 0.0, fr.get("losses"))
+        ok(fr["declared"]["loss"] != 0.0 and fr["declared"]["groups"]["traj_head"]["abs_sum"] > 0.0 and fr["declared"]["groups"]["queries"]["abs_sum"] > 0.0, "an active sample reaches the groups")
+        ok(all(v["abs_sum"] == 0.0 for v in fr["zero"]["groups"].values()), "the weight-0 control reads exactly 0.0")
+        rs = GC.judge_field_reach(fr, 2.0)
+        ok(not any("EXACTLY zero on 'traj_head'" in x or "EXACTLY zero on 'queries'" in x or "UNPROVED" in x for x in rs), rs)
+        fr0 = GC.field_reach(fcap([0.1, 5.0, 5.0, 5.0]), None)                     # the old path: index 0 active
+        ok(fr0["active_index"] == 0 and fr0["n_active"] == 1 and fr0["declared"]["groups"]["traj_head"]["abs_sum"] > 0.0, "index 0 active: unchanged")
+        fr_n = GC.field_reach(fcap([5.0, 5.0, 5.0, 5.0]), None)                    # no labelled sample is active
+        ok(fr_n["ran"] and fr_n["labelled"] == 4 and fr_n["n_active"] == 0 and "declared" not in fr_n, fr_n)
+        rn = GC.judge_field_reach(fr_n, 2.0)
+        ok(len(rn) == 1 and "UNPROVED" in rn[0] and "every hinge loss is exactly 0.0" in rn[0] and "does not reach" not in rn[0], rn)
+        frv = GC.field_reach(fcap([0.1, 5.0, 0.1, 0.1], valid=torch.tensor([False, True, True, True])), None)   # an unlabelled sample is skipped; first ACTIVE labelled = 2
+        ok(frv["labelled"] == 3 and frv["active_index"] == 2, frv.get("active_index"))
+        ok(GC.judge_field_reach({"ran": True, "labelled": 0}, 2.0) != [] and GC.judge_field_reach({"ran": False}, 2.0) != [], "unchanged: unlabelled / not run")
+    finally:
+        if old is None:
+            sys.modules.pop("field_loss", None)
+        else:
+            sys.modules["field_loss"] = old
+
+
 CHECKS = {"registry": chk_registry, "existing_unchanged": chk_existing_unchanged, "argv_delta": chk_argv_delta, "pins_refuse": chk_pins_refuse, "levers": chk_levers, "fresh_out": chk_fresh_out,
           "live_wiring": chk_live_wiring, "h_generalised": chk_h_generalised, "reach_and_regressions": chk_reach_and_regressions, "audit": chk_audit, "dvb_rows": chk_dvb_rows,
-          "live_rows": chk_live_rows_control_and_t, "trainer_integration": chk_trainer_integration, "no_scipy": chk_no_scipy}
+          "live_rows": chk_live_rows_control_and_t, "census_l2": chk_census_l2, "field_reach_active": chk_field_reach_active_sample, "trainer_integration": chk_trainer_integration, "no_scipy": chk_no_scipy}
 
 # (file, old, new, the check that must go RED): ONE emitting line of a COPY of this tree is neutralised.
 MUTATIONS = [
@@ -594,6 +705,8 @@ MUTATIONS = [
     ("gate_checks.py", "        elif not math.isclose(v, ref[\"L\"], rel_tol=RANK_REL_TOL, abs_tol=1e-12):", "        elif False:", "audit"),                                       # the L4 value comparison is gone
     ("gate_checks.py", "        if x is not None and x[\"abs_sum\"] != 0.0:\n            out.append(f\"L3 rank-only backward reaches the trajectory side", "        if False:\n            out.append(f\"L3 rank-only backward reaches the trajectory side", "reach_and_regressions"),
     ("gate_checks.py", "        if rows.get(h, 0.0) != 0.0:\n            out.append(f\"L3 rank-only backward reaches score_head row", "        if False:\n            out.append(f\"L3 rank-only backward reaches score_head row", "reach_and_regressions"),
+    ("gate_checks.py", "    c = census or {}\n    if not c.get(\"ran\"):", "    return []\n    c = census or {}\n    if not c.get(\"ran\"):", "census_l2"),                        # judge_census_head returns [] unconditionally (L2 amendment)
+    ("gate_checks.py", "    out[\"active_index\"] = idx[active[0]]\n    sl = slice(idx[active[0]], idx[active[0]] + 1)", "    out[\"active_index\"] = idx[0]\n    sl = slice(idx[0], idx[0] + 1)", "field_reach_active"),   # always probe idx[0] (the Fs defect)
 ]
 
 

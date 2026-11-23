@@ -708,6 +708,9 @@ def p7field_refusals(prof: dict, argv: list) -> list:
 SCORERFT_STEPS = 1000
 SCORERFT_BASE_SHA256 = "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"   # FILLED BY THE MM 2026-11-20: sha256 of C1's final model_final.pt (/workspace/data/refe_runs/p5c_c1/); MEASURED: the pod sha file == the verified HF pull (Sayood/tanitad-refe-p5c) == the s2_c1 read preflight
 SCORERFT_RANK_W = 0.03125                       # FILLED BY THE MM: --rank-w of T / Ts = the committed weight rule's output (smallest w with r(w) >= 1.0); the gate may only veto it
+SCORERFT_RANK_CENSUS = {"path": "/workspace/data/refe_p5c/scorerft/weight_rule_rank.json",
+                        "sha256": "a9f13c78e987440c8255bff4910e2814c46bc85c0459caa7825cf99d745dc401",
+                        "rank_loss_sha256": "c0e027d28291b55e5f76618084d084ebba59061e5b700e11b8ca5bd7b6227af7"}   # FILLED BY THE MM 2026-11-23: the weight rule's own JSON (real navtrain, same rule / init / rank_loss.py as the arm), a census for G-LIVE L2 ONLY (a head the smoke leaves at zero pairs passes iff this pinned census proves pairs > 0 under the declared rule); rank_loss_sha256 = rank_loss.py with CR stripped
 SCORERFT_RANK_HEADS = "ep,gate"
 SCORERFT_RANK_EP_GAP = 0.02
 SCORERFT_RANK_GATE_TOPK = 8
@@ -763,6 +766,8 @@ def scorerft_profile(arm: str) -> dict:
                  "init_from_sha256": SCORERFT_BASE_SHA256, "traj_label_sha256": P5C_LABEL_TABLE_SHA256, "traj_label_rank_policy": P5C_RANK_POLICY,
                  "rank_w": (float(SCORERFT_RANK_W) if SCORERFT_RANK_W is not None else None) if ranking else 0.0,
                  "rank_heads": SCORERFT_RANK_HEADS if ranking else "", "rank_ep_gap": SCORERFT_RANK_EP_GAP, "rank_gate_topk": SCORERFT_RANK_GATE_TOPK})
+    if ranking:
+        prof["rank_census"] = dict(SCORERFT_RANK_CENSUS)        # G-LIVE L2's registered census (control arms: no ranking term, so no census)
     return prof
 
 

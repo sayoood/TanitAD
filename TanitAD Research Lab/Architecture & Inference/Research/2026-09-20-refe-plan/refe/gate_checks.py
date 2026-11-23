@@ -2007,11 +2007,24 @@ def field_reach(cap, arm=None) -> dict:
     idx = [k for k in range(sdf.shape[0]) if valid is None or bool(valid[k])]
     if not idx:
         return {"ran": True, "labelled": 0}
-    sl = slice(idx[0], idx[0] + 1)
     dev = next(m.parameters()).device
-    cal = calib[sl].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
     m.train()
-    out = {"ran": True, "labelled": len(idx)}
+    # SFTT launch gate 1b (MM 2026-11-23, Fs): the field loss is a HINGE, exactly 0 on a sample whose plan never violates the field, so a backward through ONE sample (idx[0]) can read exactly zero on a healthy
+    # model.  Evaluate the (unscaled: the hinge's activity does not depend on the weight) field loss forward-only on EACH labelled sample of the first micro-batch in index order, and use the FIRST ACTIVE one.
+    losses = []
+    with torch.no_grad():
+        for k in idx:
+            s1 = slice(k, k + 1)
+            c1 = calib[s1].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+            tr1 = m(img[s1].to(dev), ego[s1].to(dev), goal[s1].to(dev), calib=c1)[0]
+            losses.append(float(field_loss(tr1.float(), sdf[s1].to(dev), margin=cap.args.field_margin, interp=cap.args.field_interp)))
+    active = [i for i, v in enumerate(losses) if v > 0.0]
+    out = {"ran": True, "labelled": len(idx), "losses": losses, "n_active": len(active)}
+    if not active:
+        return out
+    out["active_index"] = idx[active[0]]
+    sl = slice(idx[active[0]], idx[active[0]] + 1)
+    cal = calib[sl].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
     w = 0.0 if arm_is("field_weight_zero", arm) else float(cap.args.w_field)         # arm: a trainer that ignored --w-field would read all-zero
     for tag, scale in (("declared", w), ("zero", 0.0)):
         m.zero_grad(set_to_none=True)
@@ -2038,6 +2051,8 @@ def judge_field_reach(fr: dict, w_field: float) -> list:
         return ["L_field reach probe could not run (no model / first batch / recorded label): the reach is unproved"]
     if not fr.get("labelled"):
         return ["L_field reach probe: no labelled sample in the first micro-batch -- the term was not exercised"]
+    if not fr.get("n_active", 1) or "declared" not in fr:
+        return ["L_field reach probe: no labelled sample of the first micro-batch activates the term (every hinge loss is exactly 0.0): the reach is UNPROVED on this smoke"]
     out = []
     g, g0 = fr["declared"]["groups"], fr["zero"]["groups"]
     for grp in FIELD_REACH_GROUPS:
@@ -2328,6 +2343,76 @@ def judge_harness_identity(f: dict, tol: float = 1e-9) -> list:
     return []
 
 
+# ---- SFTT launch gate, G-LIVE L2 amendment (MM 2026-11-23, BRIEF_SFTT_L2).  The bar is unchanged: a declared head must form >= 1 pair on REAL data through the trainer's OWN term under the DECLARED rule.  Only the
+# evidence source widens: the smoke, OR a registered, hash-pinned pre-launch census (the weight rule's own JSON, `profile["rank_census"]` = launch_gate.SCORERFT_RANK_CENSUS).  A sparse head (gate at top-k 8: 1 set in 32
+# on real navtrain) is not structurally dead, and a ~7-set smoke sees zero gate sets ~80 % of the time.
+def rank_census_facts(profile) -> dict:
+    """The registered census's facts: sha256 of the pinned file's bytes plus the fields L2 judges, and the sha256 (CR stripped) of the `rank_loss.py` THIS process imported.  Never raises: {"ran": False, "why": ...}."""
+    try:
+        pin = (profile or {}).get("rank_census")
+        if not isinstance(pin, dict) or not pin.get("path"):
+            return {"ran": False, "why": "no registered census (profile['rank_census'] absent)"}
+        raw = Path(pin["path"]).read_bytes()
+        d = json.loads(raw.decode("utf-8"))
+        rl_file, rl_sha, rl_why = None, None, None
+        try:
+            import rank_loss as RLc
+            rl_file = getattr(RLc, "__file__", None)
+            rl_sha = hashlib.sha256(Path(rl_file).read_bytes().replace(b"\r", b"")).hexdigest() if rl_file else None
+            rl_why = None if rl_sha else "the imported rank_loss has no __file__"
+        except Exception as e:                                                                 # noqa: BLE001
+            rl_why = f"{type(e).__name__}: {e}"
+        rule = d.get("rule") if isinstance(d.get("rule"), dict) else {}
+        return {"ran": True, "path": str(pin["path"]), "sha256": hashlib.sha256(raw).hexdigest(), "heads": d.get("heads"), "ep_gap": d.get("ep_gap"), "gate_topk": d.get("gate_topk"),
+                "label_backend": d.get("label_backend"), "NOT_A_DECISION": d.get("NOT_A_DECISION"), "init_from": d.get("init_from"), "rule_rank_w": rule.get("rank_w"),
+                "pairs_by_head": d.get("pairs_by_head"), "sets_with_pairs_by_head": d.get("sets_with_pairs_by_head"), "labelled_sets": d.get("labelled_sets"),
+                "rank_loss_file": rl_file, "rank_loss_sha256": rl_sha, "rank_loss_why": rl_why}
+    except Exception as e:                                                                     # noqa: BLE001
+        return {"ran": False, "why": f"{type(e).__name__}: {e}"}
+
+
+def judge_census_head(h, census, args, profile) -> list:
+    """[] only if the registered census PROVES head `h` forms pairs on real data under the DECLARED rule (every condition below holds); else ONE reason: the original L2 text, verbatim, plus the first failed condition."""
+    base = f"L2 head {h!r} formed ZERO pairs over the whole smoke (structurally dead: the 'built, tested, unreachable' class)"
+
+    def fail(why):
+        return [f"{base}; the registered census does not prove it: {why}"]
+    c = census or {}
+    if not c.get("ran"):
+        return fail(f"the census did not run ({c.get('why')})")
+    pin = (profile or {}).get("rank_census") or {}
+    if not pin.get("sha256") or c.get("sha256") != pin.get("sha256"):
+        return fail(f"its sha256 {c.get('sha256')!r} != the pin {pin.get('sha256')!r}")
+    declared = _rank_heads_set(getattr(args, "rank_heads", ""))
+    if not isinstance(c.get("heads"), (list, tuple, set)) or set(c["heads"]) != declared:
+        return fail(f"its heads {c.get('heads')!r} != the declared {sorted(declared)}")
+    if c.get("ep_gap") != getattr(args, "rank_ep_gap", None):
+        return fail(f"its ep_gap {c.get('ep_gap')!r} != the declared {getattr(args, 'rank_ep_gap', None)!r}")
+    if c.get("gate_topk") != getattr(args, "rank_gate_topk", None):
+        return fail(f"its gate_topk {c.get('gate_topk')!r} != the declared {getattr(args, 'rank_gate_topk', None)!r}")
+    if c.get("label_backend") != "pdm":
+        return fail(f"its label_backend {c.get('label_backend')!r} is not 'pdm'")
+    if c.get("NOT_A_DECISION") is not False:
+        return fail(f"its NOT_A_DECISION is {c.get('NOT_A_DECISION')!r} (must be False)")
+    if c.get("init_from") != getattr(args, "init_from", None):
+        return fail(f"its init_from {c.get('init_from')!r} != the declared {getattr(args, 'init_from', None)!r}")
+    try:
+        same_w = math.isclose(float(c.get("rule_rank_w")), float(args.rank_w), rel_tol=1e-12)
+    except (TypeError, ValueError, AttributeError):
+        same_w = False
+    if not same_w:
+        return fail(f"its rule.rank_w {c.get('rule_rank_w')!r} != the declared {getattr(args, 'rank_w', None)!r}")
+    if not pin.get("rank_loss_sha256") or c.get("rank_loss_sha256") != pin.get("rank_loss_sha256"):
+        return fail(f"the imported rank_loss.py sha256 {c.get('rank_loss_sha256')!r} != the pin {pin.get('rank_loss_sha256')!r}")
+    pb, sb = c.get("pairs_by_head") or {}, c.get("sets_with_pairs_by_head") or {}
+    try:
+        if not (int(pb.get(h, 0)) > 0 and int(sb.get(h, 0)) > 0):
+            return fail(f"its pairs_by_head[{h!r}] = {pb.get(h)!r}, sets_with_pairs_by_head[{h!r}] = {sb.get(h)!r} (both must be > 0)")
+    except (TypeError, ValueError):
+        return fail(f"its pair counts for {h!r} are not integers")
+    return []
+
+
 def rank_live_rows(cap, profile, arm=None) -> tuple:
     """G-LIVE's rows L1-L5 for a SCORER-FT arm (DESIGN 3.3).  A CONTROL (rank_w == 0) proves the term ABSENT: no `rank` event, no `rank_L`, no call.  Returns (reasons, details)."""
     reasons, det = [], {}
@@ -2350,9 +2435,26 @@ def rank_live_rows(cap, profile, arm=None) -> tuple:
         reasons.append(f"L1 rank_L not finite on steps {bad[:4]}")
     pairs = {h: sum(int(r.get(f"rank_pairs_{h}", 0) or 0) for r in steps) for h in sorted(heads)}
     det["pairs_logged"] = pairs
-    for h, n in pairs.items():
-        if n <= 0:
-            reasons.append(f"L2 head {h!r} formed ZERO pairs over the whole smoke (structurally dead: the 'built, tested, unreachable' class)")
+    zero = [h for h, n in pairs.items() if n <= 0]
+    verdict = {h: {"source": "smoke", "ok": True} for h, n in pairs.items() if n > 0}
+    if zero:
+        census = rank_census_facts(profile)
+        dc = {"facts": ({k: v for k, v in census.items() if k not in ("pairs_by_head", "sets_with_pairs_by_head")} if census.get("ran") else census), "verdict": verdict}
+        calls_ = [c for c in calls if isinstance(c, dict)]
+        # None = not recoverable: only the first 3 rank calls keep their mask, so a longer smoke cannot be counted (never invented)
+        n_sets = int(sum(int((np.asarray(c["msk"]) > 0).sum()) for c in calls_)) if calls_ and all("msk" in c for c in calls_) else None
+        dc["n_smoke_sets"] = n_sets
+        dc["p_zero_smoke"] = {}
+        for h in zero:
+            rs_ = judge_census_head(h, census, a, profile)
+            reasons += rs_
+            verdict[h] = {"source": "census", "ok": not rs_}
+            sh, ls = ((census.get("sets_with_pairs_by_head") or {}).get(h), census.get("labelled_sets")) if census.get("ran") else (None, None)
+            try:
+                dc["p_zero_smoke"][h] = ((1.0 - float(sh) / float(ls)) ** n_sets) if n_sets is not None and sh is not None and ls else None
+            except (TypeError, ValueError, ZeroDivisionError):
+                dc["p_zero_smoke"][h] = None
+        det["census"] = dc
     try:
         fr = rank_reach(cap, profile, arm)
     except Exception as e:                                                                    # noqa: BLE001
