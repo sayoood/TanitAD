@@ -1,0 +1,102 @@
+#!/bin/bash
+# KINLAB chain "RK": RL's stage-B argv with `--dagger-label speed_v1` -> `kin_v1` on the SAME RH bank, SAME dose p = 0.1, swap mode (PREREG_V8F_KINLAB). Code of record the KINLAB commit 0ca6f49d (rk_env.sh: own tree tree_rk = df250a00's tree_ra + 6 blobs).
+# Readout causal_g1x. STAGED, NOT LAUNCHED. One process, one log. Modelled on rh_ra_chain.sh; differences, and only these:
+#   * the chain WAITS (cap 12 h) for the ADD123 chain's last line `ZZ ADD123 ` in /root/dscale_lead/mm_add123_chain.log (step wait_add123);
+#   * then tree prep (rk_tree_prep.sh, step tree_prep) -> G-SUITE at 0ca6f49d (rk_gsuite.sh, step gsuite: CPU, about 36 min = the RA run's measured wall on the same shards) -> only then the GPU lock; both run UNDER THE PRIORITY MARKER and BEFORE the lock
+#     (rh_rk_marker_watch.sh sets the marker at the ADD123 end and clears it when this chain holds the lock);
+#   * the lock (fd 9, flock on /root/gpu_queue.lock) is taken after the G-SUITE and HELD TO THE END; every exit, a refusal included, hands it back at once (EXIT trap: flock -u);
+#   * render = rk_argv.py (RL's argv with the label value and --out changed); the arms are RK_s0, RK_s1 (stage B only; K-B2 holds: each arm inits from its own UE_sK.A); the comparators RL / RH / B0 are finished arms, only read.
+# Order: (1) wait for ADD123  (2) tree prep  (3) G-SUITE  (4) flock fd 9, HELD TO THE END  (5) tree check, inputs, disk  (6) render the two RK argv files (rk_argv.py)
+#        (7) RK_s0 (rk_arm.sh: argv verify, pair check, selfcheck, gate record incl. the census bar, study-side token, train 3,000 steps through the token, lever-acts, summary, post gates, zerograd, K-CLIP, ARM_DONE)  (8) RK_s1  (9) the RA chain's end steps.
+# Every step leaves $R/done_rk/<name>.done; a relaunch skips finished steps (a half-finished arm or tree.part is MOVED ASIDE, never deleted). STOP file: $R/chains/STOP, read between steps.
+# Log: /root/rollhist/rh_rk_chain.log ; its LAST line is `ZZ ROLLHIST-RK DONE ZZ` or `ZZ ROLLHIST-RK FAIL ZZ <why>`.
+# MARKER PROTOCOL: rh_rk_marker_watch.sh (see there). LAUNCH: see launch_rk.sh (MM only).
+HERE=$(cd "$(dirname "$0")" && pwd)
+. $HERE/rk_env.sh
+D=$R/done_rk; mkdir -p $D $R/logs $R/runs $R/chains
+LOG=$R/rh_rk_chain.log
+ADDLOG=/root/dscale_lead/mm_add123_chain.log
+exec >> $LOG 2>&1
+say() { echo "$(date -u +%FT%TZ) $*"; }
+fail() { echo "ZZ ROLLHIST-RK FAIL ZZ $1"; exit 1; }
+trap 'flock -u 9 2>/dev/null; exec 9>&- 2>/dev/null' EXIT          # a refusal (or any exit) hands the GPU queue lock back at once, even if a child still holds the descriptor
+rh_readout_flags
+[ "$RH_READOUT" = causal_g1x ] || fail "RH_READOUT is $RH_READOUT: the RH bank and arms are causal_g1x"
+export_py
+step() { local n=$1; shift; [ -e $D/$n.done ] && { say "skip $n (done)"; return 0; }; [ -e $R/chains/STOP ] && fail "STOP file before step $n"; say "step $n"; "$@" || fail "step $n"; date -u +%FT%TZ > $D/$n.done; }
+say "chain start commit=${COMMIT:0:8} readout=$RH_READOUT (decl token $DECL_TOKEN) arms RK_s0 RK_s1 (--dagger-p 0.1 --dagger-label kin_v1, same banks)"
+# 1. wait for the ADD123 chain's last line (DONE, STOP or FAIL): it holds the priority marker until then
+w_add() {
+  local i
+  for i in $(seq 1 8640); do
+    grep -q "ZZ ADD123 " $ADDLOG 2>/dev/null && { say "ADD123 ended: $(grep 'ZZ ADD123 ' $ADDLOG | tail -n 1)"; return 0; }
+    [ -e $R/chains/STOP ] && return 1
+    sleep 5
+  done
+  echo "ADD123 chain did not end within 12 h"; return 1
+}
+step wait_add123 w_add
+# 2. tree prep (CPU, seconds): tree_rk = tree_ra + rk_delta.tar, blob by blob against all_blobs_rk.txt
+chk_tree() {
+  $PY $R/blobcheck.py $TREE $BLOBS > $R/logs/blobcheck_rk.log 2>&1 || return 1
+  [ "$(find $TREE -type f -not -path '*/__pycache__/*' | wc -l)" = "$(wc -l < $BLOBS)" ] || return 1
+}
+tp() {
+  [ -e $TREE.part ] && { local A=$TREE.part.aside_$(date -u +%H%M%S); mv $TREE.part $A; say "half-built tree moved aside to $A"; }
+  if [ -d $TREE ]; then chk_tree; return; fi
+  bash $HERE/rk_tree_prep.sh > $R/logs/rk_tree_prep.log 2>&1; tail -n 1 $R/logs/rk_tree_prep.log | grep -q "ZZ RK TREE OK ZZ"
+}
+step tree_prep tp
+# 3. G-SUITE at 0ca6f49d (CPU, ~36 min), under the marker, BEFORE the lock
+gs_passed() { [ -s $GSUITE_RK ] && [ -s $R/logs/rk_gsuite.log ] && tail -n 1 $R/logs/rk_gsuite.log | grep -q "ZZ RK GSUITE DONE ZZ"; }
+gs() {
+  gs_passed && { say "G-SUITE at ${COMMIT:0:8} passed earlier: kept (rk_gate_record.py re-checks its commit and counts at mint)"; return 0; }
+  bash $HERE/rk_gsuite.sh; gs_passed; }
+step gsuite gs
+# 4. the GPU queue lock, held to the end
+exec 9>/root/gpu_queue.lock
+say "waiting for the GPU queue lock"
+flock 9 || fail "flock"
+say "GPU queue lock held to the end of the chain"
+[ -e $R/chains/STOP ] && fail "STOP file at $R/chains/STOP"
+# 5. tree, inputs, disk
+step tree chk_tree
+chk_inputs() {
+  sha256sum -c $R/inputs.sha256 > $R/logs/inputs_verify_rk.log 2>&1 || return 1          # the two stage-A checkpoints (written by rh_chain.sh's inputs step)
+  [ -s $R/study/dscale10k_check_rk.py ] && [ -s $R/study/dscale10k_merge.py ] || { echo "no dscale10k_check_rk.py / dscale10k_merge.py in $R/study" >> $R/logs/inputs_verify_rk.log; return 1; }
+  for f in $HERE/rk_arm.sh $HERE/chk_arm_rk.sh $HERE/rk_argv.py $HERE/rk_env.sh $HERE/rk_gsuite.sh $HERE/rk_gate_record.py $GSUITE_RK $R/pilot/PILOT_RH.json $DS/argv/U_s0.B.tmpl.json $DS/argv/U_s1.B.tmpl.json $DS/chainlib.py; do
+    [ -s "$f" ] || { echo "missing input $f" >> $R/logs/inputs_verify_rk.log; return 1; }
+  done
+  for s in 0 1; do                                                                         # the SAME banks and the existing comparators: finished, with checkpoints (RL: the argv template and the MECH3 contrast)
+    for t in RH_s$s RL_s$s B0_s$s; do
+      [ -e $R/runs/$t/ARM_DONE ] && [ -s $R/runs/$t/train/ckpt_last.pt ] || { echo "$t is not finished (ARM_DONE + ckpt): RK compares against it" >> $R/logs/inputs_verify_rk.log; return 1; }
+    done
+    [ -s $R/bank/s$s/BANK_CHECK.json ] && [ -s $R/bank/s$s/bank.json ] || { echo "bank s$s missing" >> $R/logs/inputs_verify_rk.log; return 1; }
+  done
+}
+step inputs chk_inputs
+free_gb() { df -BG /root | tail -1 | awk '{gsub("G","",$4); print $4}'; }
+disk_ok() { f=$(free_gb); say "free disk ${f} GB"; [ "${f:-0}" -ge 20 ]; }
+step disk0 disk_ok
+# 6. the two argv files
+rn() { $PY $HERE/rk_argv.py render > $R/logs/rk_render.log 2>&1; tail -n 1 $R/logs/rk_render.log | grep -q "ZZ RK-RENDER PASS"; }
+step render rn
+# 7/8. the arms (a partial arm is moved aside, never deleted; a finished one is skipped)
+arm() {
+  local tag=$1
+  [ -e $R/runs/$tag/ARM_DONE ] && [ -s $R/runs/$tag/train/ckpt_last.pt ] && { say "skip $tag (ARM_DONE, ckpt present)"; return 0; }
+  if [ -d $R/runs/$tag/train ] || [ -d $R/runs/$tag/selfcheck ]; then
+    local A=$R/runs/aside_${tag}_$(date -u +%H%M%S); mkdir -p $A
+    for d in train selfcheck; do [ -e $R/runs/$tag/$d ] && mv $R/runs/$tag/$d $A/; done
+    rm -f $R/runs/$tag/ARM_DONE; say "partial $tag moved aside to $A"
+  fi
+  say "arm $tag"
+  bash $HERE/rk_arm.sh $tag
+}
+for s in 0 1; do
+  disk_ok || fail "free disk below 20 GB before RK_s$s"
+  step RK_s$s arm RK_s$s
+done
+# 9. the end (as the RA chain)
+say "free disk $(free_gb) GB at the end"
+echo "ZZ ROLLHIST-RK DONE ZZ"

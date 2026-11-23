@@ -1,0 +1,33 @@
+.....F
+================================== FAILURES ===================================
+_________ test_rk_mutant_b_another_bank_or_another_sha256_is_refused __________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/kinlab/tmp/ptpod/bt_mut_nobankpin/test_rk_mutant_b_another_bank_0')
+
+    def test_rk_mutant_b_another_bank_or_another_sha256_is_refused(tmp_path):
+        r = Rig(tmp_path / "mb")
+        t = rk_toks(r)
+        other = os.path.join(r.tmp, "bank_k", f"s{r.seed}")                                                    # another bank directory (the K bank's place)
+>       pr = _refused(r, r.setf(t, "--dagger-bank", other), tag="bk")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_rk_checker.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+r = <test_dscale10k_check_rhk.Rig object at 0x0000024B7E998B90>
+toks = ['--arm', 'M2b', '--seed', '0', '--grid', 'pool4x10', ...], token = None
+tag = 'bk'
+
+    def _refused(r, toks, token=None, tag="m"):
+        pr, _ = mint_rk(r, toks, token=token, tag=tag)
+        assert pr, "the mutant was MINTED (the checker accepted it)"
+>       assert refused_by(pr, "C-ARGV"), pr
+E       AssertionError: ['binding: the dagger bank has no bank.json', 'check C-BANK did not pass: {"pass": false, "problems": ["no bank.json /...test_rk_mutant_b_another_bank_0\\\\\\\\mb\\\\\\\\bank_k\\\\\\\\s0\'"], "readout_token": "causal_g1x", "kappa": "0.2"}']
+E       assert False
+E        +  where False = refused_by(['binding: the dagger bank has no bank.json', 'check C-BANK did not pass: {"pass": false, "problems": ["no bank.json /...test_rk_mutant_b_another_bank_0\\\\\\\\mb\\\\\\\\bank_k\\\\\\\\s0\'"], "readout_token": "causal_g1x", "kappa": "0.2"}'], 'C-ARGV')
+
+test_rk_checker.py:75: AssertionError
+=========================== short test summary info ===========================
+FAILED test_rk_checker.py::test_rk_mutant_b_another_bank_or_another_sha256_is_refused
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 5 passed in 1.73s

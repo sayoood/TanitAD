@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""rk_argv.py -- the argv of the KINLAB arm RK (RL's argv with exactly `--dagger-label speed_v1` -> `kin_v1` and its own `--out`; SAME bank, SAME dose p = 0.1, SAME init, swap mode). stdlib only, CPU, sub-second. STAGED, NOT RUN.
+Card PREREG_V8F_KINLAB section 2: "RL_s0's argv with exactly `--dagger-label speed_v1` -> `kin_v1`, and `--out` changed".
+
+  render [--seeds 0 1]   for each seed k: read $R/runs/RL_s{k}/argv.json (the argv of record, trained and finished) and $R/bank/s{k}/bank.json, and write $R/runs/RK_s{k}/argv.json = that argv with
+                         EXACTLY two changes: the value of `--dagger-label` (speed_v1 -> kin_v1, same position, same token count) and `--out $R/runs/RK_s{k}/train`. Refuses unless
+                           * RL_s{k}'s `--dagger-label` is exactly [speed_v1] (the last two tokens), `--dagger-p` is 0.1, no `--dagger-mode`, its `--dagger-bank-sha256` equals sha256(bank.json) and `--dagger-bank` is $R/bank/s{k};
+                           * the declaration flags read causal_g1x / 0.2 and `--init-ckpt` is /root/dscale10k/runs/UE_s{k}/A/ckpt_last.pt;
+                           * the written argv differs from RL's in exactly {--dagger-label, --out} (token list diff, in order, same length);
+                           * B0_s{k}/argv.json exists and has `--dagger-p 0` (the comparator is the EXISTING B0; no new B0).
+                         An existing RK argv.json is kept iff it is byte-identical to the one this would write, else refused (never silently rewritten).
+  verify [--seeds 0 1]   for each seed k: the EXISTING RK_s{k}/argv.json against RL_s{k}/argv.json: exactly the two differences above, nothing else. Refuses a hand-edited third difference.
+  Last line: `ZZ RK-RENDER PASS` / `ZZ RK-RENDER FAIL`, or `ZZ RK-VERIFY PASS` / `ZZ RK-VERIFY FAIL`.
+  The stock pair check is run by rk_arm.sh on the filled argv minus the two label tokens, against B0, as for RL."""
+import argparse
+import hashlib
+import json
+import os
+import sys
+
+R = os.environ.get("RH_ROOT", "/root/rollhist")
+P_RH = "0.1"                                   # RK keeps RL's (= RH's) dose; its ONLY changes are --dagger-label kin_v1 and --out
+OLD_LABEL = "speed_v1"
+NEW_LABEL = "kin_v1"
+
+
+def load(p):
+    o = json.load(open(p, encoding="utf-8"))
+    return [str(x) for x in (o["argv"] if isinstance(o, dict) else o)]
+
+
+def setf(t, f, vals):
+    t = list(t)
+    assert f in t, f"{f} is not in the argv"
+    i = t.index(f)
+    j = i + 1
+    while j < len(t) and not (t[j].startswith("--") and len(t[j]) > 2):
+        j += 1
+    return t[:i + 1] + [str(v) for v in vals] + t[j:]
+
+
+def flags(t):
+    out, i = {}, 0
+    while i < len(t):
+        if t[i].startswith("--") and len(t[i]) > 2:
+            j = i + 1
+            while j < len(t) and not (t[j].startswith("--") and len(t[j]) > 2):
+                j += 1
+            out[t[i]] = t[i + 1:j]
+            i = j
+        else:
+            i += 1
+    return out
+
+
+def sha256(p):
+    return hashlib.sha256(open(p, "rb").read()).hexdigest()
+
+
+def diff_problems(rl, rk, seed, root=R):
+    """RL argv vs RK argv (token lists): [problems]. RK must equal RL token for token except the label value and the --out value."""
+    bad = []
+    a, b = flags(rk), flags(rl)
+    diff = sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
+    if diff != ["--dagger-label", "--out"]:
+        bad.append(f"RK differs from RL in {diff}, expected exactly ['--dagger-label', '--out']")
+    if a.get("--dagger-label") != [NEW_LABEL]:
+        bad.append(f"RK --dagger-label reads {a.get('--dagger-label')}, expected [{NEW_LABEL!r}]")
+    if a.get("--out") != [f"{root}/runs/RK_s{seed}/train"]:
+        bad.append(f"RK --out reads {a.get('--out')}, expected the arm's own {root}/runs/RK_s{seed}/train")
+    if len(rk) != len(rl):
+        bad.append(f"RK has {len(rk)} tokens, RL {len(rl)}: the label swap keeps the token count")
+    else:                                      # token by token: the only positions that may differ are the two values
+        pos = [i for i in range(len(rl)) if rl[i] != rk[i]]
+        iL = rl.index("--dagger-label") + 1 if "--dagger-label" in rl else -1
+        iO = rl.index("--out") + 1 if "--out" in rl else -1
+        if any(i not in (iL, iO) for i in pos):
+            bad.append(f"RK differs from RL at token positions {pos}, allowed only {[iL, iO]}")
+    return bad
+
+
+def build(rl, seed, root=R, bank_sha=None):
+    """RL argv (list) -> (RK argv, [problems]).  bank_sha: the sha256 of bank.json (None = read it from disk; tests inject it)."""
+    bad = []
+    f = flags(rl)
+    if f.get("--dagger-label") != [OLD_LABEL] or rl[-2:] != ["--dagger-label", OLD_LABEL]:
+        bad.append(f"RL_s{seed} --dagger-label reads {f.get('--dagger-label')} (last two tokens {rl[-2:]}), expected [{OLD_LABEL!r}] as the last two tokens")
+    if f.get("--dagger-p") != [P_RH]:
+        bad.append(f"RL_s{seed} --dagger-p reads {f.get('--dagger-p')}, expected [{P_RH!r}]")
+    if "--dagger-mode" in f:
+        bad.append(f"RL_s{seed} already names --dagger-mode {f['--dagger-mode']}: RK is a swap-mode arm")
+    bank = f"{root}/bank/s{seed}"
+    if f.get("--dagger-bank") != [bank]:
+        bad.append(f"RL_s{seed} --dagger-bank reads {f.get('--dagger-bank')}, expected [{bank!r}]")
+    bj = f"{bank}/bank.json"
+    if bank_sha is None and not os.path.isfile(bj):
+        bad.append(f"no {bj}")
+    elif f.get("--dagger-bank-sha256") != [bank_sha or sha256(bj)]:
+        bad.append(f"RL_s{seed} --dagger-bank-sha256 is not sha256({bj}): the bank changed since RL trained on it")
+    if f.get("--dagger-bank-readout") != ["causal_g1x"] or f.get("--dagger-bank-kappa") != ["0.2"]:
+        bad.append("RL declaration flags are not causal_g1x / 0.2")
+    if f.get("--init-ckpt") != [f"/root/dscale10k/runs/UE_s{seed}/A/ckpt_last.pt"]:
+        bad.append(f"RL_s{seed} --init-ckpt reads {f.get('--init-ckpt')}: RK inits from UE_s{seed}.A as RL did")
+    if f.get("--out") != [f"{root}/runs/RL_s{seed}/train"]:
+        bad.append(f"RL_s{seed} --out reads {f.get('--out')}")
+    new = list(rl)
+    if "--out" in f:
+        new = setf(new, "--out", [f"{root}/runs/RK_s{seed}/train"])
+    if "--dagger-label" in f:
+        new = setf(new, "--dagger-label", [NEW_LABEL])
+    bad += diff_problems(rl, new, seed, root)
+    return new, bad
+
+
+def cmd_render(a):
+    ok = True
+    for s in a.seeds:
+        rlp = f"{R}/runs/RL_s{s}/argv.json"
+        b0p = f"{R}/runs/B0_s{s}/argv.json"
+        bad = [f"no {p}" for p in (rlp, b0p) if not os.path.isfile(p)]
+        if not bad:
+            new, bad = build(load(rlp), s, R)
+            if flags(load(b0p)).get("--dagger-p") != ["0"]:
+                bad.append(f"B0_s{s} --dagger-p is not 0")
+        if not bad:
+            d = f"{R}/runs/RK_s{s}"
+            out = d + "/argv.json"
+            text = json.dumps({"argv": new}, indent=1)
+            if os.path.isfile(out):
+                if open(out, encoding="utf-8").read() != text:
+                    bad.append(f"{out} exists and differs from the argv this would write: refused (move it aside by hand)")
+            else:
+                os.makedirs(d, exist_ok=True)
+                open(out, "w", encoding="utf-8").write(text)
+            print(f"s{s}: {out} argv_sha256={hashlib.sha256(text.encode()).hexdigest()}")
+        for m in bad:
+            print("PROBLEM", f"s{s}", m)
+        ok &= not bad
+    print("ZZ RK-RENDER", "PASS" if ok else "FAIL")
+    return 0 if ok else 1
+
+
+def cmd_verify(a):
+    ok = True
+    for s in a.seeds:
+        rlp, rkp = f"{R}/runs/RL_s{s}/argv.json", f"{R}/runs/RK_s{s}/argv.json"
+        bad = [f"no {p}" for p in (rlp, rkp) if not os.path.isfile(p)]
+        if not bad:
+            bad = diff_problems(load(rlp), load(rkp), s, R)
+        for m in bad:
+            print("PROBLEM", f"s{s}", m)
+        print(f"s{s}: {'ok' if not bad else 'REFUSED'}")
+        ok &= not bad
+    print("ZZ RK-VERIFY", "PASS" if ok else "FAIL")
+    return 0 if ok else 1
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser()
+    sp = ap.add_subparsers(dest="c", required=True)
+    for name, fn in (("render", cmd_render), ("verify", cmd_verify)):
+        r = sp.add_parser(name)
+        r.add_argument("--seeds", type=int, nargs="+", default=[0, 1])
+        r.set_defaults(f=fn)
+    a = ap.parse_args(argv)
+    return a.f(a)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

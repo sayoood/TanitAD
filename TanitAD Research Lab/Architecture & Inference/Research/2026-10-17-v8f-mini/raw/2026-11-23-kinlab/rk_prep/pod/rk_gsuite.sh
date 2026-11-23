@@ -1,0 +1,61 @@
+#!/bin/bash
+# rk_gsuite.sh -- REVISION 2. G-SUITE (full stack/tests, CPU ONLY) for the KINLAB code of record (commit 1a8b11a1, with --dagger-label-cache) on the pod. A COPY of ra_gsuite.sh (itself a copy of rh_gsuite.sh sha256 477082d7...): only the env (rk_env.sh), the tree / blob list, the junit dir, the temp dir, the log and result names and the sentinel differ.
+# tree = /root/rollhist/tree_rk (stack + taniteval of commit 1a8b11a1, blob-verified). BASE = the STAGEB tree's base: /root/strat1/junit/base, the cdbff971 run on /root/strat1/base (same pod; the DSCALE10K tree is "identity" to it).
+# 8 shards in the base run's composition (/root/strat1/shards_like_base.py), waves of 3, 3, 2 (the pod is capped at ~15.3 cores: at most ~3 busy processes), pinned to cores 48-95, nice 19 (revision 2: was 10), OMP/MKL 2 threads,
+# memory guard on the container's own added anon memory (< 20 GB; the watchdog kills the shards by PID; revision 2: a wave is not started while the container's total_rss is >= 40 GB, was 45 GB). The comparison tool is the overlay /root/strat1/overlay_strat1_check.py (read only).
+# PASS = 0 regressions AND 0 new-test failures AND 0 missing. Result: /root/rollhist/gsuite_result_rk.json. Sentinel (last line of $R/logs/rk_gsuite.log): ZZ RK GSUITE DONE ZZ or ZZ RK GSUITE FAIL ZZ <why>.
+# Runs as a chain step (rh_rk_chain.sh, step gsuite) AFTER the ADD123 chain ended and BEFORE the GPU lock is taken (it holds no GPU; the priority marker is held meanwhile). Wall MEASURED on the RA run of the same shards: 36 min 32 s (waves 9:46, 15:01, 11:45).
+# Own temp ($T) is deleted at the end.
+HERE=$(cd "$(dirname "$0")" && pwd)
+. $HERE/rk_env.sh
+BASE=cdbff971fa6dad4d20b937fe8abda6cb9f622adb
+LOG=$R/logs/rk_gsuite.log; JN=$R/junit_rk; T=$R/tmp_gsuite_rk; JB=$S1/junit/base
+mkdir -p $R/logs $HERE/prep_logs
+fail() { echo "ZZ RK GSUITE FAIL ZZ $1" | tee -a "$LOG"; exit 1; }
+rssb() { grep -E "^total_rss " /sys/fs/cgroup/memory/memory.stat | awk '{printf "%d", $2}'; }
+echo "$(date -u +%FT%TZ) start" > "$LOG"
+[ -d "$TREE" ] || fail "no $TREE"
+$PY $R/blobcheck.py $TREE $BLOBS >> "$LOG" 2>&1 || fail "tree blob check"
+[ "$(find $TREE -type f -not -path '*/__pycache__/*' | wc -l)" = "$(wc -l < $BLOBS)" ] || fail "extra or missing file in the tree"
+for k in 0 1 2 3 4 5 6 7; do [ -s "$JB/shard$k.xml" ] && [ -s "$JB/shard$k.files" ] || fail "base junit $JB shard $k missing"; done
+rm -rf "$JN" "$T"; mkdir -p "$JN" "$T"
+export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 CUDA_VISIBLE_DEVICES= HF_HUB_DISABLE_XET=1 PYTHONDONTWRITEBYTECODE=1
+cd "$TREE" || fail "cd $TREE"
+export PYTHONPATH="$TREE/stack:$TREE"
+$PY -c "import tanitad, os; assert os.path.realpath(tanitad.__file__).startswith('$TREE/stack/'), tanitad.__file__" || fail "import resolves outside the tree"
+$PY $S1/shards_like_base.py $JB $TREE $JN >> "$LOG" 2>&1 || fail "shard lists"
+for wave in "0 1 2" "3 4 5" "6 7"; do
+  R0=$(rssb); [ "${R0:-0}" -lt 42949672960 ] || fail "container anon memory $R0 B >= 40 GB: wave $wave not started"
+  echo "$(date -u +%T) wave $wave start (container rss $((R0/1073741824)) GB baseline)" >> "$LOG"
+  pids=()
+  for k in $wave; do
+    ( mkdir -p "$T/s$k"
+      TMPDIR="$T/s$k" TMP="$T/s$k" TEMP="$T/s$k" taskset -c 48-95 nice -n 19 timeout 4h $PY -m pytest -q -p no:cacheprovider --continue-on-collection-errors \
+        --basetemp="$T/s$k/bt" --junitxml="$JN/shard$k.xml" $(cat "$JN/shard$k.files" | tr '\n' ' ') > "$JN/shard$k.log" 2>&1
+      echo "rc=$?" >> "$JN/shard$k.log" ) &
+    pids+=($!)
+  done
+  alive() { for p in "${pids[@]}"; do kill -0 "$p" 2>/dev/null && return 0; done; return 1; }
+  peak=0
+  while alive; do
+    r=$(rssb); d=$((r-R0)); [ "$d" -gt "$peak" ] && peak=$d
+    if [ "$d" -ge 21474836480 ]; then
+      for p in "${pids[@]}"; do pkill -TERM -P "$p" 2>/dev/null; kill -TERM "$p" 2>/dev/null; done
+      fail "memory guard: container anon memory grew by $((d/1073741824)) GB (>= 20 GB) during wave $wave; shards killed by PID"
+    fi
+    sleep 15
+  done
+  echo "$(date -u +%T) wave $wave done (peak container rss growth $((peak/1073741824)) GB)" >> "$LOG"
+done
+for k in 0 1 2 3 4 5 6 7; do [ -s "$JN/shard$k.xml" ] || fail "shard $k wrote no junit"; done
+cd "$R" || fail "cd $R"
+$PY $S1/overlay_strat1_check.py suite --base-junit $JB --new-junit $JN --base-commit $BASE --new-commit $COMMIT --out $R/gsuite_result_rk.json > $R/logs/suite_compare_rk.log 2>&1 \
+  || fail "G-SUITE regressions (see $R/gsuite_result_rk.json)"
+$PY -c "
+import json,sys
+r=json.load(open('$R/gsuite_result_rk.json'))
+print('n_regressions',r['n_regressions'],'new_test_failures',len(r['new_test_failures']),'n_new_only',r['n_new_only'],'missing',len(r['missing_in_new']),'base',r['base'],'new',r['new'])
+sys.exit(1 if (r['n_regressions'] or r['new_test_failures'] or r['missing_in_new']) else 0)" >> "$LOG" 2>&1 || fail "regressions, new-test failures or missing tests (see $R/gsuite_result_rk.json)"
+echo "$(date -u +%FT%TZ) own temp $T deleted (pytest basetemps)" >> $HERE/prep_logs/deletions.log
+rm -rf "${T:?}"
+echo "ZZ RK GSUITE DONE ZZ" >> "$LOG"

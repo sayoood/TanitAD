@@ -1,0 +1,33 @@
+304c304
+<     res["next_lever"] = (NEXT_P03 if C.A_KIND == "RHp3" else NEXT_K if C.A_KIND == "RHK" else NEXT_RL if C.A_KIND == "RL" else NEXT_RA if C.A_KIND == "RA" else NEXT).get(base)
+---
+>     res["next_lever"] = (NEXT_P03 if C.A_KIND == "RHp3" else NEXT_K if C.A_KIND == "RHK" else NEXT_RL if C.A_KIND == "RL" else NEXT_RA if C.A_KIND == "RA" else NEXT_RK if C.A_KIND == "RK" else NEXT).get(base)
+624a625,648
+> # RK (KINLAB, PREREG_V8F_KINLAB): the same names for RK (RL's argv with `--dagger-label speed_v1` -> `kin_v1`: the OWN-KINEMATICS label on matcher-ok own states, the RH bank, p = 0.1, swap mode).  The KINLAB card's section 5
+> # (KINLAB-REPAIRS / HARMS / PARTIAL / SEED-DISAGREE / BLOCKED, with its precedence) is the MM's table; this reader prints the facts it needs (G-T0 per seed, P1 family verdicts) and the lever the card names for the closest ROLLHIST
+> # outcome name.  MECH3 (RK - RL at T0) is mech_rk.py's.  A lever the card does not name is never decided here.
+> NEXT_RK = dict(NEXT_K)
+> NEXT_RK["ROLLHIST-REPAIRS"] = "KINLAB-REPAIRS if at both seeds (G-T0 holds, a family BETTER at both, none WORSE): the dose with the larger T1 gains: kin_v1 at p 0.3, stage B only, same bank (the MM pre-registers it)"
+> NEXT_RK["ROLLHIST-PARTIAL"] = "KINLAB-PARTIAL: part of the T0 cost is the kinematic conflict. Read MECH3 (RK - RL at T0, mech_rk.py): MECH3-YES -> T_B 2.0 s (a longer blend); MECH3-NO -> K-INPUT (O's prior path rebuilt from the logged kinematics at r', the own pose history kept), each under a new card"
+> NEXT_RK["ROLLHIST-NO-EFFECT"] = "the kinematic label moved nothing: check the lever-acts line (the train log's dagger_label_kin > 0 per log interval; the gate record's n_label_kin and census share) BEFORE reading it as a refutation; the MM pre-registers the next lever"
+> NEXT_RK["ROLLHIST-HARMS"] = "KINLAB-HARMS: the kinematic label costs more than it repairs. MECH3-YES -> T_B 2.0 s, a stronger own share; MECH3-NO -> K-INPUT (O's prior path rebuilt from the logged kinematics at r'), under a new card (the MM pre-registers it)"
+> 
+> 
+> def rk_answer(res, rh):
+>     """ONE line: does the own-kinematics label hold G-T0 and keep P2 / P3?  RK's P2 / P3 and G-T0 against RH's (same bank, same dose, human label; the PARTIAL read), read only, beside.  RK - RL under C* (ATTR) is a pair of the read; MECH3 (RK - RL at T0) is mech_rk.py's."""
+>     P = res.get("P") or {}
+>     p2, p3 = (P.get("P2") or {}).get("pass"), (P.get("P3") or {}).get("pass")
+>     g = P.get("G_T0") or {}
+>     gword = "G-T0 HOLDS" if g.get("holds") else ("G-T0 FAILS at all seeds" if g.get("fails_at_all_seeds") else "G-T0 FAILS at one seed" if g.get("fails_at_exactly_one_seed") else f"G-T0 reads {g.get('per_seed')}")
+>     rp = (rh or {}).get("P") or {}
+>     r2, r3 = (rp.get("P2") or {}).get("pass"), (rp.get("P3") or {}).get("pass")
+>     rg = ((rp.get("G_T0") or {}).get("per_seed"))
+>     word = "keeps both P2 and P3" if (p2 and p3) else "keeps P2 but NOT P3" if p2 else "keeps P3 but NOT P2" if p3 else "keeps NEITHER P2 nor P3"
+>     return (f"kinematic label {word} and {gword}: RK P2 {p2}, P3 {p3} (outcome {res.get('outcome')}); RH on the same bank with the human label (the PARTIAL read): P2 {r2}, P3 {r3}, G-T0 per seed {rg}"
+>             + ("" if rh else " [the RH result file was not found]"))
+> 
+> 
+671a696,698
+>     if C.A_KIND == "RK":
+>         res["rk_answer"] = rk_answer(res, J(a.rh_result))
+>         print("RK:", res["rk_answer"])

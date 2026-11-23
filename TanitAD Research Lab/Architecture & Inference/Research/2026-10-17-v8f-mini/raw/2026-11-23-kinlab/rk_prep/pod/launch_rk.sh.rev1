@@ -1,0 +1,13 @@
+#!/bin/bash
+# launch_rk.sh -- MM only, AFTER the card is frozen, the PI go with its cost is in, the kit is shipped and verified (SHA256_RK.txt) and the dry mint passed (DRY_MINT_RK.md). Same shape as launch_ra.sh: marker watcher first, then the chain. Refuses if any chain runs.
+# The chain waits (cap 12 h) for the ADD123 chain's last line, then tree prep and G-SUITE (CPU, ~36 min, under the marker), then waits on /root/gpu_queue.lock (flock) and holds it to the end. Same RH_READOUT as the RH chain: causal_g1x.
+# The watcher sets /root/N1DW_READY at the ADD123 end (only if absent) and clears only its own token when the chain holds the lock.
+ps -eo args | grep -q "[r]h_rk_chain.sh" && { echo "an rh_rk_chain.sh is running; refusing"; exit 1; }
+ps -eo args | grep -q "[r]h_ra_chain.sh" && { echo "an rh_ra_chain.sh is running; refusing"; exit 1; }
+ps -eo args | grep -q "[r]h_rl_chain.sh" && { echo "an rh_rl_chain.sh is running; refusing"; exit 1; }
+ps -eo args | grep -q "[r]h_chain.sh" && { echo "an rh_chain.sh is running; refusing"; exit 1; }
+ps -eo args | grep -q "[r]h_rk_marker_watch.sh" && { echo "an rh_rk_marker_watch.sh is running; refusing"; exit 1; }
+nohup setsid bash /root/rollhist/rh_rk_marker_watch.sh < /dev/null > /dev/null 2>&1 &
+sleep 1
+RH_READOUT=causal_g1x nohup setsid bash /root/rollhist/rh_rk_chain.sh < /dev/null > /dev/null 2>&1 &
+echo "ZZ RK LAUNCHED ZZ"
