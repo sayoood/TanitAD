@@ -1,0 +1,63 @@
+WELL-FORMED KI_s0 mint+verify PASS (["probe: base_source ['logged'] rows_changed.base [0] n_selected_at_p1 [12]", 'ZZ RH-GATE-RECORD MINTED KI_s0'], ['ZZ RH-GATE-VERIFY OK KI_s0'])
+WELL-FORMED KI_s1 mint+verify PASS (["probe: base_source ['logged'] rows_changed.base [0] n_selected_at_p1 [12]", 'ZZ RH-GATE-RECORD MINTED KI_s1'], ['ZZ RH-GATE-VERIFY OK KI_s1'])
+G1 PASS RED (--dagger-base is None)
+G2 PASS RED (--dagger-base is 'own', not logged)
+G3 PASS RED (built levers carry dagger_base ['own'])
+G4 PASS RED (base_source ['own'])
+G5 PASS RED (rows_changed.base [7])
+G6 PASS RED (rows_changed.base [])
+G7 PASS RED (n_selected_at_p1 [0])
+G8 PASS RED (G-SUITE new commit is '1a8b11a1abd50c09636da8b7425e97573cdf1d04')
+G9 PASS RED (G-SUITE reads regressions)
+G10 PASS RED (serves KI_s0 / KI_s1 only)
+G11 PASS RED (missing tree_done)
+G12 PASS RED (not the sha256 of bank.json)
+G13 PASS RED (names --dagger-mode)
+G14 PASS RED (grad_diff_all [0.0])
+G15 PASS RED (control_p0_grad_diff reads [0.25])
+G16 PASS RED (names --dagger-label )
+G17 PASS RED (not the RH bank)
+G18 PASS RED (did not print ZZ ROLLHIST-PAIR PASS)
+G19 PASS RED (dagger_label ['speed_v1'])
+G20 PASS RED (names --dagger-label-cache)
+G21 PASS RED (dagger_probe did not pass)
+G22 PASS RED (names --dagger-kin-tb)
+G23 PASS RED (declared_vs_built = 'FAIL')
+G24 PASS RED (acc_probe did not pass)
+G25 PASS RED (PILOT_RH.json pass=True readout='causal_g1')
+G26 PASS RED (full-bank check json is not a pass)
+G27 PASS RED (n_selected_at_p1 [])
+G28 PASS RED (base_source [])
+G29 PASS RED (rows_changed.base [0, 0])
+G30 PASS RED (built levers carry dagger_base [])
+G31 PASS RED (placeholder refuses)
+G31b verify under the placeholder PASS 
+V1 gsuite changed after the mint PASS 
+V1 argv changed after the mint PASS 
+V1 bank.json changed after the mint PASS 
+V1 tree marker changed after the mint PASS 
+V2 tree marker removed after the mint PASS 
+V3 record probe edited PASS 
+V3b record base edited PASS 
+V4 selfcheck rows_changed.base edited after the mint PASS 
+V5 record without its selfcheck binding PASS 
+P1 precheck well-formed (no selfcheck needed), writes nothing PASS ['ZZ KI-INPUTS-PRECHECK OK KI_s0']
+P1b precheck seed 1 PASS 
+P2 precheck G8 PASS ["PROBLEM G-SUITE new commit is '1a8b11a1abd50c09636da8b7425e97573cdf1d04', not 4097a89e"]
+P2 precheck G9 PASS ['PROBLEM G-SUITE reads regressions / new-test failures / missing tests']
+P2 precheck G12 PASS ['PROBLEM argv --dagger-bank-sha256 is not the sha256 of bank.json']
+P2 precheck G2 PASS ["PROBLEM KI argv --dagger-base is 'own', not logged"]
+P2 precheck G1 PASS ['PROBLEM KI argv --dagger-base is None, not logged']
+P2 precheck G16 PASS ["PROBLEM KI argv names --dagger-label 'kin_v1': KI is RH + --dagger-base logged, nothing else"]
+P2 precheck G17 PASS ["PROBLEM KI argv --dagger-bank is 'F:\\\\TanitAD-scratch\\\\kinlab\\\\tmp\\\\gr_test\\\\R/bank_k/s0', not the RH bank F:\\TanitAD-scratch\\kinlab\\tmp\\gr_test\\R/bank/s0"]
+P2 precheck G25 PASS ["PROBLEM PILOT_RH.json pass=True readout='causal_g1' (want pass, causal_g1x)"]
+P2 precheck G26 PASS ['PROBLEM full-bank check json is not a pass for this readout']
+P3 precheck: G-SUITE result missing PASS 
+P4 precheck refuses another tag PASS 
+P5 precheck with the argv on stdin (no argv file), writes nothing PASS ['ZZ KI-INPUTS-PRECHECK OK KI_s0']
+P6 precheck stdin P6a base own PASS ["PROBLEM KI argv --dagger-base is 'own', not logged"]
+P6 precheck stdin P6b extra label flag PASS ["PROBLEM KI argv names --dagger-label 'kin_v1': KI is RH + --dagger-base logged, nothing else"]
+P6 precheck stdin P6c no base flag PASS ['PROBLEM KI argv --dagger-base is None, not logged']
+P6 precheck stdin P6d extra cache flag PASS ["PROBLEM KI argv names --dagger-label-cache '/x.npz': KI is RH + --dagger-base logged, nothing else"]
+P7 precheck stdin garbage is refused, not a crash PASS 
+ZZ KI-GATE-RECORD TEST PASS

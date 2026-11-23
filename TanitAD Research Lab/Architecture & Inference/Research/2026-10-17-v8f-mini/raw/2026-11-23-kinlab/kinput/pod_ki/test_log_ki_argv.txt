@@ -1,0 +1,46 @@
+RH fixture has 62 tokens PASS 62
+WELL-FORMED build: 64 tokens, last two are --dagger-base logged, own --out PASS []
+WELL-FORMED differs from RH in exactly 1 token position (the --out value) plus the 2 appended tokens PASS [7]
+WELL-FORMED verify (diff_problems) clean PASS 
+WELL-FORMED seed-1 form (own init, bank, --out) PASS []
+V1 base value own PASS ["KI --dagger-base reads ['own'], expected ['logged']"]
+V2 base value garbage PASS ["KI --dagger-base reads ['base'], expected ['logged']"]
+V3 a third flag appended PASS ["KI differs from RH in ['--dagger-base', '--detach-lower', '--out'], expected exactly ['--dagger-base', '--out']"]
+V4 a third value changed (--steps) PASS ["KI differs from RH in ['--dagger-base', '--out', '--steps'], expected exactly ['--dagger-base', '--out']"]
+V5 another bank (bank_k) PASS ["KI differs from RH in ['--dagger-bank', '--dagger-base', '--out'], expected exactly ['--dagger-base', '--out']"]
+V6 --out left RH's PASS ["KI differs from RH in ['--dagger-base'], expected exactly ['--dagger-base', '--out']"]
+V7 dose 0.3 PASS ["KI differs from RH in ['--dagger-base', '--dagger-p', '--out'], expected exactly ['--dagger-base', '--out']"]
+V8 dagger-mode swap appended PASS ["KI differs from RH in ['--dagger-base', '--dagger-mode', '--out'], expected exactly ['--dagger-base', '--out']"]
+V9 bank sha changed PASS ["KI differs from RH in ['--dagger-bank-sha256', '--dagger-base', '--out'], expected exactly ['--dagger-base', '--out']"]
+V10 base pair moved (not at the end) PASS ["KI differs from RH in ['--dagger-base', '--grid', '--out'], expected exactly ['--dagger-base', '--out']"]
+V11 init changed PASS ["KI differs from RH in ['--dagger-base', '--init-ckpt', '--out'], expected exactly ['--dagger-base', '--out']"]
+V12 --out of RK PASS ["KI --out reads ['/root/rollhist/runs/RK_s0/train'], expected the arm's own /root/rollhist/runs/KI_s0/train"]
+V13 base flag missing (KI = RH + --out only) PASS ["KI differs from RH in ['--out'], expected exactly ['--dagger-base', '--out']"]
+V14 base flag duplicated PASS ['KI names --dagger-base 2 times, expected once']
+V15 base flag valueless PASS ["KI --dagger-base reads [], expected ['logged']"]
+V16 a label flag added after the base pair (a third change) PASS ["KI differs from RH in ['--dagger-base', '--dagger-label', '--out'], expected exactly ['--dagger-base', '--out']"]
+V17 a cache pair added (a third change) PASS ["KI differs from RH in ['--dagger-base', '--dagger-label-cache', '--out'], expected exactly ['--dagger-base', '--out']"]
+V18 --dagger-kin-tb added (a third change) PASS ["KI differs from RH in ['--dagger-base', '--dagger-kin-tb', '--out'], expected exactly ['--dagger-base', '--out']"]
+V19 the other seed's --out PASS ["KI --out reads ['/root/rollhist/runs/KI_s1/train'], expected the arm's own /root/rollhist/runs/KI_s0/train"]
+V20 --device changed (the CPU form is not the launch argv) PASS ["KI differs from RH in ['--dagger-base', '--device', '--out'], expected exactly ['--dagger-base', '--out']"]
+B1 RH already names --dagger-base PASS ["RH_s0 already names --dagger-base ['own']: RH has no lever flag, KI adds --dagger-base only"]
+B2 RH carries a label flag PASS ["RH_s0 already names --dagger-label ['speed_v1']: RH has no lever flag, KI adds --dagger-base only"]
+B3 RH dose 0.3 PASS ["RH_s0 --dagger-p reads ['0.3'], expected ['0.1']"]
+B4 RH bank sha not bank.json's PASS ['RH_s0 --dagger-bank-sha256 is not sha256(/root/rollhist/bank/s0/bank.json): the bank changed since RH trained on it']
+B5 RH already has dagger-mode PASS ["RH_s0 already names --dagger-mode ['swap']: RH has no lever flag, KI adds --dagger-base only"]
+B6 RH init is another seed's PASS ["RH_s0 --init-ckpt reads ['/root/dscale10k/runs/UE_s1/A/ckpt_last.pt']: KI inits from UE_s0.A as RH did"]
+B7 RH readout is causal_g1 PASS ['RH declaration flags are not causal_g1x / 0.2']
+B8 RH already names a cache PASS ["RH_s0 already names --dagger-label-cache ['/root/rollhist/kin_cache/s0_kin_v1.npz']: RH has no lever flag, KI adds --dagger-base only"]
+B9 RH --out is not its own PASS ["RH_s0 --out reads ['/root/rollhist/runs/RL_s0/train']"]
+B10 RH names --dagger-kin-tb PASS ["RH_s0 already names --dagger-kin-tb ['1.0']: RH has no lever flag, KI adds --dagger-base only"]
+SHOW passes, 64 tokens, writes nothing PASS ["s0: KI argv = RH argv with [('--out', 'F:\\\\TanitAD-scratch\\\\kinlab\\\\tmp\\\\argv_fs/R/runs/RH_s0/train', 'F:\\\\TanitAD-scratch\\\\kinlab\\\\tmp\\\\argv_fs/R/runs/KI_s0/train')] and the appended ['--dagger-base', 'logged']; 64 tokens; sha256 0b7607ce47e420b2e8f07061f1cc9e580304be9c77e2ed406ef3c0ac6ca825cc", 'ZZ KI-SHOW PASS']
+JSON prints the in-memory KI argv (64 tokens, base pair last) and writes nothing PASS 
+CPU-ARGV differs from the KI argv in exactly --device PASS 
+RENDER writes runs/KI_s0/argv.json PASS ['ZZ KI-RENDER PASS']
+RENDER twice is idempotent PASS 
+VERIFY passes on the rendered argv PASS 
+VERIFY refuses a hand-edited third change (--steps) PASS 
+RENDER refuses to rewrite a differing KI argv PASS 
+JSON refuses a differing existing KI argv PASS 
+SHOW refuses when RH already carries a lever flag PASS 
+ZZ KI-ARGV TEST PASS
