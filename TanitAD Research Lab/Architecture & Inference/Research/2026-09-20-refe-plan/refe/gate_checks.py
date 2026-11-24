@@ -1990,6 +1990,13 @@ def field_reach(cap, arm=None) -> dict:
     return out
 
 
+def field_reach_detail(fr: dict) -> dict:
+    """G-LIVE's evidence form of a `field_reach` result: each probe arm (`declared`, `zero`) is cut to {loss, groups}; every other key (ran, labelled and, since 1b,
+    losses / n_active / active_index) is kept as it is.  Fs launch gate 1c (MM 2026-11-24): the inline form indexed every key but ran / labelled as a probe dict and raised
+    TypeError on 1b's `losses` list, so the Fs gate crashed after G-DVB (pod, 2026-11-24T07:29Z)."""
+    return {k: ({"loss": v["loss"], "groups": v["groups"]} if isinstance(v, dict) else v) for k, v in fr.items()}
+
+
 def judge_field_reach(fr: dict, w_field: float) -> list:
     """The reach probe re-judged from its RAW FIELDS.  [] = proved: L_field-only gradient is non-zero on every ancestor group of `traj`, the scorer groups have NO autograd path
     (grad is None, not merely zero), and the weight-0 control reads exactly 0.0 on every group."""
@@ -2341,7 +2348,7 @@ def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, contro
         except Exception as e:                                                        # noqa: BLE001
             fr = {"ran": False}
             reasons.append(f"L_field reach probe could not run: {type(e).__name__}: {e}")
-        det["field_reach"] = {k: (v if k in ("ran", "labelled") else {"loss": v["loss"], "groups": v["groups"]}) for k, v in fr.items()}
+        det["field_reach"] = field_reach_detail(fr)
         det["field_inext_logged"] = [r["field_inext"] for r in steps if "field_inext" in r]
         det["field_viol_logged"] = [r["field_viol"] for r in steps if "field_viol" in r]
         if not reasons:
