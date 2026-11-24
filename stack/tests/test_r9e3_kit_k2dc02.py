@@ -119,7 +119,7 @@ def _run_guard(tmp_path, e3, d1):
     (d / "r9e3_K2DC02.argv.json").write_text(json.dumps({"argv": e3}), encoding="utf-8")
     (d / "r9e3_K2DC02_d1.argv.json").write_text(json.dumps({"argv": d1}), encoding="utf-8")
     src = _queue_guard_src().replace("sys.argv[1]", repr(str(d)))
-    return subprocess.run([PY, "-I", "-c", src], capture_output=True, text=True).returncode
+    return subprocess.run([PY, "-I", "-c", src], capture_output=True, text=True, encoding="utf-8").returncode
 
 
 def _set(a, k, v):
@@ -170,7 +170,7 @@ def test_restart_NOARM_python_accepts_e3_argv_only(tmp_path):
     src = m.group(1)
 
     def run(argv):
-        return subprocess.run([PY, "-I", "-c", src], input=json.dumps({"argv": argv}), capture_output=True, text=True).stdout.strip()
+        return subprocess.run([PY, "-I", "-c", src], input=json.dumps({"argv": argv}), capture_output=True, text=True, encoding="utf-8").stdout.strip()
 
     assert run(_argv("K2DC02")) == "1"
     assert run(_argv("K2DC02_d1")) == "0"
@@ -283,7 +283,7 @@ def test_restart_norecords_reads_e3s_own_records_ready_line(tmp_path):
     st = tmp_path / "s.status"
     st.write_bytes(STATUS_1124.encode())
     def n(v):
-        r = subprocess.run([_bash(), "-c", f"grep -c ' {v}-RECORDS-READY at a49c964032cd ' '{st.as_posix()}'"], capture_output=True, text=True)
+        r = subprocess.run([_bash(), "-c", f"grep -c ' {v}-RECORDS-READY at a49c964032cd ' '{st.as_posix()}'"], capture_output=True, text=True, encoding="utf-8")
         return r.stdout.strip()
     assert n("K2DC02") == "1"                                                      # E3's records are ready despite the D1 FAIL line
     assert n("K2DC02_d1") == "0"                                                   # D1's are not: never read as E3's

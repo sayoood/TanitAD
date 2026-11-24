@@ -71,6 +71,10 @@ def _run(mod, root, workers, monkeypatch):
     marks = root / f"marks_{workers}.txt"
     monkeypatch.setenv("GATE_MARKS", str(marks))
     monkeypatch.setenv("THOR_GATE_WORKERS", str(workers))
+    # Measure the runner's OWN TMPDIR policy from an unset baseline: under a multi-worker gate suite (study e3: 3 workers) the OUTER runner gives
+    # this pytest a per-slot TMPDIR, the inner N=1 children inherited it, and "no TMPDIR override" failed on Thor (MEASURED 2026-11-24 02:40Z,
+    # suite_ba457a792581) although the runner set none.
+    monkeypatch.delenv("TMPDIR", raising=False)
     src_run, plan = _fake_suite(root / f"w{workers}")
     run = src_run
     # the inner pytest must import pytest from where THIS one did: the Thor venv has no pytest (the gate passes its --no-deps side
