@@ -1,0 +1,33 @@
+VERDICT: O3 | O3: FAIL: the heads rank, the pick does not. one seed per arm: training variance was NOT measured for this arm (a Stage-1 outcome is accepted on one seed, decided before data)
+NEXT ARM (committed in the card, Rule Zero): decision-level term: pick-anchored pairwise on the `navsim_v1` aggregate (every j with PDMS_j > PDMS_pick vs the current pick, weight PDMS_j - PDMS_pick), a new head key `pick` in the same `rank_loss.py`; C reused, ~14.2 L40-h
+tier: T1 (NAVSIM v1 PDMS, open-loop pseudo-simulation of the executed LQR-tracked plan; not closed loop, not T0)
+estimator: paired log-cluster bootstrap, 10000 draws, seed 20260927; answers: another draw of LOGS only; another TRAINING run = the seed pair (Ts - Cs, F = |Cs - C|; H-ESTIM-SEED-1); another INFERENCE run = none (deterministic argmax, CTRL-DET)
+look 1 of H-SCORERFT-1 (Stage 1: T, C); multiplicity across cards is not corrected; card sha256 adc1b2ae8d3cc9b3dfed00a20a3c39197428cda8492be34af3bb9ed24010ec91
+n tokens 12146, logs 136; arms {'T': 'T', 'C': 'C'}; stage 1
+controls: CTRL-SET=PASS, CTRL-T=PASS, CTRL-T=PASS, CTRL-CSV=PASS, CTRL-CSV=PASS, CTRL-SEAM=PASS, CTRL-ARGV=PASS, CTRL-W0=PASS, CTRL-DET=PASS, CTRL-ID=PASS, CTRL-ID=PASS  (all pass: True)
+P1 d0 = T - C PDMS (tracked): -0.9015 [-1.2021, -0.5874] -> FAIL
+G1 (T - C, tracked, none separated adverse): FAIL ['nc', 'dac', 'ttc']
+  sub nc: tracked -0.7698 [-1.0052, -0.5417] | transparent (no tracker in this number) -0.6669 [-0.9550, -0.3887]
+  sub dac: tracked -0.5599 [-0.8101, -0.3119] | transparent (no tracker in this number) -0.2223 [-0.6112, 0.1406]
+  sub ttc: tracked -2.1077 [-2.5977, -1.6179] | transparent (no tracker in this number) -1.3338 [-1.7733, -0.9173]
+  sub ep: tracked 0.9386 [0.6040, 1.2841] | transparent (no tracker in this number) 1.4473 [1.0330, 1.8490]
+  sub c: tracked -0.0082 [-0.0279, 0.0000] | transparent (no tracker in this number) 1.3091 [0.2416, 2.3554]
+  sub ddc: tracked -0.9262 [-1.2792, -0.5910] | transparent (no tracker in this number) -0.8521 [-1.2111, -0.5061]  [DDC: reported, not a guard]
+P2: PENDING (Stage 2)
+P3: PENDING (Stage 2)
+GOAL 94.55: T 91.77 [90.95, 92.56] -> BELOW GOAL
+GOAL 94.55: C 92.67 [91.90, 93.40] -> BELOW GOAL
+M1 EP Spearman T - C: 0.3534 [0.3340, 0.3748] moved=True
+M2 zeroed-pick rate T - C (pp): 1.2597 [0.9670, 1.5496]
+M3 regret (oracle - pick) T - C: 0.9320 [0.6091, 1.2408] moved=False
+M4 oracle-of-64 T - C: 0.0304 [-0.0311, 0.0901] damaged=False
+transparent comfort T - C, transparent_20_pose_plan: 1.3091 [0.2416, 2.3554] (descriptive, no clause)
+transparent comfort T - C, transparent_8_submitted_poses: 0.9139 [0.3717, 1.5212] (descriptive, no clause)
+families (each stands alone, never pooled):
+  LONGITUDINAL: 22 components
+  LATERAL: 8 components
+  lead-agent (headway / time-gap / TTC): headway_min_m=OK n=6192, time_gap_min_s=OK n=5660, min_ttc_s=OK n=6192, lead_viol=OK n=6435, lead_at_risk=OK n=6435, lead_progress_ratio=OK n=5331
+  TACTICAL (b) selection quality: computed; (c) goal-setting: NOT COMPUTABLE (n = 12146)
+  STRATEGIC: REPORTED IN FULL (no bar; PI ruling 2026-11-16)
+  separated adverse qualifiers: LONGITUDINAL.headway_min_m, LONGITUDINAL.time_gap_min_s, LONGITUDINAL.min_ttc_s, LONGITUDINAL.lead_viol, LONGITUDINAL.lead_progress_ratio, LONGITUDINAL.speed_mae_mps, LONGITUDINAL.target_speed_acc.within_0.5_mps, LONGITUDINAL.target_speed_acc.within_1.0_mps, LONGITUDINAL.target_speed_acc.within_2.0_mps, LONGITUDINAL.along_mae_m, LONGITUDINAL.ego_progress.progress_ratio_mean, LONGITUDINAL.ego_progress.progress_error_mean, LATERAL.heading_mae_deg, LATERAL.yaw_rate_mae_degps, LATERAL.cross_mae_m, LATERAL.cross_final_mae_m, LATERAL.last_pose_heading_err_deg, TACTICAL.lateral_decision.accuracy, TACTICAL.lateral_decision.kappa, TACTICAL.longitudinal_decision.accuracy, TACTICAL.maneuver_5way_collapsed.accuracy, TACTICAL.maneuver_5way_collapsed.kappa, TACTICAL.selection.regret, TACTICAL.selection.zeroed, TACTICAL.selection.pick
+ADOPT would not clear C1's own GUARD-FAIL (TM+C: transparent comfort, the longitudinal speed bias); those stay open on the lineage
