@@ -1130,7 +1130,7 @@ def rank_refusals(a, n_proposals: int = 64) -> list:
         if a.labeller != "online":
             bad.append("--rank-w > 0 needs --labeller online (the only path the term is built on)")
         if not heads:
-            bad.append("--rank-w > 0 needs --rank-heads (a comma list of ep, gate, ttc): the term would have no pairs")
+            bad.append("--rank-w > 0 needs --rank-heads (a comma list of ep, gate, ttc, pick): the term would have no pairs")
     elif isinstance(w, (int, float)):
         if heads:
             bad.append(f"--rank-heads {','.join(heads)} named with --rank-w 0: configured and never trained")
@@ -2037,7 +2037,7 @@ def run(a) -> int:
             micro += 1
             if micro % a.accum:
                 continue                     # still filling the window: no step, no step count
-            torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad] + aux_params, 1.0)
+            gn_pre = torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad] + aux_params, 1.0)     # the PRE-clip global norm (clip_grad_norm_ returns it); only READ below, for the log
             opt.step()
             opt.zero_grad(set_to_none=True)
             if sched is not None:
@@ -2059,7 +2059,10 @@ def run(a) -> int:
                         "samples": n_seen,
                         "cuda_max_mem_gb": (torch.cuda.max_memory_allocated() / 2**30
                                             if dev == "cuda" else None),
-                        "pos_L1": float(l_pos), "yaw_L1": float(l_yaw)}
+                        "pos_L1": float(l_pos), "yaw_L1": float(l_yaw),
+                        # CTRL-CLIP (card 3.2): the PRE-clip global grad norm of this step and the coefficient torch's clip applied, min(1, max_norm / (norm + 1e-6)) in the norm's own dtype
+                        # (torch 2.7.1 `_clip_grads_with_norm_`: clamp(max_norm / (total_norm + 1e-6), max=1.0)).  Read-only: nothing below the clip is touched, so the update is bit-identical.
+                        "grad_norm_pre": float(gn_pre), "clip_coef": float(torch.clamp(1.0 / (gn_pre + 1e-6), max=1.0))}
                     if l_field is not None:
                         # L_field: the unweighted loss, the multiplier applied to it, the share of in-extent footprint corners with SDF < 0, and the share of corners in extent
                         row.update({"field_L": float(l_field), "field_w": float(a.w_field), "field_viol": float(fparts["violating_frac"]),
@@ -2349,7 +2352,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="weight of L_rank (refe/rank_loss.py): pairwise logistic losses inside each labelled 64-proposal set, weighted by the navsim_v1 PDMS gap. 0.0 = OFF: the term is not "
                          "computed. Set once by the committed gradient-norm rule (refe/weight_rule_rank.py), never tuned on PDMS. Needs --labeller online and --rank-heads.")
     ap.add_argument("--rank-heads", default="",
-                    help="comma list of the pair families, a subset of ep, gate, ttc (ep: safe-vs-safe EP order; gate: safe vs an unsafe proposal in the scorer's own top-k; ttc: TTC-1 vs TTC-0 among safe). "
+                    help="comma list of the pair families, a subset of ep, gate, ttc, pick (ep: safe-vs-safe EP order; gate: safe vs an unsafe proposal in the scorer's own top-k; ttc: TTC-1 vs TTC-0 among safe; "
+                         "pick: every proposal the harness PDMS ranks above the scorer's own navsim_v1 pick, paired against that pick, weight = the PDMS gap). "
                          "Named with --rank-w 0 is refused.")
     ap.add_argument("--rank-ep-gap", type=float, default=0.02, help="minimum EP-label gap for an EP pair, in (0, 1] (registered 0.02)")
     ap.add_argument("--rank-gate-topk", type=int, default=8, help="the gate pairs' unsafe member must sit in the scorer's own top-k by navsim_v1, k in [1, n_proposals] (registered 8)")

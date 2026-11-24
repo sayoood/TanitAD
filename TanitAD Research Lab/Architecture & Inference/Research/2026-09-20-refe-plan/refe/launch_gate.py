@@ -714,13 +714,29 @@ SCORERFT_RANK_CENSUS = {"path": "/workspace/data/refe_p5c/scorerft/weight_rule_r
 SCORERFT_RANK_HEADS = "ep,gate"
 SCORERFT_RANK_EP_GAP = 0.02
 SCORERFT_RANK_GATE_TOPK = 8
-SCORERFT_ARM_NAME = {"T": "refe_scorerft_t", "C": "refe_scorerft_c", "Ts": "refe_scorerft_t_s1", "Cs": "refe_scorerft_c_s1"}
-SCORERFT_ARM_SEED = {"T": 0, "C": 0, "Ts": 1, "Cs": 1}
-SCORERFT_ARM_RANK = {"T": True, "C": False, "Ts": True, "Cs": False}          # does the arm train the term?
+SCORERFT_ARM_NAME = {"T": "refe_scorerft_t", "C": "refe_scorerft_c", "Ts": "refe_scorerft_t_s1", "Cs": "refe_scorerft_c_s1", "P": "refe_scorerft_p", "Ps": "refe_scorerft_p_s1"}
+SCORERFT_ARM_SEED = {"T": 0, "C": 0, "Ts": 1, "Cs": 1, "P": 0, "Ps": 1}
+SCORERFT_ARM_RANK = {"T": True, "C": False, "Ts": True, "Cs": False, "P": True, "Ps": True}          # does the arm train the term?
+# ARM P (O3 of PREREG_SCORER_FT section 9: "the heads rank, the pick does not"): the DECISION-LEVEL term, head `pick` ALONE (every proposal the harness PDMS ranks above the scorer's own navsim_v1 pick is paired against that
+# pick, weight = the PDMS gap).  P reuses C (same init, seed, steps): argv(P) - argv(C) = {--rank-w (value), --rank-heads pick, --out}; no gap / top-k is named (the trainer refuses them without `ep` / `gate`).  Ps = P with --seed 1
+# (argv(Ps) - argv(P) = {--seed, --out}), run only if the card says so.  PINS THE MM FILLS (None = REFUSE): SCORERFT_P_RANK_W, the output of weight_rule_rank.py on P's own argv (the pod).  No census pin: `pick` forms a pair on
+# (almost) every real set, so L2 is met by the smoke; a smoke that sees zero `pick` pairs is then REFUSED (no registered census proves it), which is the correct reading of a smoke that cannot rank.
+SCORERFT_P_ARMS = ("P", "Ps")
+SCORERFT_P_RANK_W = None                                       # FILLED BY THE MM: --rank-w of P / Ps = weight_rule_rank.py's rule output on P's own argv (smallest w with r(w) >= 1.0); the gate may only veto it
+SCORERFT_P_RANK_HEADS = "pick"
+SCORERFT_ARM_HEADS = {"T": SCORERFT_RANK_HEADS, "Ts": SCORERFT_RANK_HEADS, "P": SCORERFT_P_RANK_HEADS, "Ps": SCORERFT_P_RANK_HEADS}      # the registered heads of each ranking arm
+
+
+def _scorerft_w(arm: str):
+    """The registered --rank-w pin of a ranking arm: SCORERFT_P_RANK_W for P / Ps, SCORERFT_RANK_W for T / Ts (None = unfilled)."""
+    return SCORERFT_P_RANK_W if arm in SCORERFT_P_ARMS else SCORERFT_RANK_W
 SCORERFT_ENV_FORBIDDEN = ("REFE_RANK_MUTATE",)
 SCORERFT_DEFAULT_INIT = "/workspace/data/refe_runs/p5c_c1/model_final.pt"
 SCORERFT_SUITE_EXTRA = [{"script": "test_rank_loss.py", "args": ["--fast"], "token": "ZZRANK_PASS"},
                         {"script": "test_scorerft_profile.py", "args": ["--fast"], "token": "ZZSCORERFTPROF_PASS"}]
+# ARM P / Ps ONLY (O3d, MM 2026-11-24): the CTRL-CLIP probe's own test (clip_probe.py V1-V4 + RED arms, the wrapper on the real CPU trainer, bit-identical params with and without the clip logging, the S0 allow-list).
+# T / C / Ts / Cs do not carry it: their profiles (and every other profile's fingerprint) are unchanged.  Whole file (no --fast form), ~80 s CPU.
+SCORERFT_P_SUITE_EXTRA = [{"script": "test_clip_probe.py", "token": "ZZCLIPPROBE_PASS"}]
 
 
 def scorerft_argv(arm: str, paths: dict | None = None, rank_w=None) -> list:
@@ -735,10 +751,13 @@ def scorerft_argv(arm: str, paths: dict | None = None, rank_w=None) -> list:
     a[a.index("--seed") + 1] = str(SCORERFT_ARM_SEED[arm])
     a[a.index("--out") + 1] = f"{P['out_root']}/scorerft_{arm.lower()}"
     if SCORERFT_ARM_RANK[arm]:
-        w = SCORERFT_RANK_W if rank_w is None else rank_w
+        w = _scorerft_w(arm) if rank_w is None else rank_w
         if w is None:
-            raise ValueError("SCORERFT_RANK_W is unfilled: the ranking arms have no template until the MM registers the weight rule's output")
-        rk = ["--rank-w", repr(float(w)), "--rank-heads", SCORERFT_RANK_HEADS, "--rank-ep-gap", repr(float(SCORERFT_RANK_EP_GAP)), "--rank-gate-topk", str(SCORERFT_RANK_GATE_TOPK)]
+            raise ValueError("SCORERFT_RANK_W / SCORERFT_P_RANK_W is unfilled: the ranking arms have no template until the MM registers the weight rule's output")
+        if arm in SCORERFT_P_ARMS:
+            rk = ["--rank-w", repr(float(w)), "--rank-heads", SCORERFT_P_RANK_HEADS]
+        else:
+            rk = ["--rank-w", repr(float(w)), "--rank-heads", SCORERFT_RANK_HEADS, "--rank-ep-gap", repr(float(SCORERFT_RANK_EP_GAP)), "--rank-gate-topk", str(SCORERFT_RANK_GATE_TOPK)]
     else:
         rk = ["--rank-w", "0.0"]
     i = a.index("--w-field")
@@ -754,19 +773,21 @@ def scorerft_profile(arm: str) -> dict:
     ranking = SCORERFT_ARM_RANK[arm]
     req = dict(c1["required_flags"])
     req.update({"--steps": str(SCORERFT_STEPS), "--seed": str(SCORERFT_ARM_SEED[arm]),
-                "--rank-w": (repr(float(SCORERFT_RANK_W)) if SCORERFT_RANK_W is not None else None) if ranking else "0.0"})
-    if ranking:
+                "--rank-w": (repr(float(_scorerft_w(arm))) if _scorerft_w(arm) is not None else None) if ranking else "0.0"})
+    if ranking and arm in SCORERFT_P_ARMS:
+        req.update({"--rank-heads": SCORERFT_P_RANK_HEADS})
+    elif ranking:
         req.update({"--rank-heads": SCORERFT_RANK_HEADS, "--rank-ep-gap": repr(float(SCORERFT_RANK_EP_GAP)), "--rank-gate-topk": str(SCORERFT_RANK_GATE_TOPK)})
     prof = {k: v for k, v in c1.items() if k not in ("p5c_rules", "p5c_arm", "p5c_base")}
     exp = dict(c1["expect_schedule"])
     exp["steps"] = SCORERFT_STEPS
     prof.update({"name": SCORERFT_ARM_NAME[arm], "scorerft_rules": True, "scorerft_arm": arm, "traj_label_required": True,
-                 "suite": list(c1["suite"]) + SCORERFT_SUITE_EXTRA, "required_flags": req, "expect_schedule": exp,
+                 "suite": list(c1["suite"]) + SCORERFT_SUITE_EXTRA + (SCORERFT_P_SUITE_EXTRA if arm in SCORERFT_P_ARMS else []), "required_flags": req, "expect_schedule": exp,
                  "live_terms": P6_TERMS + (("rank_L",) if ranking else ()), "forbidden_env": SCORERFT_ENV_FORBIDDEN,
                  "init_from_sha256": SCORERFT_BASE_SHA256, "traj_label_sha256": P5C_LABEL_TABLE_SHA256, "traj_label_rank_policy": P5C_RANK_POLICY,
-                 "rank_w": (float(SCORERFT_RANK_W) if SCORERFT_RANK_W is not None else None) if ranking else 0.0,
-                 "rank_heads": SCORERFT_RANK_HEADS if ranking else "", "rank_ep_gap": SCORERFT_RANK_EP_GAP, "rank_gate_topk": SCORERFT_RANK_GATE_TOPK})
-    if ranking:
+                 "rank_w": (float(_scorerft_w(arm)) if _scorerft_w(arm) is not None else None) if ranking else 0.0,
+                 "rank_heads": SCORERFT_ARM_HEADS[arm] if ranking else "", "rank_ep_gap": SCORERFT_RANK_EP_GAP, "rank_gate_topk": SCORERFT_RANK_GATE_TOPK})
+    if ranking and arm not in SCORERFT_P_ARMS:
         prof["rank_census"] = dict(SCORERFT_RANK_CENSUS)        # G-LIVE L2's registered census (control arms: no ranking term, so no census)
     return prof
 
@@ -795,13 +816,13 @@ def scorerft_refusals(prof: dict, argv: list) -> list:
         out.append(f"{name}: the table's rank policy is {prof.get('traj_label_rank_policy')!r}; C1's is {P5C_RANK_POLICY!r}")
     rw = prof.get("rank_w")
     if type(rw) is not float or not math.isfinite(rw):
-        out.append(f"{name}: the registered weight rank_w = {rw!r} is not a finite float (SCORERFT_RANK_W: the weight rule's output, filled by the MM)")
+        out.append(f"{name}: the registered weight rank_w = {rw!r} is not a finite float (SCORERFT_RANK_W / SCORERFT_P_RANK_W: the weight rule's output, filled by the MM)")
     elif ranking and not rw > 0.0:
         out.append(f"{name}: arm {arm} trains the ranking term and registers rank_w = {rw!r} (must be > 0)")
     elif not ranking and rw != 0.0:
         out.append(f"{name}: control arm {arm} registers rank_w = {rw!r} (must be EXACTLY 0.0)")
-    if ranking and (prof.get("rank_heads"), prof.get("rank_ep_gap"), prof.get("rank_gate_topk")) != (SCORERFT_RANK_HEADS, SCORERFT_RANK_EP_GAP, SCORERFT_RANK_GATE_TOPK):
-        out.append(f"{name}: the registered rule {prof.get('rank_heads')!r} / gap {prof.get('rank_ep_gap')!r} / top-k {prof.get('rank_gate_topk')!r} is not the card's ({SCORERFT_RANK_HEADS!r} / {SCORERFT_RANK_EP_GAP} / {SCORERFT_RANK_GATE_TOPK})")
+    if ranking and (prof.get("rank_heads"), prof.get("rank_ep_gap"), prof.get("rank_gate_topk")) != (SCORERFT_ARM_HEADS[arm], SCORERFT_RANK_EP_GAP, SCORERFT_RANK_GATE_TOPK):
+        out.append(f"{name}: the registered rule {prof.get('rank_heads')!r} / gap {prof.get('rank_ep_gap')!r} / top-k {prof.get('rank_gate_topk')!r} is not the card's ({SCORERFT_ARM_HEADS[arm]!r} / {SCORERFT_RANK_EP_GAP} / {SCORERFT_RANK_GATE_TOPK})")
     if not ranking and prof.get("rank_heads"):
         out.append(f"{name}: control arm {arm} registers rank_heads {prof.get('rank_heads')!r}: it must train no ranking head")
     terms = tuple(prof.get("live_terms", ()))

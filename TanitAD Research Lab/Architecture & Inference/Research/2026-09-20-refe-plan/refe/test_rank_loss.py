@@ -70,6 +70,7 @@ def ref_term(s, y, msk, batch, heads, gap, k):
         pdms = [_v1(y[b, m]) for m in range(M)]
         agg = [_v1([_sig(v) for v in s[b, m, :5]]) for m in range(M)]
         top = set(np.argsort(-np.array(agg), kind="stable")[:k].tolist())
+        pick = int(np.argmax(np.array(agg)))                                                       # the first maximal index (the planner's argmax)
         for h in heads:
             num = den = 0.0
             for i in range(M):
@@ -81,6 +82,8 @@ def ref_term(s, y, msk, batch, heads, gap, k):
                         z = (_logsig(s[b, i, 0]) + _logsig(s[b, i, 1])) - (_logsig(s[b, j, 0]) + _logsig(s[b, j, 1]))
                     elif h == "ttc" and safe[i] and safe[j] and y[b, i, 3] == 1.0 and y[b, j, 3] == 0.0:
                         a, z = 5.0 / 12.0, s[b, i, 3] - s[b, j, 3]
+                    elif h == "pick" and j == pick and pdms[i] > pdms[j]:
+                        a, z = pdms[i] - pdms[j], agg[i] - agg[j]
                     else:
                         continue
                     pairs[h].add((b, i, j))
@@ -194,6 +197,262 @@ def chk_analytic_identities():
     ok(float(Ll) > 0.0 and float(st.grad.abs().sum()) > 0.0 and 0 < lo.last["pairs"]["ep"] < n_all_ep, (lo.last, n_all_ep))
 
 
+def chk_pick_identity():
+    """O3: the loss's own pick IS the inference-time pick, bit for bit.  (1) `RK.navsim_v1(sigmoid(s))` is EXACTLY `REFePlanner.aggregate(rule navsim_v1)` (the planner's own method, called through the same shim
+       onpolicy_label_v4.v1_aggregate uses) on float32 logits, and `RK.pick_index` == the planner's argmax (`_pick`: aggregate(score)[0].argmax()); (2) the pair mask of head `pick` is the column of THAT pick on
+       every set; (3) a constructed near-tie (two proposals whose float32 aggregates are EQUAL while their float64 aggregates differ) goes to the FIRST index exactly as the float32 planner does, and a float64 argmax
+       would have gone to the other one (the check CAN go red)."""
+    import types
+    from planner import REFePlanner
+    shim = types.SimpleNamespace(rule="navsim_v1", V1_W=REFePlanner.V1_W, PDM_W=REFePlanner.PDM_W)
+    g = np.random.default_rng(77)
+    for seed in range(6):
+        sc = torch.tensor(g.normal(0, 2.0, (3, 64, 6)), dtype=torch.float32)
+        sc[:, 7] = sc[:, 3]                                                                          # an EXACT duplicate: a tie the planner resolves to the first index
+        a_pl = REFePlanner.aggregate(shim, sc)
+        a_rk = RK.navsim_v1(torch.sigmoid(sc))
+        ok(torch.equal(a_pl, a_rk), "RK.navsim_v1 must equal REFePlanner.aggregate bit for bit")
+        pk_pl = a_pl.argmax(1)
+        ok(torch.equal(RK.pick_index(sc), pk_pl), (seed, RK.pick_index(sc), pk_pl))
+        y = torch.tensor(g.random((3, 64, 6)), dtype=torch.float32).round(decimals=2)
+        P = RK.RankLoss(("pick",)).pairs(sc, y)
+        m = P["pick"][0]                                                                             # [B, i, k]
+        for b in range(3):
+            cols = m[b].any(0).nonzero().flatten().tolist()
+            ok(cols in ([int(pk_pl[b])], []), (seed, b, cols, int(pk_pl[b])))                          # pairs only on the planner's pick column (none if the pick is the oracle)
+    # (3) the near-tie: logit EP of proposal 5 is 1e-7 above proposal 2's, all else equal
+    found = 0
+    for base in (0.31, -0.7, 1.9, 0.05):
+        sc = torch.zeros(1, 8, 6, dtype=torch.float32)
+        sc[0, :, EP_] = -3.0
+        sc[0, 2, EP_] = base
+        sc[0, 5, EP_] = float(np.float32(base) + np.float32(1e-7))
+        a32 = RK.navsim_v1(torch.sigmoid(sc))
+        a64 = RK.navsim_v1(torch.sigmoid(sc.double()))
+        if int(a64.argmax(1)) != int(a32.argmax(1)):
+            found += 1
+            ok(int(RK.pick_index(sc)) == int(REFePlanner.aggregate(shim, sc).argmax(1)) == int(a32.argmax(1)) == 2 and int(a64.argmax(1)) == 5, (base, int(a32.argmax(1)), int(a64.argmax(1))))
+            y = torch.zeros(1, 8, 6, dtype=torch.float32)
+            y[0, :, 0], y[0, :, 1], y[0, 6, 2] = 1.0, 1.0, 1.0
+            P = RK.RankLoss(("pick",)).pairs(sc, y)
+            ok(sorted(P["pick"][0][0].any(0).nonzero().flatten().tolist()) == [2], "the pairs anchor on the FLOAT32 pick (index 2), not the float64 one (5)")
+    ok(found >= 1, "no constructed near-tie separated float32 from float64: the sensitivity of this check is unproved")
+
+
+EP_ = 2
+
+
+def chk_pick_analytic():
+    """Hand-computed.  Set 0 (labelled), 4 proposals, ALL NC = DAC = 1 logits 0 and TTC = C logits 0 (p = .5), EP logits z = [0, 2, -1, 1]:  aggregate_m = .25 (5 sigma(z_m) + 3.5) / 12  =>  pick = 1.
+       labels pdms: p0 (EP .9, TTC 1, C 1) 11.5/12 | p1 (EP .1, TTC 1, C 1) 7.5/12 | p2 (EP 1, TTC 1, C 1) 12/12 | p3 unsafe 0.   Pairs: (0 vs pick) d 4/12, (2 vs pick) d 4.5/12; p3 is NOT above the pick.
+       L(b) = (4 softplus(agg1 - agg0) + 4.5 softplus(agg1 - agg2)) / 8.5 ; set 1 is UNlabelled (garbage labels with pairs) and contributes exactly 0; denominator = batch = 2.  The CONSTANT denominator: the labelled set's
+       value is halved, not renormalised over the sets that have pairs."""
+    sp = lambda x: math.log1p(math.exp(x))                                                          # noqa: E731
+    sg = lambda x: 1.0 / (1.0 + math.exp(-x))                                                       # noqa: E731
+    M = 4
+    z = [0.0, 2.0, -1.0, 1.0]
+    agg = [0.25 * (5.0 * sg(v) + 3.5) / 12.0 for v in z]
+    ok(max(range(M), key=lambda m: agg[m]) == 1, agg)
+    hand = (4.0 * sp(agg[1] - agg[0]) + 4.5 * sp(agg[1] - agg[2])) / 8.5
+    s = torch.zeros(2, M, 6, dtype=torch.float64)
+    s[0, :, 2] = torch.tensor(z, dtype=torch.float64)
+    s[1, :, 2] = torch.tensor(z, dtype=torch.float64)
+    y = torch.zeros(2, M, 6, dtype=torch.float64)
+    y[0, :, 0] = 1.0
+    y[0, :, 1] = torch.tensor([1.0, 1.0, 1.0, 0.0], dtype=torch.float64)
+    y[0, :, 2] = torch.tensor([0.9, 0.1, 1.0, 0.0], dtype=torch.float64)
+    y[0, :, 3] = torch.tensor([1.0, 1.0, 1.0, 0.0], dtype=torch.float64)
+    y[0, :, 4] = torch.tensor([1.0, 1.0, 1.0, 0.0], dtype=torch.float64)
+    y[1] = y[0]
+    y[1, 0, 2], y[1, 2, 2] = 1.0, 0.0                                                                # garbage on the unlabelled set (still has pairs)
+    msk = torch.tensor([1.0, 0.0], dtype=torch.float64)
+    r = RK.RankLoss(("pick",))
+    sv = s.clone().requires_grad_(True)
+    L = r.term(score=sv, labels=y, msk=msk, batch=2)
+    ok(abs(float(L) - hand / 2.0) < 1e-12, (float(L), hand / 2.0))
+    ok(r.last["pairs"]["pick"] == 2 and r.last["sets"]["pick"] == 1 and r.last["sets_labelled"] == 1, r.last)
+    ok(RK.RankLoss(("pick",)).pairs(s, y)["pick"][0][0].nonzero().tolist() == [[0, 1], [2, 1]], "pairs are (i better, k = the pick)")
+    L.backward()
+    gr = sv.grad.abs().sum((0, 1))
+    ok(float(gr[EP_]) > 0.0 and float(sv.grad[1].abs().sum()) == 0.0, "the unlabelled set has exactly 0 gradient")
+    ok(float(gr[5]) == 0.0, "DDC exactly 0.0")                                                       # the aggregate ignores DDC
+    # no pair when the pick is the label-best: L exactly 0.0 and gradient exactly 0.0 (a bar above everything)
+    y2 = y.clone()
+    y2[0, :, 2] = torch.tensor([0.1, 1.0, 0.5, 0.0], dtype=torch.float64)                            # p1 (the pick) is now the oracle
+    sv2 = s.clone().requires_grad_(True)
+    r2 = RK.RankLoss(("pick",))
+    L2 = r2.term(score=sv2, labels=y2, msk=msk, batch=2)
+    L2.backward()
+    ok(float(L2) == 0.0 and r2.last["pairs"]["pick"] == 0 and float(sv2.grad.abs().sum()) == 0.0, (float(L2), r2.last))
+    # weight 0 of the trainer's contribution: (term * 0) reads EXACTLY 0.0 on every logit
+    sv3 = s.clone().requires_grad_(True)
+    (RK.RankLoss(("pick",)).term(score=sv3, labels=y, msk=msk, batch=2) * 0.0).backward()
+    ok(float(sv3.grad.abs().sum()) == 0.0, "the zero control must read exactly 0.0")
+
+
+def _pick_term_unrouted(s, y, msk, batch):
+    """The pick term with NO routing, written independently of rank_loss.RankLoss.pairs' agg line: same pair mask and weights (label-only), z = the plain aggregate navsim_v1(sigmoid(s)) with every factor live."""
+    P = RK.RankLoss(("pick",)).pairs(s, y)
+    m, a, _ = P["pick"]
+    agg = RK.navsim_v1(torch.sigmoid(s.double()))
+    dz = agg.unsqueeze(2) - agg.unsqueeze(1)
+    w = a * m.double()
+    den = w.sum((1, 2))
+    num = (w * torch.nn.functional.softplus(-dz)).sum((1, 2))
+    Lh = torch.where(den > 0, num / torch.where(den > 0, den, torch.ones_like(den)), torch.zeros_like(den))
+    return ((Lh * msk.detach().double()).sum() / float(batch)).to(s.dtype), m, dz
+
+
+def chk_pick_routing():
+    """LABEL-CONSISTENT ROUTING of the pick term (MM design decision 10).  (a) the FORWARD is bit-identical to the unrouted form (loss value, pair mask, logit differences) on random float64 AND float32 sets (the trainer's dtype);
+       and the routed gradient equals the unrouted gradient EXACTLY where an independent consistency mask (pick: y < p, better proposal: y > p) holds and is EXACTLY 0.0 elsewhere.  Hand-built set (4 proposals, p = .5 on
+       NC / DAC / TTC / C, EP logits [0, 5, 1.5, -1] => pick = 1; EP labels [.9, .1, .8, 0], p2 EP y .8 < p .818):
+       (b) the pick's NC label is 1 (> p): its NC and DAC gradients from the term are EXACTLY 0.0, as are TTC and C (labels 1 > .5);  (c) with the pick's NC label 0 (< p) the NC gradient is non-zero and LOWERS p_NC (loss increases
+       with the logit); DAC stays exactly 0.0;  (d) better j0 (EP label .9 > p .5): the EP gradient RAISES p_EP (loss falls as the logit grows); better j2 (EP label .8 < p .818): EP gradient EXACTLY 0.0 though j2 is better;
+       DDC exactly 0.0 throughout."""
+    for dtype in (torch.float64, torch.float32):
+        for seed in range(4):
+            st, yt, mt, s_, y_, m_ = rand_case(seed + 50, dtype=dtype)
+            su = st.detach().clone().requires_grad_(True)
+            Lr = RK.RankLoss(("pick",)).term(score=st, labels=yt, msk=mt, batch=2)
+            Lu, mu, dzu = _pick_term_unrouted(su, yt, mt, 2)
+            Pr = RK.RankLoss(("pick",)).pairs(st, yt)["pick"]
+            ok(torch.equal(Lr, Lu) and torch.equal(Pr[0], mu) and torch.equal(Pr[2], dzu), (dtype, seed, float(Lr), float(Lu)))       # forward: bit for bit
+            Lr.backward()
+            Lu.backward()
+            with torch.no_grad():
+                pk = RK.pick_index(su.detach())
+                p = torch.sigmoid(st.detach().double())
+                at = torch.zeros(p.shape[:2], dtype=torch.bool)
+                at.scatter_(1, pk.unsqueeze(1), True)
+                cons = torch.where(at.unsqueeze(2), yt.double() < p, yt.double() > p)
+                exp = torch.where(cons, su.grad.double(), torch.zeros_like(su.grad.double()))
+            err = float((st.grad.double() - exp).abs().max())
+            ok(err <= 1e-12 * max(1e-30, float(su.grad.abs().max())) and bool(((st.grad == 0) | cons).all()), (dtype, seed, err))   # exact zeros where inconsistent
+            ok(int((~cons & (su.grad != 0)).sum()) > 0, "the case must actually mask something (else the test proves nothing)")
+    M = 4
+    z = torch.zeros(1, M, 6, dtype=torch.float64)
+    z[0, :, 2] = torch.tensor([0.0, 5.0, 1.5, -1.0], dtype=torch.float64)
+    y = torch.zeros(1, M, 6, dtype=torch.float64)
+    y[0, :3, 0] = 1.0
+    y[0, :3, 1] = 1.0
+    y[0, :3, 3] = 1.0
+    y[0, :3, 4] = 1.0
+    y[0, :, 2] = torch.tensor([0.9, 0.1, 0.8, 0.0], dtype=torch.float64)
+    msk = torch.ones(1, dtype=torch.float64)
+
+    def grad_of(yy):
+        sv = z.clone().requires_grad_(True)
+        r = RK.RankLoss(("pick",))
+        r.term(score=sv, labels=yy, msk=msk, batch=1).backward()
+        ok(sorted(r.last and RK.RankLoss(("pick",)).pairs(z, yy)["pick"][0][0].any(0).nonzero().flatten().tolist()) == [1], "the pick is proposal 1")
+        return sv.grad[0]
+    g = grad_of(y)
+    for col in (0, 1, 3, 4):
+        ok(float(g[1, col]) == 0.0, ("(b) the pick's label is 1 > p: exactly 0.0", col, float(g[1, col])))
+    ok(float(g[1, 2]) > 0.0, "the pick's EP label .1 < p .993: flows, loss rises with the logit, descent LOWERS p_EP")
+    ok(all(float(g[0, c]) < 0.0 for c in (0, 1, 2, 3, 4)) and all(float(g[2, c]) < 0.0 for c in (0, 1, 3, 4)), "(d) a better proposal's labels exceed p: loss falls with the logit, descent RAISES p")
+    ok(float(g[2, 2]) == 0.0, ("(d) better j2: EP label .8 < p .818 -> exactly 0.0", float(g[2, 2])))
+    ok(float(g[:, 5].abs().sum()) == 0.0 and float(g[3].abs().sum()) == 0.0, "DDC and the not-better p3 exactly 0.0")
+    # card section 1.1 / Q-P16: STRICT inequality.  Pick live iff p > y; better j live iff p < y; an exact tie p == y is NOT live.
+    #   (i) pick NC label 0.5, p_NC 0.7: live, gradient > 0 (lowers p);  (ii) the same pick with p_NC 0.3: exactly 0.0;  (iii) EP tie p == y: exactly 0.0 (pick and better j).
+    def lg(p):
+        return math.log(p / (1.0 - p))
+    for p_nc, live in ((0.7, True), (0.3, False)):
+        zz = z.clone()
+        zz[0, :, 0] = lg(p_nc)                                                                       # every proposal has p_NC = p_nc, so the pick stays proposal 1
+        yy = y.clone()
+        yy[0, 1, 0] = 0.5                                                                            # NC label .5 (pdms .5 x ...; the half penalty): proposals 0 / 2 (NC 1) are above it
+        sv = zz.clone().requires_grad_(True)
+        r = RK.RankLoss(("pick",))
+        r.term(score=sv, labels=yy, msk=msk, batch=1).backward()
+        ok(RK.pick_index(zz).tolist() == [1], "the pick is still proposal 1 (EP logit 5)")
+        gnc = float(sv.grad[0, 1, 0])
+        ok((gnc > 0.0) if live else (gnc == 0.0), ("(i)/(ii) NC label .5 vs p", p_nc, gnc))
+    # (iii) an EP tie p == y: sigmoid(0.0) == 0.5 exactly, label .5.  (A) the tie on a BETTER j; (B) the tie on the PICK.  Each is exactly 0.0, with a live control beside it.
+    for case in ("A", "B"):
+        zt = z.clone()
+        yt = y.clone()
+        if case == "A":
+            zt[0, :, 2] = torch.tensor([4.0, 0.0, 0.0, -1.0], dtype=torch.float64)                   # pick = proposal 0 (EP p .982)
+            yt[0, :, 2] = torch.tensor([0.05, 0.95, 0.5, 0.0], dtype=torch.float64)                  # j1 live (.95 > .5); j2 TIE (.5 == .5); pick .05 < .982 live
+            tie, ctrl, sgn = 2, 1, -1.0
+        else:
+            zt[0, :, 2] = torch.tensor([0.0, -3.0, -3.0, -1.0], dtype=torch.float64)                 # pick = proposal 0 (EP p .5)
+            yt[0, :, 2] = torch.tensor([0.5, 0.9, 0.8, 0.0], dtype=torch.float64)                    # the pick: p .5 == label .5 TIE; j1 live (.9 > .047)
+            tie, ctrl, sgn = 0, 1, -1.0
+        sv = zt.clone().requires_grad_(True)
+        rt = RK.RankLoss(("pick",))
+        rt.term(score=sv, labels=yt, msk=msk, batch=1).backward()
+        ok(RK.pick_index(zt).tolist() == [0] and rt.last["pairs"]["pick"] >= 1, (case, RK.pick_index(zt).tolist(), rt.last))
+        ok(float(sv.grad[0, tie, 2]) == 0.0, ("(iii) EP tie p == y: exactly 0.0", case, float(sv.grad[0, tie, 2])))
+        ok(float(sv.grad[0, ctrl, 2]) * sgn > 0.0, ("control: the live better j", case, float(sv.grad[0, ctrl, 2])))
+    # card 4.4(a): a pick with DAC label 0 gets a non-zero DAC gradient that LOWERS it; a better j with DAC label 1 gets one that RAISES it; label-0 on a better j is exactly 0.0
+    yd = y.clone()
+    yd[0, 1, 1] = 0.0                                                                                # the pick's DAC label 0 < p .5
+    gd = grad_of(yd)
+    ok(float(gd[1, 1]) > 0.0 and float(gd[0, 1]) < 0.0 and float(gd[2, 1]) < 0.0, ("DAC: pick lowered, better j raised", gd[:, 1].tolist()))
+    yj = y.clone()
+    yj[0, 2, 3] = 0.0                                                                                # better j2 with TTC label 0 (< p .5): never gets gradient (pdms still above the pick)
+    gj = grad_of(yj)
+    ok(float(gj[2, 3]) == 0.0 and float(gj[0, 3]) < 0.0, ("a label-0 head on a better j: exactly 0.0", gj[:, 3].tolist()))
+    y2 = y.clone()
+    y2[0, 1, 0] = 0.0                                                                                # (c) the pick's NC label 0 < p .5: its pdms is 0, so every proposal with pdms > 0 is above it
+    g2 = grad_of(y2)
+    ok(float(g2[1, 0]) > 0.0, ("(c) NC label 0 < p: flows, descent LOWERS p_NC", float(g2[1, 0])))
+    ok(float(g2[1, 1]) == 0.0, "DAC label 1 > p: still exactly 0.0")
+
+
+def chk_pick_semantics():
+    """The loop reference (ref_term, with its own pick) against the term on random sets, value and pair set, alone and combined with ep / gate; STRICT PDMS inequality (an equal-PDMS proposal is no pair); an UNSAFE pick
+       (pdms 0) pairs every proposal with positive PDMS; the gradient rows: NC, DAC, EP, TTC and C > 0, DDC EXACTLY 0.0 (and EP / TTC / C-only: the aggregate is what is read); accum identity (B 2 x accum 2 == B 4)."""
+    for seed in range(3):
+        for heads in (("pick",), ("ep", "gate", "pick"), ("pick", "ttc")):
+            st, yt, mt, s, y, m = rand_case(seed + 30)
+            r = RK.RankLoss(heads, ep_gap=0.02, gate_topk=8)
+            L = r.term(score=st, labels=yt, msk=mt, batch=2)
+            Lr, prs = ref_term(s, y, m, 2, heads, 0.02, 8)
+            P = r.pairs(st, yt)
+            for h in heads:
+                mine = {tuple(int(v) for v in idx) for idx in P[h][0].nonzero().tolist()}
+                ok(mine == prs[h] and len(mine) > 0, (seed, h, len(mine), len(prs[h])))
+            ok(abs(float(L) - Lr) <= 1e-12 * max(1.0, abs(Lr)), (seed, heads, float(L), Lr))
+    # strict inequality: two proposals with EXACTLY the pick's pdms, one above
+    M = 4
+    y = torch.zeros(1, M, 6, dtype=torch.float64)
+    y[0, :, 0], y[0, :, 1] = 1.0, 1.0
+    y[0, :, 2] = torch.tensor([0.5, 0.5, 0.75, 0.1], dtype=torch.float64)
+    s = torch.zeros(1, M, 6, dtype=torch.float64)
+    s[0, 1, 2] = 3.0                                                                                 # p1 is the pick (pdms 5*.5/12); p0 ties it, p2 is above, p3 below
+    r = RK.RankLoss(("pick",))
+    P = r.pairs(s, y)
+    ok(sorted(P["pick"][0][0].nonzero().tolist()) == [[2, 1]], P["pick"][0][0].nonzero().tolist())
+    # an unsafe pick pairs everything with pdms > 0
+    y3 = y.clone()
+    y3[0, 1, 0] = 0.0                                                                                # the pick p1 is unsafe: pdms 0
+    P3 = RK.RankLoss(("pick",)).pairs(s, y3)
+    ok(sorted(P3["pick"][0][0].nonzero().tolist()) == [[0, 1], [2, 1], [3, 1]], P3["pick"][0][0].nonzero().tolist())
+    # gradient rows on bare logits
+    st, yt, mt, *_ = rand_case(6)
+    RK.RankLoss(("pick",)).term(score=st, labels=yt, msk=mt, batch=2).backward()
+    g = st.grad.abs().sum((0, 1))
+    ok(all(float(g[k]) > 0.0 for k in (0, 1, 2, 3, 4)) and float(g[5]) == 0.0, g.tolist())
+    # accum identity
+    st, yt, mt, s_, y_, m_ = rand_case(8, B=4)
+    mt[1] = 0.0
+    r = RK.RankLoss(("pick",))
+    full = 0.5 * r.term(score=st, labels=yt, msk=mt, batch=4)
+    full.backward()
+    g_full = st.grad.clone()
+    s2 = torch.tensor(s_, dtype=torch.float64, requires_grad=True)
+    tot = 0.0
+    for sl in (slice(0, 2), slice(2, 4)):
+        t = 0.5 * r.term(score=s2[sl], labels=yt[sl], msk=mt[sl], batch=2) / 2.0
+        t.backward()
+        tot = tot + float(t)
+    ok(abs(tot - float(full)) <= 1e-15 * max(1.0, abs(float(full))) and float((s2.grad - g_full).abs().max()) <= 1e-15 * float(g_full.abs().max()), (tot, float(full)))
+
+
 def chk_accum_identity():
     """B 2 x accum 2 == B 4 x accum 1.  The trainer's contribution of a micro-batch is rank_w * term(batch = --batch) / accum, summed over the window; with a CONSTANT
        denominator that is the full-batch value.  A per-micro own-count denominator breaks it (train.py:1858-1871)."""
@@ -300,6 +559,9 @@ def chk_refusals():
     ok(refs() == [] and refs("--rank-w", "0.0") == [], "the defaults must be clean")
     ok(refs("--rank-w", "0.5", "--rank-heads", "ep,gate", "--rank-ep-gap", "0.05", "--rank-gate-topk", "4") == [])
     ok(refs("--rank-w", "0.5", "--rank-heads", "ttc") == [])
+    ok(refs("--rank-w", "0.5", "--rank-heads", "pick") == [] and refs("--rank-w", "0.5", "--rank-heads", "ep,pick") == [])
+    ok(any("named without `ep`" in r for r in refs("--rank-w", "0.5", "--rank-heads", "pick", "--rank-ep-gap", "0.1")) and any("named without `gate`" in r for r in refs("--rank-w", "0.5", "--rank-heads", "pick", "--rank-gate-topk", "4")),
+       "pick alone carries no gap / top-k")
     for extra, frag in ((("--rank-w", "-0.1"), "finite number >= 0"), (("--rank-w", "nan"), "finite number >= 0"), (("--rank-w", "inf"), "finite number >= 0"),
                         (("--rank-w", "0.5"), "needs --rank-heads"), (("--rank-w", "0.5", "--rank-heads", "ep,ep"), "duplicate"),
                         (("--rank-w", "0.5", "--rank-heads", "ep,foo"), "unknown rank head"), (("--rank-w", "0.5", "--rank-heads", ""), "needs --rank-heads"),
@@ -400,6 +662,33 @@ def chk_trainer_reach():
         ok(abs(b[g] / a[g] - 2.0) < 1e-4, (g, b[g] / a[g]))
     c = _grp(_run(td, bank, "off", (), score_only=True, zero_bce=True))
     ok(all(c[g] == 0.0 for g in ("score_head", "score_dec", "score_q_mlp", "backbone.lora", "traj_head", "dec")), c)
+    shutil.rmtree(td, ignore_errors=True)
+
+
+def chk_trainer_pick_reach():
+    """O3, reachability from the ACTUAL CALLER: argv `--rank-w W --rank-heads pick` -> parser (train.py:2348-2355) -> RK.RankLoss built (train.py:1591) -> `rank.term(...)` (train.py:2011) -> `tot_ + a.rank_w * l_rank`
+       (train.py:2014) -> `.backward()`.  With the BCE zeroed and the trajectory term's gradient removed, every gradient observed is L_rank(pick)'s: non-zero on score_head / score_dec / score_q_mlp / the trunk, EXACTLY 0.0 on
+       traj_head and dec; the flag VALUE reaches the loss (w = 0.002 doubles w = 0.001; small weights, because the trainer clips the global grad norm at 1.0 (train.py:2040) and the ROUTED pick gradient is large enough that w = 0.5 / 1.0 both sit on the clip); the control (no --rank-w) reads EXACTLY 0.0; the logged rows carry rank_L > 0 and rank_pairs_pick > 0."""
+    td = P6._mkdtemp()
+    bank = P6.make_bank(td)
+    h = ("--rank-heads", "pick")
+    cap_a = _run(td, bank, "pw05", ("--rank-w", "0.001", *h), score_only=True, zero_bce=True)
+    a = _grp(cap_a)
+    for g in ("score_head", "score_dec", "score_q_mlp", "backbone.lora", "scene_proj"):
+        ok(a[g] > 0.0, (g, a))
+    ok(a["traj_head"] == 0.0 and a["dec"] == 0.0, a)
+    b = _grp(_run(td, bank, "pw10", ("--rank-w", "0.002", *h), score_only=True, zero_bce=True))
+    for g in ("score_head", "score_dec", "score_q_mlp"):
+        ok(abs(b[g] / a[g] - 2.0) < 1e-4, (g, b[g] / a[g]))
+    c = _grp(_run(td, bank, "poff", (), score_only=True, zero_bce=True))
+    ok(all(c[g] == 0.0 for g in ("score_head", "score_dec", "score_q_mlp", "backbone.lora", "traj_head", "dec")), c)
+    cap = _run(td, bank, "pon", ("--rank-w", "0.5", *h))
+    ev = [r for r in cap.metrics if r.get("event") == "rank"]
+    ok(len(ev) == 1 and ev[0]["heads"] == ["pick"] and ev[0]["aggregate"] == "navsim_v1" and ev[0]["mutate"] is None and ev[0]["rank_w"] == 0.5, ev)
+    steps = [r for r in cap.metrics if "traj_L1" in r]
+    # a step whose scorer pick IS the label-best has no pick pair (L exactly 0.0, counted): so finiteness on every row, and pairs > 0 with rank_L > 0 on at least one row (smoke step 0 of this bank)
+    ok(len(steps) == 2 and all(math.isfinite(r["rank_L"]) and r["rank_L"] >= 0.0 and "rank_pairs_ep" not in r and (r["rank_pairs_pick"] > 0) == (r["rank_L"] > 0.0) for r in steps)
+       and any(r["rank_pairs_pick"] > 0 and r["rank_sets_pick"] > 0 and r["rank_L"] > 0.0 for r in steps), steps)
     shutil.rmtree(td, ignore_errors=True)
 
 
@@ -546,14 +835,46 @@ def chk_weight_rule_smoke():
     shutil.rmtree(td, ignore_errors=True)
 
 
+def chk_weight_rule_pick_smoke():
+    """weight_rule_rank.py accepts the `pick` head: the tool end to end on a self-made tiny bank (SYNTHETIC labels, NOT A DECISION) builds through the REAL train.run with --rank-heads pick (and NO gap / top-k), measures
+       r / rho from the pick term's gradients, and reports pairs > 0 for `pick` (no dead head)."""
+    import io
+    import contextlib
+    import weight_rule_rank as WR
+    import online_labeller as OL
+    td = P6._mkdtemp()
+    bank = P6.make_bank(td, 6)
+    args = " ".join(P6.argv_p6(bank, str(td / "wr_out"), extra=("--rank-heads", "pick")))
+    real = OL.synthetic_labels
+    OL.synthetic_labels = _rich_labels()
+    buf = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buf):
+            rc = WR.main(["--args", args, "--refe", str(HERE), "--out", str(td / "wr.json")])
+    finally:
+        OL.synthetic_labels = real
+    res = json.loads((td / "wr.json").read_text(encoding="utf-8"))
+    ok(rc in (0, 5) and res["NOT_A_DECISION"] is True and res["heads"] == ["pick"], (rc, buf.getvalue()[-400:]))
+    ok(res["pairs_by_head"]["pick"] > 0 and res["sets_with_pairs_by_head"]["pick"] > 0 and res["dead_heads"] == [], res["pairs_by_head"])
+    p = res["pooled"]
+    ok(all(math.isfinite(p[k]) and p[k] > 0.0 for k in ("norm_grad_S_l_score", "norm_grad_S_rank_w1", "norm_grad_T_l_traj", "norm_grad_T_rank_w1", "r1", "rho1")), p)
+    for w in WR.CANDIDATES:
+        ok(res["r_by_w"][repr(w)] == w * p["r1"], w)
+    shutil.rmtree(td, ignore_errors=True)
+
+
 # ------------------------------------------------------------------------------------------------ the check table and the mutations
-UNIT = ("analytic", "reference_audit", "analytic_identities", "accum_identity", "boundary_semantics", "gradient_rows", "model_reach", "refusals", "identity_args", "weight_rule_decide")
-TRAINER = ("trainer_reach", "trainer_mutation_arms", "trainer_row_fields", "off_path_identity", "weight_rule_smoke")
+UNIT = ("analytic", "reference_audit", "analytic_identities", "pick_identity", "pick_analytic", "pick_routing", "pick_semantics", "accum_identity", "boundary_semantics", "gradient_rows", "model_reach", "refusals", "identity_args",
+        "weight_rule_decide")
+TRAINER = ("trainer_reach", "trainer_pick_reach", "trainer_mutation_arms", "trainer_row_fields", "off_path_identity", "weight_rule_smoke", "weight_rule_pick_smoke")
 CHECKS = {n: globals()[f"chk_{n}"] for n in UNIT + TRAINER}
 
 # (name, file, old, new, the check that must go RED).  Edits are exact single-occurrence string replacements in a COPY of refe/*.py.
 LINE_MUTATIONS = [
     ("train: delete the line that ADDS the term", "train.py", "                            tot_ = tot_ + a.rank_w * l_rank", "                            pass", "trainer_reach"),
+    ("train: delete the line that ADDS the term (pick arm)", "train.py", "                            tot_ = tot_ + a.rank_w * l_rank", "                            pass", "trainer_pick_reach"),
+    ("train: the weight never reaches the loss (constant 1) (pick arm)", "train.py", "tot_ = tot_ + a.rank_w * l_rank", "tot_ = tot_ + 1.0 * l_rank", "trainer_pick_reach"),
+    ("train: --rank-heads not passed to the built term (pick arm)", "train.py", "RK.RankLoss(a.rank_heads, ep_gap=a.rank_ep_gap,", "RK.RankLoss('ep', ep_gap=a.rank_ep_gap,", "trainer_pick_reach"),
     ("train: the weight never reaches the loss (constant 1)", "train.py", "tot_ = tot_ + a.rank_w * l_rank", "tot_ = tot_ + 1.0 * l_rank", "trainer_reach"),
     ("train: the term is never built (rank = None)", "train.py", "rank = RK.RankLoss(a.rank_heads, ep_gap=a.rank_ep_gap, gate_topk=a.rank_gate_topk) if a.rank_w > 0.0 else None", "rank = None", "trainer_row_fields"),
     ("train: --rank-heads not passed to the built term", "train.py", "RK.RankLoss(a.rank_heads, ep_gap=a.rank_ep_gap,", "RK.RankLoss('ep', ep_gap=a.rank_ep_gap,", "trainer_row_fields"),
@@ -563,6 +884,17 @@ LINE_MUTATIONS = [
     ("train: the refusals are not called", "train.py", "    bad_rank = rank_refusals(a, cfg.n_proposals)", "    bad_rank = []", "refusals"),
     ("train: rank keys dropped from the resume identity", "train.py", '"rank_w", "rank_heads", "rank_ep_gap", "rank_gate_topk") + AUX', ') + AUX', "identity_args"),
     ("train: the OFF path builds the term anyway", "train.py", "if a.rank_w > 0.0 else None\n    if rank is not None:", "if a.rank_w >= 0.0 else None\n    if rank is not None:", "off_path_identity"),
+    ("rank_loss: the pick head's pair mask is emptied (the pick term is never added)", "rank_loss.py", 'out["pick"] = (m, d, agg.unsqueeze(2) - agg.unsqueeze(1))', 'out["pick"] = (torch.zeros_like(m), d, agg.unsqueeze(2) - agg.unsqueeze(1))', "pick_analytic"),
+    ("rank_loss: the pick term's routing is removed (prob stays whole)", "rank_loss.py", "            prob = torch.where(cons, prob, prob.detach())", "            prob = prob", "pick_routing"),
+    ("rank_loss: the routing direction is flipped on the pick (y > p)", "rank_loss.py", "cons = torch.where(at.unsqueeze(2), y < prob.detach(), y > prob.detach())", "cons = torch.where(at.unsqueeze(2), y > prob.detach(), y > prob.detach())", "pick_routing"),
+    ("rank_loss: the routing direction is flipped on a better proposal (y < p)", "rank_loss.py", "cons = torch.where(at.unsqueeze(2), y < prob.detach(), y > prob.detach())", "cons = torch.where(at.unsqueeze(2), y < prob.detach(), y < prob.detach())", "pick_routing"),
+    ("rank_loss: pick pairs weight 1 instead of the PDMS gap", "rank_loss.py", 'out["pick"] = (m, d, agg.unsqueeze(2) - agg.unsqueeze(1))', 'out["pick"] = (m, torch.ones_like(d), agg.unsqueeze(2) - agg.unsqueeze(1))', "pick_analytic"),
+    ("rank_loss: pick pairs include equal PDMS (>= instead of >)", "rank_loss.py", "m = at.unsqueeze(1) & (d > 0)", "m = at.unsqueeze(1) & (d >= 0)", "pick_semantics"),
+    ("rank_loss: pick z reads the EP logit, not the aggregate", "rank_loss.py", "            agg = navsim_v1(prob)                                                            # [B, M] float64 WITH grad: the aggregate the rule argmaxes", "            agg = s[..., EP]", "pick_semantics"),
+    ("rank_loss: the pick is argmaxed in float64 (a near-tie flips)", "rank_loss.py", "        return navsim_v1(torch.sigmoid(score.detach())).argmax(1)", "        return navsim_v1(torch.sigmoid(score.detach().double())).argmax(1)", "pick_identity"),
+    ("rank_loss: the pick tie-break goes to the LAST index (the planner takes the first)", "rank_loss.py", "        return navsim_v1(torch.sigmoid(score.detach())).argmax(1)", "        return score.shape[1] - 1 - navsim_v1(torch.sigmoid(score.detach())).flip(1).argmax(1)", "pick_identity"),
+    ("rank_loss: the aggregate drops the TTC term", "rank_loss.py", "    return p[..., NC] * p[..., DAC] * (p[..., EP] * w1[0] + p[..., TTC] * w1[1] + p[..., C] * w1[2]) / w1.sum()", "    return p[..., NC] * p[..., DAC] * (p[..., EP] * w1[0] + p[..., C] * w1[2]) / w1.sum()", "pick_identity"),
+    ("weight rule: pick pair counts not reported", "weight_rule_rank.py", "            pairs[hh] += rank.last[\"pairs\"][hh]", "            pairs[hh] += 0", "weight_rule_pick_smoke"),
     ("rank_loss: EP pairs lose the safe condition", "rank_loss.py", "else (safe.unsqueeze(2) & safe.unsqueeze(1))", "else torch.ones_like(d, dtype=torch.bool)", "reference_audit"),
     ("rank_loss: gate pairs lose the top-k restriction", "rank_loss.py", "& top.unsqueeze(1) & (d > 0)", "& (d > 0)", "reference_audit"),
     ("rank_loss: gate weight = 1 instead of the PDMS gap", "rank_loss.py", 'out["gate"] = (m, d, z.unsqueeze(2) - z.unsqueeze(1))', 'out["gate"] = (m, torch.ones_like(d), z.unsqueeze(2) - z.unsqueeze(1))', "analytic"),
@@ -592,6 +924,8 @@ ENV_MUTATIONS = [
     ("REFE_RANK_MUTATE=head_swap", {"REFE_RANK_MUTATE": "head_swap"}, "reference_audit"),
     ("REFE_RANK_MUTATE=traj_leak", {"REFE_RANK_MUTATE": "traj_leak"}, "trainer_mutation_arms"),
     ("REFE_RANK_MUTATE=<typo>", {"REFE_RANK_MUTATE": "dorp"}, "trainer_mutation_arms"),
+    ("REFE_RANK_MUTATE=pick_oracle", {"REFE_RANK_MUTATE": "pick_oracle"}, "pick_analytic"),
+    ("REFE_RANK_MUTATE=pick_noroute", {"REFE_RANK_MUTATE": "pick_noroute"}, "pick_routing"),
 ]
 
 

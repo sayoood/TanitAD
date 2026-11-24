@@ -46,6 +46,7 @@ W_FIX = 0.25                                                       # a fixture r
 W_ARGV = float(L.SCORERFT_RANK_W) if L.SCORERFT_RANK_W is not None else W_FIX
 ARMS = ("T", "C", "Ts", "Cs")
 NAMES = {"T": "refe_scorerft_t", "C": "refe_scorerft_c", "Ts": "refe_scorerft_t_s1", "Cs": "refe_scorerft_c_s1"}
+P_NAMES = {"P": "refe_scorerft_p", "Ps": "refe_scorerft_p_s1"}                # O3's decision-level arm (head `pick`) and its seed-1 replicate
 # whole-profile fingerprints sha256(repr(sorted(items)))[:16] of EVERY profile that existed at 36b92a2b (the 2026-11-07 trap: a launch_gate.py edit can move them, and other tests pin them BY VALUE)
 FP_PINS = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_field": "5ddc49053a99fa78", "refe_field_ctrl": "0b6281b1bfa996ed", "refe_rehearsal": "821cd1ef3bf55d4e",
            "refe_rls1": "bce7e25ee8718c08", "refe_aux_s1": "f95f48727b62ccc6", "refe_p7": "94cca167ce121a94", "refe_p5c": "ed995961b67113bd", "refe_p5c_c0": "65b0a2e8fc15b36e",
@@ -115,7 +116,7 @@ def chk_existing_unchanged():
     for nm, fp in FP_PINS.items():
         got = hashlib.sha256(repr(sorted(L.PROFILES[nm].items())).encode()).hexdigest()[:16]
         ok(got == fp, f"{nm}: fingerprint moved {fp} -> {got}")
-    ok(set(L.PROFILES) == set(FP_PINS) | set(NAMES.values()), sorted(set(L.PROFILES) ^ (set(FP_PINS) | set(NAMES.values()))))
+    ok(set(L.PROFILES) == set(FP_PINS) | set(NAMES.values()) | set(P_NAMES.values()), sorted(set(L.PROFILES) ^ (set(FP_PINS) | set(NAMES.values()) | set(P_NAMES.values()))))
     for nm in FP_PINS:
         ok(not any(k.startswith(("scorerft", "rank_")) or k == "traj_label_required" for k in L.PROFILES[nm]), nm)
 
@@ -138,6 +139,111 @@ def chk_argv_delta():
         ok(L.SCORERFT_RANK_W is not None, "unfilled weight must raise")
     except ValueError:
         ok(L.SCORERFT_RANK_W is None)
+
+
+def _real_rank_loss():
+    """The REAL refe/rank_loss.py (the suite's other checks install a fake `rank_loss` module in sys.modules; this one is loaded by path under its own name)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("rank_loss_real_for_pick", str(HERE / "rank_loss.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def chk_p_arms():
+    """ARM P (O3: the pick-anchored decision-level term, head `pick`): argv(P) - argv(C) = {--rank-w, --rank-heads, --out} and NOTHING else (no gap / top-k, which the trainer refuses without ep / gate); argv(Ps) - argv(P) =
+    {--seed, --out}; the weight pin SCORERFT_P_RANK_W refuses while unfilled; with the pins filled the template is clean; every lever the card names is refused when it moves; the control C is unchanged by the new arms."""
+    P_, Ps_ = (L.scorerft_argv(a, rank_w=W_ARGV) for a in ("P", "Ps"))
+    C_, Cs_ = targv("C"), targv("Cs")
+    ok(delta(P_, C_) == {"--rank-w", "--rank-heads", "--out"}, delta(P_, C_))
+    ok(delta(Ps_, P_) == {"--seed", "--out"}, delta(Ps_, P_))
+    ok(delta(Ps_, Cs_) == {"--rank-w", "--rank-heads", "--out"}, delta(Ps_, Cs_))
+    fP = flagset(P_)
+    ok(fP["--rank-heads"] == ["pick"] and float(fP["--rank-w"][0]) == W_ARGV and "--rank-ep-gap" not in fP and "--rank-gate-topk" not in fP, fP)
+    ok(flagset(P_)["--seed"] == ["0"] and flagset(Ps_)["--seed"] == ["1"] and flagset(P_)["--init-from"] == [L.SCORERFT_DEFAULT_INIT] and flagset(P_)["--steps"] == ["1000"], "P recipe = C's")
+    ok(L.SCORERFT_ARM_NAME["P"] == "refe_scorerft_p" and L.SCORERFT_ARM_NAME["Ps"] == "refe_scorerft_p_s1" and flagset(P_)["--out"] != flagset(C_)["--out"], "names / out")
+    for a_, nm in P_NAMES.items():
+        p = L.PROFILES[nm]
+        ok(p["name"] == nm and p["scorerft_rules"] is True and p["scorerft_arm"] == a_ and p["rank_heads"] == "pick" and "rank_L" in p["live_terms"], nm)
+        ok(p["required_flags"]["--rank-heads"] == "pick" and "--rank-ep-gap" not in p["required_flags"] and "--rank-gate-topk" not in p["required_flags"], nm)
+        ok("rank_census" not in p and p["traj_label_required"] is True and "REFE_RANK_MUTATE" in p["forbidden_env"], nm)
+        ok(p["required_flags"]["--seed"] == ("0" if a_ == "P" else "1"), nm)
+        ok(any(e.get("script") == "test_rank_loss.py" and e["token"] == "ZZRANK_PASS" for e in p["suite"]), nm)
+        ok(sum(1 for e in p["suite"] if e.get("script") == "test_clip_probe.py") == 1 and {"script": "test_clip_probe.py", "token": "ZZCLIPPROBE_PASS"} in p["suite"], nm + ": P / Ps carry test_clip_probe.py in G-SUITE")
+    for nm in list(NAMES.values()):                                                                # ... and ONLY P / Ps: T / C / Ts / Cs are untouched
+        ok(all(e.get("script") != "test_clip_probe.py" for e in L.PROFILES[nm]["suite"]), nm + ": no test_clip_probe.py")
+    ok(L.PROFILES["refe_scorerft_p"]["suite"] == L.PROFILES["refe_scorerft_p_s1"]["suite"] and L.SCORERFT_P_SUITE_EXTRA == [{"script": "test_clip_probe.py", "token": "ZZCLIPPROBE_PASS"}]
+       and L.PROFILES["refe_scorerft_p"]["suite"][:-1] == L.PROFILES["refe_scorerft_c"]["suite"], "P suite = C's suite + the probe test (last)")
+    try:
+        L.scorerft_argv("P")                                                                       # no template without the weight pin
+        ok(L.SCORERFT_P_RANK_W is not None, "unfilled P weight must raise")
+    except ValueError:
+        ok(L.SCORERFT_P_RANK_W is None)
+    p0 = L.scorerft_profile("P")                                                                   # the profile as committed: the weight pin decides
+    p0["init_from_sha256"] = HEX_BASE
+    if L.SCORERFT_P_RANK_W is None:
+        ok(p0["rank_w"] is None and "finite float" in refusals(p0, P_) and "SCORERFT_P_RANK_W" in refusals(p0, P_), "an unfilled P weight REFUSES the argv: " + refusals(p0, P_))
+    for a_ in ("P", "Ps"):
+        argv = L.scorerft_argv(a_, rank_w=W_ARGV)
+        pf = L.scorerft_profile(a_)
+        pf["init_from_sha256"] = HEX_BASE
+        pf["rank_w"] = W_ARGV
+        ok(refusals(pf, argv) == "", f"{a_}: the template with the pins filled must be clean: {refusals(pf, argv)}")
+        for nm, bad in (("heads ep,gate", mv(argv, "--rank-heads", "ep,gate")), ("heads ep,pick", mv(argv, "--rank-heads", "ep,pick")), ("rank-w moved", mv(argv, "--rank-w", repr(W_ARGV + 0.5))),
+                        ("steps", mv(argv, "--steps", "2000")), ("no heads", drop(argv, "--rank-heads")), ("no rank-w (R-CTRL)", drop(argv, "--rank-w")),
+                        ("gap named", argv + ["--rank-ep-gap", "0.05"]), ("topk named", argv + ["--rank-gate-topk", "8"]), ("seed", mv(argv, "--seed", "1" if a_ == "P" else "0")), ("extra", argv + ["--w-field", "2.0"])):
+            ok(refusals(pf, bad) != "", f"{a_} must refuse: {nm}")
+        pw = dict(pf, rank_w=0.0)
+        ok("must be > 0" in refusals(pw, argv), "P at weight 0 refuses")
+        ph = dict(pf, rank_heads="ep,gate")
+        ok("not the card's" in refusals(ph, argv), "P registering T's heads refuses")
+    ok(all(delta(targv(a_), L.p5c_argv("C1")) == ({"--init-from", "--steps", "--out", "--rank-w"} | ({"--rank-heads", "--rank-ep-gap", "--rank-gate-topk"} if L.SCORERFT_ARM_RANK[a_] else set())
+                                                    | ({"--seed"} if a_ in ("Ts", "Cs") else set())) for a_ in ARMS), "T / C / Ts / Cs are unchanged by the new arms")
+
+
+def chk_pick_rows():
+    """The gate's own rows with the `pick` head, against the REAL rank_loss.RankLoss: (1) the gate's numpy reference == the trainer's term, VALUE and PAIR SET, on float32 logits (the trainer's dtype); (2) L3 on a stand-in model: `pick`
+    reaches score_head rows NC, DAC, EP, TTC AND C and EXACTLY 0.0 on DDC, on the trajectory side and under the weight-0 control; a gate that thought `pick` trains only NC/DAC/EP is RED, and so is a term that stops reaching C."""
+    import torch
+    RLr = _real_rank_loss()
+    for seed in range(4):
+        s_, y = make_sets(seed=20 + seed, B=3, M=16)
+        msk = np.ones(3, np.float32)
+        term = RLr.RankLoss("pick", ep_gap=0.02, gate_topk=8)
+        v = term.term(torch.from_numpy(s_).requires_grad_(True), torch.from_numpy(y), torch.from_numpy(msk), 3)
+        ref = GC.rank_reference(s_, y, msk, 3, "pick", 0.02, 8)
+        ok(ref["pairs"]["pick"] > 0 and ref["pairs"]["pick"] == term.last["pairs"]["pick"], (seed, ref["pairs"], term.last))
+        ok(abs(float(v) - ref["L"]) <= 1e-6 * max(1.0, abs(ref["L"])), (seed, float(v), ref["L"]))
+        P = term.pairs(torch.from_numpy(s_), torch.from_numpy(y))
+        mine = sorted(tuple(int(t) for t in idx) for idx in P["pick"][0].nonzero().tolist())
+        ok(mine == ref["pair_sets"]["pick"], seed)
+        ok(GC.judge_rank_audit([{"logits": s_, "labels": y, "msk": msk, "batch": 3, "heads": "pick", "ep_gap": 0.02, "gate_topk": 8, "value": float(v), "pairs": dict(term.last["pairs"])}], None)[0] == [], seed)
+    old_mod = sys.modules.get("rank_loss")
+    sys.modules["rank_loss"] = RLr                                                                   # the probe (`import rank_loss as RL` in gate_checks.rank_reach) now builds the REAL term
+    try:
+        done = False
+        for seed in range(6):
+            cap = reach_cap(heads="pick", seed=seed)
+            fr = GC.rank_reach(cap, {}, None)
+            if not fr["declared"]["loss"] > 0.0:
+                continue                                                                             # the stand-in model's own pick happened to be the labels' best: no pair on that set
+            done = True
+            rows = fr["declared"]["score_head_rows"]
+            ok(all(rows[h] > 0.0 for h in ("nc", "dac", "ep", "ttc", "c")) and rows["ddc"] == 0.0, rows)
+            g = fr["declared"]["groups"]
+            ok(g["traj_head"]["abs_sum"] == 0.0 and g["dec"]["abs_sum"] == 0.0 and g["queries"]["abs_sum"] == 0.0 and g["backbone.lora"]["abs_sum"] > 0 and g["scene_proj"]["abs_sum"] > 0, g)
+            ok(all(v["abs_sum"] == 0.0 for v in fr["zero"]["groups"].values()) and all(v == 0.0 for v in fr["zero"]["score_head_rows"].values()), "the weight-0 control reads exactly 0.0")
+            ok(GC.judge_rank_reach(fr, "pick") == [], GC.judge_rank_reach(fr, "pick"))
+            ok(any("row TTC" in x or "row C" in x for x in GC.judge_rank_reach(fr, "ep,gate")), "a pick capture judged as ep,gate (TTC / C must be 0.0) is RED")
+            fr_bad = {**fr, "declared": {**fr["declared"], "score_head_rows": {**rows, "c": 0.0}}}
+            ok(any("row C" in x for x in GC.judge_rank_reach(fr_bad, "pick")), "pick: C reading zero is RED")
+            break
+        ok(done, "no seed gave the stand-in model a non-oracle pick")
+    finally:
+        if old_mod is None:
+            sys.modules.pop("rank_loss", None)
+        else:
+            sys.modules["rank_loss"] = old_mod
 
 
 def chk_pins_refuse():
@@ -253,6 +359,74 @@ def chk_h_generalised():
 
 
 # ------------------------------------------------------------------------------------------------ the rows, on synthetic captures
+def route_calls(seeds=(20, 21, 22), real=None):
+    """Captured-call dicts as the gate's recorder stores them (logits / labels / msk / batch / value / pairs), built from the REAL term on float32 logits."""
+    import torch
+    calls = []
+    for sd in seeds:
+        s_, y = make_sets(seed=sd, B=3, M=16)
+        msk = np.ones(3, np.float32)
+        term = (real or _real_rank_loss()).RankLoss("pick", ep_gap=0.02, gate_topk=16)
+        v = term.term(torch.from_numpy(s_), torch.from_numpy(y), torch.from_numpy(msk), 3)
+        calls.append({"heads": "pick", "ep_gap": 0.02, "gate_topk": 16, "batch": 3, "logits": s_, "labels": y, "msk": msk, "value": float(v), "pairs": dict(term.last["pairs"])})
+    return calls
+
+
+def chk_route_real():
+    """CTRL-ROUTE (b) (card 4.4): on real labelled sets, the pick-only term's gradient on the LOGITS is EXACTLY 0.0 on every label-inconsistent factor, non-zero on live ones, exactly 0.0 outside the pair roles and on DDC; the count of
+    label-1 picks is > 0 or the check is REFUSED; `REFE_RANK_MUTATE=pick_noroute` turns it RED, both directly and through `rank_live_rows` (the gate)."""
+    RLr = _real_rank_loss()
+    old_mod, old_env = sys.modules.get("rank_loss"), os.environ.get("REFE_RANK_MUTATE")
+    sys.modules["rank_loss"] = RLr
+    try:
+        os.environ.pop("REFE_RANK_MUTATE", None)
+        calls = route_calls(real=RLr)
+        fr = GC.rank_route_facts(calls)
+        ok(fr["ran"] and fr["n_pick_nc1"] > 0 and fr["n_pick_dac1"] > 0 and fr["dead_cells"] > 0 and fr["live_cells"] > 0 and fr["live_nonzero"] == fr["live_cells"], fr)
+        ok(fr["dead_nonzero"] == 0 and fr["pick_nc_nonzero"] == 0 and fr["pick_dac_nonzero"] == 0 and fr["other_nonzero"] == 0 and fr["other_cells"] > 0, fr)
+        ok(GC.judge_rank_route(fr) == [], GC.judge_rank_route(fr))
+        os.environ["REFE_RANK_MUTATE"] = "pick_noroute"                                              # the deliberate-regression arm: the routing removed, every factor live
+        try:
+            frm = GC.rank_route_facts(calls)
+        finally:
+            os.environ.pop("REFE_RANK_MUTATE", None)
+        rm = GC.judge_rank_route(frm)
+        ok(frm["dead_nonzero"] > 0 and frm["pick_nc_nonzero"] > 0 and frm["pick_dac_nonzero"] > 0 and any("label-inconsistent" in x for x in rm), (frm, rm))
+        ok(frm["live_nonzero"] == frm["live_cells"] and frm["other_nonzero"] == 0, "the unrouted term differs ONLY on the dead cells")
+        ok(GC.judge_rank_route({**fr, "live_nonzero": 0}) != [], "a routing that zeroes every cell is RED")
+        ok(GC.judge_rank_route({**fr, "other_nonzero": 1}) != [], "a gradient outside the pair roles / on DDC is RED")
+        ok(GC.judge_rank_route({**fr, "n_pick_nc1": 0}) != [] and "VACUOUS" in GC.judge_rank_route({**fr, "n_pick_nc1": 0})[0], "no label-1 pick: REFUSED as vacuous")
+        ok(GC.judge_rank_route({"ran": False}) != [], "an unrun probe is not a pass")
+        lab0 = [dict(c, labels=np.concatenate([np.zeros_like(c["labels"][..., :1]), c["labels"][..., 1:]], -1)) for c in calls]
+        fr0 = GC.rank_route_facts(lab0)
+        ok(fr0["n_pick_nc1"] == 0 and any("VACUOUS" in x for x in GC.judge_rank_route(fr0)), ("NC label 0 everywhere", fr0))
+        # through the gate: rank_live_rows on a P capture
+        def live(env):
+            cap = reach_cap(heads="pick", seed=1)
+            cap.metrics = [{"event": "rank"}] + [{"step": i, "traj_L1": 1.0, "rank_L": 0.4, "rank_pairs_pick": 4} for i in range(2)]
+            cap.rank_calls = [dict(c) for c in calls]
+            cap.lab_submits = []
+            if env:
+                os.environ["REFE_RANK_MUTATE"] = env
+            try:
+                return GC.rank_live_rows(cap, {}, None)
+            finally:
+                os.environ.pop("REFE_RANK_MUTATE", None)
+        r, d = live(None)
+        ok(not any("CTRL-ROUTE" in x for x in r) and d["route"]["ran"] and d["route"]["dead_nonzero"] == 0, (r, d.get("route")))
+        r2, d2 = live("pick_noroute")
+        ok(any("CTRL-ROUTE" in x and "label-inconsistent" in x for x in r2) and d2["route"]["dead_nonzero"] > 0, r2)
+    finally:
+        if old_mod is None:
+            sys.modules.pop("rank_loss", None)
+        else:
+            sys.modules["rank_loss"] = old_mod
+        if old_env is None:
+            os.environ.pop("REFE_RANK_MUTATE", None)
+        else:
+            os.environ["REFE_RANK_MUTATE"] = old_env
+
+
 def make_sets(seed=7, B=3, M=16):
     rng = np.random.default_rng(seed)
     y = np.zeros((B, M, 6), np.float32)
@@ -729,7 +903,7 @@ def chk_l5_identity_dtype():
     ok(GC.identity_diff(1.25, 1.0, np.float32) == 0.0 and GC.identity_diff(-0.5, 0.0, np.float32) == 0.0, "L5: NAVSIM's value is clipped to [0, 1] first")
 
 
-CHECKS = {"registry": chk_registry, "existing_unchanged": chk_existing_unchanged, "argv_delta": chk_argv_delta, "pins_refuse": chk_pins_refuse, "levers": chk_levers, "fresh_out": chk_fresh_out,
+CHECKS = {"registry": chk_registry, "existing_unchanged": chk_existing_unchanged, "argv_delta": chk_argv_delta, "p_arms": chk_p_arms, "pick_rows": chk_pick_rows, "route_real": chk_route_real, "pins_refuse": chk_pins_refuse, "levers": chk_levers, "fresh_out": chk_fresh_out,
           "live_wiring": chk_live_wiring, "h_generalised": chk_h_generalised, "reach_and_regressions": chk_reach_and_regressions, "audit": chk_audit, "dvb_rows": chk_dvb_rows,
           "live_rows": chk_live_rows_control_and_t, "census_l2": chk_census_l2, "field_reach_active": chk_field_reach_active_sample, "l5_identity_dtype": chk_l5_identity_dtype, "trainer_integration": chk_trainer_integration, "no_scipy": chk_no_scipy}
 
@@ -744,7 +918,12 @@ MUTATIONS = [
     ("launch_gate.py", "    for f in sorted(set(got) - set(want) - {\"--resume\"}):\n        out.append(f\"{name}: the argv carries {f} {' '.join(got[f][0])}, which arm {arm}'s argv does not (the arms",
      "    for f in []:\n        out.append(f\"{name}: the argv carries {f} {' '.join(got[f][0])}, which arm {arm}'s argv does not (the arms", "levers"),                  # an extra lever is accepted
     ("launch_gate.py", "    a[a.index(\"--seed\") + 1] = str(SCORERFT_ARM_SEED[arm])\n", "", "argv_delta"),                                                          # the replicates no longer differ by the seed
-    ("launch_gate.py", "        rk = [\"--rank-w\", \"0.0\"]\n", "        rk = []\n", "argv_delta"),                                                                   # C no longer NAMES --rank-w 0.0
+    ("launch_gate.py", "        rk = [\"--rank-w\", \"0.0\"]\n", "        rk = []\n", "argv_delta"),
+    ("launch_gate.py", "        if arm in SCORERFT_P_ARMS:\n            rk = [\"--rank-w\", repr(float(w)), \"--rank-heads\", SCORERFT_P_RANK_HEADS]\n", "        if False:\n            rk = []\n", "p_arms"),                 # P gets T's head set and gap / top-k
+    ("launch_gate.py", "    if ranking and arm in SCORERFT_P_ARMS:\n        req.update({\"--rank-heads\": SCORERFT_P_RANK_HEADS})", "    if False:\n        req.update({})", "p_arms"),                    # P's profile no longer requires --rank-heads pick
+    ("launch_gate.py", "(SCORERFT_ARM_HEADS[arm], SCORERFT_RANK_EP_GAP, SCORERFT_RANK_GATE_TOPK):\n", "(SCORERFT_RANK_HEADS, SCORERFT_RANK_EP_GAP, SCORERFT_RANK_GATE_TOPK):\n", "p_arms"),   # the registered-rule check forgets the per-arm heads
+    ("gate_checks.py", " | ({\"ttc\", \"c\"} if \"pick\" in _rank_heads_set(heads) else set())", "", "pick_rows"),                                                           # the reach judge forgets that `pick` trains TTC and C
+    ("gate_checks.py", "                        if not (j == pick_k and pdms[i] > pdms[j]):\n", "                        if not (j == pick_k and pdms[i] >= pdms[j]):\n", "pick_rows"),   # the reference pairs ties                                                                   # C no longer NAMES --rank-w 0.0
     ("gate_checks.py", "    if profile.get(\"scorerft_rules\"):                                   # SCORER-FT arms", "    if False:                                   # SCORER-FT arms", "live_wiring"),   # the scorerft arms are not routed to the live rows
     ("gate_checks.py", "    needs_table = profile[\"traj_label_required\"] if \"traj_label_required\" in profile else profile.get(\"p5c_arm\") in (\"C1\", \"C1r\")", "    needs_table = profile.get(\"p5c_arm\") in (\"C1\", \"C1r\")", "h_generalised"),
     ("gate_checks.py", "        ok=bool(calls) and len(mult) == len(calls) and all(math.isclose(m_, w, rel_tol=1e-5) for m_ in mult))", "        ok=True)", "dvb_rows"),      # the hook row no longer judges the multiplier
@@ -759,6 +938,11 @@ MUTATIONS = [
      "    return {k: (v if k in (\"ran\", \"labelled\") else {\"loss\": v[\"loss\"], \"groups\": v[\"groups\"]}) for k, v in fr.items()}\n", "field_reach_active"),   # 1c: the 1b-era form (TypeError on `losses`)
     ("gate_checks.py", "        det[\"field_reach\"] = field_reach_detail(fr)\n",
      "        det[\"field_reach\"] = {k: (v if k in (\"ran\", \"labelled\") else {\"loss\": v[\"loss\"], \"groups\": v[\"groups\"]}) for k, v in fr.items()}\n", "field_reach_active"),   # 1c: check_live bypasses the helper (the Fs crash)
+    ("gate_checks.py", "    if fr[\"dead_nonzero\"] > 0 or fr[\"pick_nc_nonzero\"] > 0 or fr[\"pick_dac_nonzero\"] > 0:\n", "    if False:\n", "route_real"),                              # the judge forgets the label-inconsistent cells
+    ("gate_checks.py", "                                out[\"dead_nonzero\"] += 1\n", "                                out[\"dead_nonzero\"] += 0\n", "route_real"),                          # the facts never count a dead cell that reads non-zero
+    ("gate_checks.py", "    if \"pick\" in heads:                                                                       # CTRL-ROUTE (b)", "    if False:                                                                       # CTRL-ROUTE (b)", "route_real"),   # the gate no longer runs CTRL-ROUTE
+    ("gate_checks.py", "    if not fr[\"n_pick_nc1\"] > 0:\n", "    if False:\n", "route_real"),                                                                               # a vacuous probe is accepted
+    ("gate_checks.py", "                        live = (d_ < 0.0) if role[m] == 1 else (d_ > 0.0)", "                        live = (d_ > 0.0) if role[m] == 1 else (d_ < 0.0)", "route_real"),         # the expectation's directions flipped
 ]
 
 

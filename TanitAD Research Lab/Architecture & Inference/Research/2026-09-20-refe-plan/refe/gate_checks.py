@@ -2080,7 +2080,7 @@ def judge_field_reach(fr: dict, w_field: float) -> list:
 # reference below (DESIGN 2.2), so a trainer whose term pairs the wrong things (R-UNSAFE, R-SHUF) or weights them wrongly is caught by VALUE, not by inspection.
 RANK_HEAD_COLS = {"nc": 0, "dac": 1, "ep": 2, "ttc": 3, "c": 4, "ddc": 5}             # the scorer's six outputs, in `online_labeller.COMPONENTS` order
 RANK_PDMS_W = (5.0, 5.0, 2.0)                                                           # navsim_v1: NC x DAC x (5 EP + 5 TTC + 2 C) / 12  (planner.py V1_W)
-RANK_TRAINED_ROWS = {"ep": ("nc", "dac", "ep"), "gate": ("nc", "dac", "ep"), "ttc": ("nc", "dac", "ep", "ttc")}     # (documentary) rows of score_head a named head trains; the reach probe derives the real set from `heads`
+RANK_TRAINED_ROWS = {"ep": ("nc", "dac", "ep"), "gate": ("nc", "dac", "ep"), "ttc": ("nc", "dac", "ep", "ttc"), "pick": ("nc", "dac", "ep", "ttc", "c")}     # (documentary) rows of score_head a named head trains; the reach probe derives the real set from `heads`
 RANK_REL_TOL = 1e-6                                                                     # L4: L_rank within 1e-6 relative of the reference
 RANK_TRUNK_GROUPS = ("backbone.lora", "scene_proj")                                     # --scorer-sees-trunk: the rank gradient must reach these
 RANK_ZERO_GROUPS = ("traj_head", "dec", "queries")                                      # the trajectory side: the scorer reads `traj.detach()`, so EXACTLY 0.0 (R-LEAK)
@@ -2100,6 +2100,7 @@ def rank_reference(logits, labels, msk, batch, heads, ep_gap, gate_topk) -> dict
       EP   pairs: safe_i & safe_j & y_EP,i - y_EP,j >= ep_gap            weight (5/12)(y_EP,i - y_EP,j)     z = s_EP
       gate pairs: safe_i & !safe_j & j in topk & pdms_i > pdms_j          weight pdms_i - pdms_j             z = logsigmoid(s_NC) + logsigmoid(s_DAC)
       TTC  pairs: safe_i & safe_j & y_TTC,i == 1 & y_TTC,j == 0          weight 5/12                        z = s_TTC
+      PICK pairs: k = argmax_m navsim_v1(sigmoid(s_m)) (in the logits' own dtype);  pdms_i > pdms_k    weight pdms_i - pdms_k            z = navsim_v1(sigmoid(s))
       L_h(b) = sum a_ij softplus(-(z_i - z_j)) / sum a_ij (0 without a pair);  L = (1/batch) sum_b msk_b sum_h L_h(b)
     Returns {"L", "pairs": {head: n}, "sets": {head: n sets with a pair}, "pair_sets": {head: sorted [(b, i, j)]}}."""
     s = np.asarray(logits, dtype=np.float64)
@@ -2115,7 +2116,8 @@ def rank_reference(logits, labels, msk, batch, heads, ep_gap, gate_topk) -> dict
 
     def softplus(x):
         return np.logaddexp(0.0, x)
-    heads = [h for h in ("ep", "gate", "ttc") if h in _rank_heads_set(heads)]
+    heads = [h for h in ("ep", "gate", "ttc", "pick") if h in _rank_heads_set(heads)]
+    s_native = np.asarray(logits)                                                        # the pick is argmaxed in the dtype the logits ARRIVE in (the trainer's float32), as the planner does
     out = {"L": 0.0, "pairs": {h: 0 for h in heads}, "sets": {h: 0 for h in heads}, "pair_sets": {h: [] for h in heads}}
     w1 = np.asarray(RANK_PDMS_W)
     for b in range(B):
@@ -2124,6 +2126,11 @@ def rank_reference(logits, labels, msk, batch, heads, ep_gap, gate_topk) -> dict
         p = sig(s[b])
         agg = p[:, 0] * p[:, 1] * (p[:, 2] * w1[0] + p[:, 3] * w1[1] + p[:, 4] * w1[2]) / w1.sum()
         top = set(np.argsort(-agg, kind="stable")[:int(gate_topk)].tolist())
+        pick_k = None
+        if "pick" in heads:
+            pn = 1.0 / (1.0 + np.exp(-s_native[b]))
+            w1n = np.asarray(RANK_PDMS_W, dtype=pn.dtype)
+            pick_k = int(np.argmax(pn[:, 0] * pn[:, 1] * (pn[:, 2] * w1n[0] + pn[:, 3] * w1n[1] + pn[:, 4] * w1n[2]) / w1n.sum()))
         for h in heads:
             num = den = 0.0
             ps = []
@@ -2131,7 +2138,11 @@ def rank_reference(logits, labels, msk, batch, heads, ep_gap, gate_topk) -> dict
                 for j in range(M):
                     if i == j:
                         continue
-                    if h == "ep":
+                    if h == "pick":
+                        if not (j == pick_k and pdms[i] > pdms[j]):
+                            continue
+                        a, z = pdms[i] - pdms[j], agg[i] - agg[j]
+                    elif h == "ep":
                         if not (safe[i] and safe[j] and y[b, i, 2] - y[b, j, 2] >= ep_gap):
                             continue
                         a, z = (5.0 / 12.0) * (y[b, i, 2] - y[b, j, 2]), s[b, i, 2] - s[b, j, 2]
@@ -2263,7 +2274,7 @@ def judge_rank_reach(fr: dict, heads) -> list:
         return ["L3 rank reach probe: the first captured set carries no label (mask 0): the term was not exercised"]
     out = []
     g, rows = fr["declared"]["groups"], fr["declared"]["score_head_rows"]
-    trained = {"nc", "dac", "ep"} | ({"ttc"} if "ttc" in _rank_heads_set(heads) else set())
+    trained = {"nc", "dac", "ep"} | ({"ttc"} if "ttc" in _rank_heads_set(heads) else set()) | ({"ttc", "c"} if "pick" in _rank_heads_set(heads) else set())     # `pick` reads NC, DAC, EP, TTC, C through the aggregate (DDC stays 0.0)
     for h in sorted(trained):
         if not rows.get(h, 0.0) > 0.0:
             out.append(f"L3 rank-only backward reads EXACTLY zero on score_head row {h.upper()}: the term does not reach a head it trains")
@@ -2442,6 +2453,99 @@ def judge_census_head(h, census, args, profile) -> list:
     return []
 
 
+# ---- CTRL-ROUTE on REAL data (PREREG_SCORERFT_PICK 4.4(b), MM decision 10).  `pick`'s aggregate s~ = navsim_v1(p) routes each head probability p_h(m) so that the term moves it only TOWARD that proposal's OWN label: on the pick k (the term
+# lowers s_k) a factor is live iff y_h < p_h; on a better proposal i (the term raises s_i) iff y_h > p_h; every other cell, and DDC (not in the aggregate), has no gradient at all.  The probe reads d L_rank / d LOGIT (L_rank ALONE: no BCE, no
+# l_traj) on the smoke's captured (logits, labels, mask) calls with the TRAINER's own term built with heads="pick" only, and compares every cell with the gate's OWN expectation (`rank_reference`'s pair set + the labels): a cell that is label-inconsistent
+# must read EXACTLY 0.0.  The routing is logit-level only (the score_head weight row still gets gradient through other proposals' live factors); nothing is claimed for rows.
+ROUTE_TIE = 1e-9                                                                            # |y - p| below this is a boundary tie: the strict rule is not decided by the gate's float64 sigmoid, so the cell is not scored
+
+
+def rank_route_facts(calls: list, max_calls: int = 3) -> dict:
+    """CTRL-ROUTE (b): per captured call, the gradient of the pick-only L_rank on the captured logits, classified against the gate's own expectation.  Returns RAW counts:
+    sets / sets_with_pair, n_pick_nc1 / n_pick_dac1 (sets whose pick has that label = 1 AND which have a pair, i.e. where the zero is non-vacuous), dead_cells / dead_nonzero (label-inconsistent cells and the ones that read != 0.0, with the first
+    few listed), live_cells / live_nonzero, other_cells / other_nonzero (cells of proposals with no role in a pair, and DDC), pick_nc_nonzero / pick_dac_nonzero (a label-1 pick whose NC / DAC logit gradient is not exactly 0.0)."""
+    import torch
+    import rank_loss as RL
+    out = {"ran": False, "calls": 0, "sets": 0, "sets_with_pair": 0, "n_pick_nc1": 0, "n_pick_dac1": 0, "dead_cells": 0, "dead_nonzero": 0, "live_cells": 0, "live_nonzero": 0, "other_cells": 0, "other_nonzero": 0,
+           "pick_nc_nonzero": 0, "pick_dac_nonzero": 0, "first_bad": []}
+    for k, c in enumerate(calls[:max_calls]):
+        if not isinstance(c, dict) or "logits" not in c or "labels" not in c or "msk" not in c:
+            continue
+        lg, lab, msk = np.asarray(c["logits"]), np.asarray(c["labels"]), np.asarray(c["msk"]).reshape(-1)
+        B, M, _ = lg.shape
+        term = RL.RankLoss(heads="pick", ep_gap=float(c.get("ep_gap") or 0.02), gate_topk=int(M))             # the trainer's own class; its REFE_RANK_MUTATE switch (the regression arm) is read HERE, as in the trainer
+        s = torch.from_numpy(lg.copy()).requires_grad_(True)
+        r = term.term(s, torch.from_numpy(lab.copy()), torch.from_numpy(msk.copy()), int(c.get("batch") or B))
+        r = r[0] if isinstance(r, tuple) else r
+        if getattr(r, "requires_grad", False):
+            r.backward()
+        g = np.zeros(lg.shape, np.float64) if s.grad is None else s.grad.detach().double().cpu().numpy()
+        ref = rank_reference(lg, lab, msk, int(c.get("batch") or B), "pick", float(c.get("ep_gap") or 0.02), int(M))
+        pairs_by_set: dict = {}
+        for (b, i, j) in ref["pair_sets"]["pick"]:
+            pairs_by_set.setdefault(b, []).append((i, j))
+        y = np.asarray(lab, dtype=np.float64)
+        p = 1.0 / (1.0 + np.exp(-np.asarray(lg, dtype=np.float64)))
+        out["ran"] = True
+        out["calls"] += 1
+        for b in range(B):
+            if not msk[b] > 0.0:
+                continue
+            out["sets"] += 1
+            ps = pairs_by_set.get(b)
+            role = np.zeros(M, np.int8)                                                    # 0 = no role, 1 = the pick, 2 = a better proposal
+            if ps:
+                out["sets_with_pair"] += 1
+                role[ps[0][1]] = 1
+                for (i, _) in ps:
+                    role[i] = 2
+                kk = ps[0][1]
+                out["n_pick_nc1"] += int(y[b, kk, 0] >= 1.0)
+                out["n_pick_dac1"] += int(y[b, kk, 1] >= 1.0)
+            for m in range(M):
+                for h in range(6):
+                    v = float(g[b, m, h])
+                    if h < 5 and role[m] != 0:
+                        d_ = y[b, m, h] - p[b, m, h]
+                        if abs(d_) < ROUTE_TIE:
+                            continue
+                        live = (d_ < 0.0) if role[m] == 1 else (d_ > 0.0)                  # pick: y < p; better proposal: y > p
+                        if live:
+                            out["live_cells"] += 1
+                            out["live_nonzero"] += int(v != 0.0)
+                        else:
+                            out["dead_cells"] += 1
+                            if v != 0.0:
+                                out["dead_nonzero"] += 1
+                                if len(out["first_bad"]) < 6:
+                                    out["first_bad"].append({"call": k, "set": b, "proposal": m, "head": ("nc", "dac", "ep", "ttc", "c")[h], "role": "pick" if role[m] == 1 else "better", "y": float(y[b, m, h]), "p": float(p[b, m, h]), "grad": v})
+                                if role[m] == 1 and h == 0 and y[b, m, 0] >= 1.0:
+                                    out["pick_nc_nonzero"] += 1
+                                if role[m] == 1 and h == 1 and y[b, m, 1] >= 1.0:
+                                    out["pick_dac_nonzero"] += 1
+                    else:
+                        out["other_cells"] += 1
+                        out["other_nonzero"] += int(v != 0.0)
+    return out
+
+
+def judge_rank_route(fr: dict) -> list:
+    """CTRL-ROUTE (b), re-judged from the RAW counts.  [] = proved.  Refused when it could not run, or is VACUOUS (no labelled set whose pick has NC label 1 and a pair; no live cell at all).  RED when ANY label-inconsistent cell,
+    any cell outside a pair's roles, or DDC reads other than exactly 0.0, or when no live cell is non-zero."""
+    if not fr.get("ran"):
+        return ["CTRL-ROUTE (real data): could not run (no captured rank call with logits / labels): the routing is unproved"]
+    out = []
+    if not fr["n_pick_nc1"] > 0:
+        out.append(f"CTRL-ROUTE (real data) REFUSED, VACUOUS: {fr['n_pick_nc1']} of {fr['sets_with_pair']} pair-bearing sets ({fr['sets']} labelled) have a pick with NC label 1, so the 'exactly 0.0 on a label-1 pick' check examined nothing")
+    if not fr["live_cells"] > 0 or not fr["live_nonzero"] > 0:
+        out.append(f"CTRL-ROUTE (real data): live cells {fr['live_cells']}, non-zero {fr['live_nonzero']} (>= 1 live cell must be non-zero: the routing zeroed everything, or nothing was exercised)")
+    if fr["dead_nonzero"] > 0 or fr["pick_nc_nonzero"] > 0 or fr["pick_dac_nonzero"] > 0:
+        out.append(f"CTRL-ROUTE (real data): {fr['dead_nonzero']} of {fr['dead_cells']} label-inconsistent cells read non-zero (a label-1 pick: NC {fr['pick_nc_nonzero']}, DAC {fr['pick_dac_nonzero']}); each must be EXACTLY 0.0 -- the routing is absent or wrong: {fr['first_bad'][:3]}")
+    if fr["other_nonzero"] > 0:
+        out.append(f"CTRL-ROUTE (real data): {fr['other_nonzero']} of {fr['other_cells']} cells outside the pair roles (and DDC) read non-zero; each must be EXACTLY 0.0")
+    return out
+
+
 def rank_live_rows(cap, profile, arm=None) -> tuple:
     """G-LIVE's rows L1-L5 for a SCORER-FT arm (DESIGN 3.3).  A CONTROL (rank_w == 0) proves the term ABSENT: no `rank` event, no `rank_L`, no call.  Returns (reasons, details)."""
     reasons, det = [], {}
@@ -2498,6 +2602,14 @@ def rank_live_rows(cap, profile, arm=None) -> tuple:
     rs4, d4 = judge_rank_audit(calls, a)
     det["audit"] = d4
     reasons += rs4
+    if "pick" in heads:                                                                       # CTRL-ROUTE (b): label-consistent routing, on the smoke's real labelled sets (PREREG_SCORERFT_PICK 4.4)
+        try:
+            fro = rank_route_facts([c for c in calls if isinstance(c, dict)])
+            reasons += judge_rank_route(fro)
+        except Exception as e:                                                                # noqa: BLE001
+            fro = {"ran": False}
+            reasons.append(f"CTRL-ROUTE (real data) could not run: {type(e).__name__}: {e}")
+        det["route"] = fro
     f5 = harness_identity_facts(cap)
     det["harness_identity"] = f5
     reasons += judge_harness_identity(f5)

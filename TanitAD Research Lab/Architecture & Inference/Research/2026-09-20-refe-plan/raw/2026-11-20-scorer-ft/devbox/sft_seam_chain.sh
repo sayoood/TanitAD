@@ -8,11 +8,12 @@
 # Resumable: marker per stage in $W/markers_<arm>/. Harness = the P5-C read's export F:/TanitAD_p5cread_tip (751f3ae7): the same harness as
 # C1's own read (SCORER-FT adds a loss term and no parameter: MEASURED from the source diff, RankLoss is a plain class and train.py adds no
 # model attribute; so the harness model loads the checkpoint as it loads C1's, and a key mismatch would fail the seam loudly).
+# v4 2026-11-24 (O3d): + arms SFTP (HF scorerft/p, seam scorerft_p) and SFTPs, CTRL-DET like SFTT / SFTTs.
 # v2 2026-11-21: + CTRL-DET (the full-seam `rep`) for SFTT / SFTTs after the proptable.
-# usage: sft_seam_chain.sh <ARM: SFTC|SFTT|SFTCs|SFTTs> <HF prefix, e.g. scorerft/c> <seam name, e.g. scorerft_c>. Launch: run_sft_seam.cmd.
+# usage: sft_seam_chain.sh <ARM: SFTC|SFTT|SFTP|SFTCs|SFTTs|SFTPs> <HF prefix, e.g. scorerft/c> <seam name, e.g. scorerft_c>. Launch: run_sft_seam.cmd.
 set -u
 A="${1:?arm}"; PFX="${2:?hf prefix}"; NAME="${3:?seam name}"; a=$(echo "$A" | tr 'A-Z' 'a-z')
-case "$A" in SFTC|SFTT|SFTCs|SFTTs) ;; *) echo "REFUSING: arm $A is not a SCORER-FT arm"; exit 2;; esac
+case "$A" in SFTC|SFTT|SFTP|SFTCs|SFTTs|SFTPs) ;; *) echo "REFUSING: arm $A is not a SCORER-FT arm"; exit 2;; esac
 case "$NAME" in scorerft_*) ;; *) echo "REFUSING: seam name $NAME must start scorerft_"; exit 2;; esac
 RC=E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_readchain
 NX=E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_next
@@ -32,7 +33,7 @@ trap 'say "signal received"; release_lock; exit 143' INT TERM
 fail() { printf 'stage=%s rc=%s time=%s\n' "$1" "$2" "$(ts)" > "$M/chain.FAILED"; say "FAILED $1 (rc $2) log $L/$1.log"; release_lock; exit 1; }
 [ -f "$M/chain.FAILED" ] && { n=1; while [ -f "$M/chain.FAILED.attempt_$n" ]; do n=$((n+1)); done; mv "$M/chain.FAILED" "$M/chain.FAILED.attempt_$n"; say "resuming (attempt $n kept)"; }
 commit_ok() { local g; g=$("$PY_T" "$RC/tools/commit_guard.py" | tr -d '\r\n '); case "$g" in ''|*[!0-9]*) return 1;; esac; [ "$g" -ge 6 ]; }
-wait_commit() { local i=0; while ! commit_ok; do i=$((i+1)); [ $i -gt 60 ] && return 1; sleep 60; done; return 0; }
+wait_commit() { local i=0; while ! commit_ok; do i=$((i+1)); [ $i -gt 240 ] && return 1; sleep 60; done; return 0; }   # v3 MM 2026-11-23: 240 min (another session's pinned suite can hold commit > 60 min)
 free_gb() { "$PY_T" -c "import shutil,sys;print(int(shutil.disk_usage(sys.argv[1]).free//(1<<30)))" "$1" | tr -d '\r\n '; }
 export CUDA_VISIBLE_DEVICES=-1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export PYTHONPATH="$TIP/stack;$TIP/taniteval;$EV;$EV/p5c"
@@ -75,10 +76,10 @@ if [ ! -f "$M/proptable.DONE" ]; then
   [ "$rc" = 0 ] && [ "$n" -ge 12146 ] || fail proptable "$rc"
   printf '%s rc=0 rows=%s\n' "$(ts)" "$n" > "$M/proptable.DONE"
 fi
-# v2 (MM 2026-11-21): CTRL-DET (RUNBOOK_SCORERFT_READ section 4) for the T arms: p7_read_chain.py's own `rep` step re-runs T's FULL seam (12,146 tokens,
+# v2 (MM 2026-11-21): CTRL-DET (RUNBOOK_SCORERFT_READ section 4) for the T and P arms: p7_read_chain.py's own `rep` step re-runs T's FULL seam (12,146 tokens,
 # no dump; the same batch layout as seam1) and raises unless tokens are equal and every pose is bit-identical. The read takes it as --det-seam-t.
 DET=""
-case "$A" in SFTT|SFTTs)
+case "$A" in SFTT|SFTTs|SFTP|SFTPs)
   run det env -u CUDA_VISIBLE_DEVICES "$PY_T" "$EV/p7_read_chain.py" --ckpt "$ARMD/model_final.pt" --name "$NAME" --expect-ckpt-sha256 "$SHA"       --base p6 --also p2 --ego-yaw-table "$YAW" --work "$W/s2_$a" --only rep
   release_lock
   DET="$DATA/seams/stage2_${NAME}_rep.npz"; [ -s "$DET" ] || fail det_missing 5

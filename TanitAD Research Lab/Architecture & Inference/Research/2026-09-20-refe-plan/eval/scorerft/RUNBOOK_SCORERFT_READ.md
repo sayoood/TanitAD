@@ -1,4 +1,8 @@
-# RUNBOOK: SCORER-FT T-vs-C read (`scorerft_read.py`), from the two seams to the verdict
+# RUNBOOK: SCORER-FT reads (`scorerft_read.py`)
+
+Part B below reads arm P against the reused C (card PREREG_SCORERFT_PICK.md). `--card` defaults to `scorer_ft`, so Part A's commands are unchanged.
+
+# Part A: T-vs-C (card PREREG_SCORER_FT.md, Stage 1 DONE 2026-11-24, O3), from the two seams to the verdict
 
 Card: `PK/raw/2026-11-20-scorer-ft/PREREG_SCORER_FT.md` (frozen; sha256 `adc1b2ae8d3cc9b3dfed00a20a3c39197428cda8492be34af3bb9ed24010ec91`, verify before reading).
 `PK` = `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan`. Everything here is CPU, dev box, no GPU. Python `C:/Users/Admin/venvs/tanitad/Scripts/python.exe` (`PY_T`);
@@ -79,3 +83,66 @@ CTRL-T (table pick == harness CSV to 1e-9, every token, every arm), CTRL-CSV, CT
 `.../scorerft_read/read/dry_runs/`: `dry_c1_vs_c0.*` (C1 as T, C0 as C; reproduces the P5-C read's d = +1.1702 [0.6730, 1.6450] and C1's regret 6.80, EP Spearman 0.413, AUCs 0.929 / 0.962 / 0.900),
 `dry_ctrlid_c1_vs_c1.*` (CTRL-ID: every Delta exactly 0.0, no P1), `dry_stage2_exercise.*` (P2 / P3 plumbing only; Ts = C1, Cs = base), `dry_ctrl_det_p7_full.json` (CTRL-DET function on the P7 seam and its banked re-run).
 Not exercisable on stand-ins and listed per run under `controls_not_available`: CTRL-ARGV and CTRL-W0 (no pod argv, no step-0 digest) and CTRL-DET for C1 (no re-run on 200 tokens): their code paths are covered by `test_scorerft_read.py` only.
+
+
+---
+
+# Part B: P-vs-C read (card `PREREG_SCORERFT_PICK.md`, sha256 `<PICK_PREREG_SHA256>`, amended 2026-11-24 for the gradient clip, `b47b2cd0…` at the time of writing)
+
+`--card` defaults to `scorer_ft`, so Part A's commands are unchanged. Under `--card pick` the roles T / Ts are PRINTED P / Ps (never `T_minus_C`). Every pin below that reads `None` in `scorerft_read.py` makes a real read REFUSE
+(`PICK_PREREG_SHA256`, `PICK_TRAIN_SHA256`, `CLIP_PROBE_SHA256`; `PICK_CODE_TAG` is optional); a dry run is allowed and stamped.
+
+* **Directories.** `OP=E:/Projects/TanitAD-artifacts/scorerft_read/read_p` (new). `O1=E:/Projects/TanitAD-artifacts/scorerft_read/read_out` is Stage 1's directory and is READ-ONLY for Part B.
+
+## B0. Inputs
+| input | made by / from | pin |
+|---|---|---|
+| P seam, dump, harness CSV, table `propscore/full_SFTP_s*of2.jsonl`, CTRL-DET re-run seam `stage2_scorerft_p_rep.npz` | `sft_seam_chain.sh SFTP scorerft/p scorerft_p` (whitelist needs `SFTP|SFTPs`) | CTRL-SEAM ledger (new, `$OP/seam_ledger.json`) |
+| P `config.json`, `summary.json`, `metrics.jsonl`, `weight_rule_rank_p.json`, `w0_p.json` | pulled from the pod, framed (GoTTY trap) into `$OP/pod/` | CTRL-CODE / CTRL-S0 / CTRL-WRULE / CTRL-W0 |
+| C seam, dump, CSV, table, `argv_c.json`, `w0_c.json`, `pod_config_c.json` | REUSED from Stage 1 | `C_SEAM_SHA256` ... `C_W0_SHA256`, `C_POD_CONFIG_SHA256` |
+| C `metrics.jsonl` | `o3/card/evidence/metrics_scorerft_c.jsonl` | `C_METRICS_SHA256` |
+| Stage 1 `read_stage1.json`, `seam_ledger.json` | `$O1/` | `STAGE1_READ_SHA256`, `STAGE1_LEDGER_SHA256` |
+| **CTRL-CLIP probe JSON** | `refe/clip_probe.py` (B0b), banked with its sha256 | `CLIP_PROBE_SHA256` |
+
+## B0b. CTRL-CLIP probe (pre-launch, on the L40 pod with C's image, after P's launch-gate PASS token and before P's launch; card 3.2)
+```
+python PK/refe/clip_probe.py --argv-c <argv_c.json> --argv-p <P's PASS-token argv> --c-metrics <metrics_scorerft_c.jsonl> --scratch <scratch dir> --out $OP/pod/clip_probe.json
+```
+Runs the real `train.run` of each form (only `--out` replaced) under a pass-through wrapper on `clip_grad_norm_`, 8 steps (K = N_MICRO), stops before the optimiser step of step 8, writes no checkpoint, deletes its scratch.
+Exit 0 valid; 5 = invalid (PL3: re-run; a V2 / V3 failure means C is not reusable, so C'); 4 = the probe did not run. State CLIP-0 / CLIP-SAME / CLIP-T (PL4: launch, tagged). The probe's scope is steps 0-7 only.
+Bank the JSON (HF + sha256) and fill `CLIP_PROBE_SHA256`.
+
+## B1. Preflight (all must hold)
+1. The card sha equals `PICK_PREREG_SHA256`. 2. `sha256sum` of every C and Stage 1 input equals its pin. 3. The WHOLE test files pass holding the pytest lock dir: `test_scorerft_read.py` (67), `test_clip_probe.py`.
+3b. Positive control on the real logs: `ctrl_s0(metrics_scorerft_c.jsonl, metrics_scorerft_t.jsonl, rank_w=0.03125)` and `ctrl_order(...)` both PASS (19 + 10 keys, 0 of 1,000 steps differ). Otherwise STOP.
+4. Stage 1 reproduction: run Part A section 5's exact command with the modified tool into `$OP/repro/`; `verdict`, `T_minus_C`, `levels`, `goal`, `mechanism`, `families`, `controls[*].pass` equal Stage 1's. Otherwise STOP.
+5. `CHAIN.log` holds `SFTP chain start tip=751f3ae7`. 6. Both seam reports read 12,146 rows and 0 misses.
+
+## B2-B3. One transp_score pass with P, C and base; families, tactical, strategic
+As Part A sections 2-3 with arms `P`, `C`, `base` and `--pairs P:C`; `famci_P_vs_C.json` must carry `label_a C`, `label_b P`, or the read prints NOT-EVALUATED. C is re-scored from its sha-pinned Stage 1 seam; CTRL-CREUSE proves it IS Stage 1's C.
+
+## B4. The read
+```
+PY_T $EV/scorerft/scorerft_read.py --card pick --rows "$OP/pass1/rows_s*of2.jsonl" --p P --c C \
+  --seam-p <P seam> --dump-p <P dump> --csv-p <P csv> --proptable-p "<propscore>/full_SFTP_s*of2.jsonl" --argv-p $OP/pod/argv_p.json \
+  --seam-c <C seam> --dump-c <C dump> --csv-c <C csv> --proptable-c "<propscore>/full_SFTC_s*of2.jsonl" --argv-c $O1/argv_c.json \
+  --w0-digest-c $O1/w0_c.json --w0-digest-p $OP/pod/w0_p.json --w0-ref f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4 \
+  --det-seam-p <P rep seam> --seam-ledger $OP/seam_ledger.json --convert-report $OP/plans/convert_report.json \
+  --metrics-c <o3/card/evidence/metrics_scorerft_c.jsonl> --metrics-p $OP/pod/metrics_p.jsonl --pod-config-c <PK>/raw/2026-11-24-scorerft-read/pod_config_c.json --pod-config-p $OP/pod/config_p.json \
+  --seam-report-c <C report.json> --seam-report-p <P report.json> --seam-chain-log E:/Projects/TanitAD-artifacts/scorerft_read/CHAIN.log \
+  --weight-rule-p $OP/pod/weight_rule_rank_p.json --clip-probe $OP/pod/clip_probe.json --stage1-read $O1/read_stage1.json --stage1-ledger $O1/seam_ledger.json \
+  --fam-ci $OP/families/famci_P_vs_C.json --tactical $OP/tactical.json --strategic $OP/strategic_family_P_C.json \
+  --out $OP/read_p_stage1.json --text $OP/report_p_stage1.txt --verdict-line $OP/VERDICT_p_stage1.txt
+```
+`$OP/seam_ledger.json` is a NEW ledger (recorded at first sight, re-checked on a re-run); Stage 1's ledger enters only through `--stage1-ledger`.
+
+## B5. Reading the output
+Outcome order OP1 ... OP7 after the pre-launch PL1-PL4 and INVALID / INCOMPLETE; the text names the committed next arm. M1 is reported, not decisive; M5 is descriptive. The verdict line prints the CTRL-CLIP state
+(`clip: CLIP-0` / `CLIP-SAME occ=a/8` / `CLIP-T on=.. off=.. ...`); under CLIP-T the OP4-OP7 notes name the clip as an unexcluded co-mediator (PL4 (c)). Every separated-adverse row is listed. STRATEGIC in full. Update
+`GOALS_AND_CLAIMS.md` (`H-SCORERFT-PICK-1`) in the same turn as the verdict.
+
+## B6. Stage 2 (only on STAGE-2-TRIGGERED)
+Run Cs, then Ps (each with its own CTRL-CLIP), repeat B2-B3 with `Cs=`, `Ps=` and `--pairs Ps:Cs`, then the read with `--ps Ps --cs Cs`, `--pod-config-cs/-ps`, `--metrics-cs/-ps` and `--fam-ci-s`.
+
+## B7. Dry runs
+`dry_pick_*`: the pick card on stand-ins (the synthetic arms of `test_scorerft_read.py`), every output stamped `DRY RUN`.
