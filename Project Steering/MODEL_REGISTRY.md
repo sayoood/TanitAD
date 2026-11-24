@@ -6178,3 +6178,14 @@ The candidate spec is the coordinator's (the v8proof fork). This section is the 
 * the headway unsafe rate U against B0 sits on the worse side at every read (s2 under C\* +0.0125 [+0.0000, +0.0267]; under K +0.0071 [+0.0000, +0.0161]), never separated.
 
 **Status:** ADOPTED as the stage B of the recipe of record, carried under readout K. Not yet in the candidate spec: that update is the coordinator's.
+
+### 20.1 RH stage B -- the headway cost read at three seeds: NOT-SEPARATED under readout K (card PREREG_V8F_RHHW3, 3c85a42b) *(addendum to §20)*
+
+| item | value |
+|---|---|
+| read | headway unsafe rate U, RH − B0, pooled over seeds 0, 1 and 2 by the frozen headway reader (`--seeds 0,1,2`, unchanged). Control R0 reproduces the two-seed read exactly. T1-kin/hb0.2; paired episode-cluster bootstrap, B 2,000, seed 0, over 53 lead episodes and 562 lead windows per seed |
+| under K (the adopted readout; decides) | D **+0.0042** [−0.0017, +0.0107]; per seed +0.0071 / −0.0018 / +0.0071 (+4 / −1 / +4 windows of 562); F3 0.0089: **NOT-SEPARATED** |
+| under C\* (beside) | D +0.0160 [+0.0070, +0.0266]; per seed +0.0178 / +0.0178 / +0.0125; F3 0.0249: NOT-SEPARATED, straddles on the worse side |
+| evidence | MEASURED (ours). The per-seed points were partly seen before the card, which says so |
+
+The second open cost of §20 is restated here: **under readout K, the headway unsafe rate is not separated from B0's at three seeds.** Under C\* the worse-side trend holds at every seed, inside the floor. The T0 shift of §20 is unchanged.
