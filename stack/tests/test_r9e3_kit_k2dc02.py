@@ -216,3 +216,74 @@ def test_resume_guards_and_lock():
     assert "sup_refcv7.sh $ARM $R/runs.d" in code and "flock -w 7200 9" in code and "GPU-NOT-EMPTY" in code
     assert code.index('if [ "$MODE" = DRY ]') < code.index("setsid nohup")
     assert "pkill" not in code and "pgrep" not in code
+
+
+# ---- 2026-11-24 fix: queue 28 failed a SUCCESSFUL D1 bind -- its marker regex had no `_`, and arm K2DC02_d1 has one ----------------------------
+STATUS_1124 = (                                   # the real Thor lines (recq28_a49c964032cd.status), MEASURED 2026-11-24
+    "2026-11-23T23:03:25Z box_K2DC02 OK (ZZR9E1BIND-box-K2DC02-OKZZ)\n"
+    "2026-11-23T23:03:25Z K2DC02-RECORDS-READY at a49c964032cd (map-banded + box own, E3 argv)\n"
+    "2026-11-23T23:03:25Z mapb_K2DC02_d1 try 1: lock free, calling bind\n"
+    "2026-11-24T00:22:57Z mapb_K2DC02_d1 FAILED (no marker): [r9e1-bind:map-banded:K2DC02_d1] harness finished\n"
+    "ZZRECQ28-FAIL-mapb_K2DC02_d1ZZ\n")
+
+
+def test_queue_marker_regexes_accept_an_underscore_arm():
+    pats = re.findall(r"grep -oE '(ZZR9E1BIND-[^']*ZZ)'", _t("r9_recqueue28.sh"))
+    assert len(pats) == 2, pats                                                     # the skip check + the bind loop
+    for p in pats:
+        assert "_" in p.split("[", 1)[1].split("]", 1)[0], p                         # the character class carries `_`
+        for m in ("ZZR9E1BIND-map-banded-K2DC02_d1-OKZZ", "ZZR9E1BIND-box-K2DC02_d1-OKZZ", "ZZR9E1BIND-box-K2DC02-OKZZ"):
+            assert re.fullmatch(p, m), (p, m)
+    assert "[A-Za-z0-9-]*ZZ" not in _t("r9_recqueue28.sh")                         # the 11-23 class is gone
+
+
+def _gpu_fn():
+    t = _t("r9_recqueue28.sh")
+    i = t.index("gpu() {")
+    return t[i:t.index("\n}\n", i) + 3]
+
+
+def _run_gpu(tmp_path, pre_out):
+    L = tmp_path / "logs"
+    L.mkdir()
+    called = tmp_path / "called"
+    if pre_out is not None:
+        (L / "recq28_a49c964032cd_mapb_K2DC02_d1.1.out").write_bytes(pre_out.encode())
+    stub = tmp_path / "bind.sh"
+    stub.write_bytes(("echo CALLED > '%s'\necho ZZR9E1BIND-map-banded-K2DC02_d1-OKZZ\n" % called.as_posix()).encode())
+    lock = tmp_path / "lock"
+    lock.write_bytes(b"")
+    sh = tmp_path / "t.sh"
+    sh.write_bytes(("set -u\nL='%s'; C12=a49c964032cd; LOCKF='%s'; BIND='%s'\n"
+                    "ev() { echo \"EV $*\"; }\nfail() { echo \"FAIL $*\"; exit 3; }\nflock() { return 0; }   # the dev box has no flock: the lock is free here\n"
+                    "%s\ngpu mapb_K2DC02_d1 map-banded K2DC02_d1\necho RC=$?\n"
+                    % (L.as_posix(), lock.as_posix(), stub.as_posix(), _gpu_fn())).encode())
+    r = subprocess.run([_bash(), str(sh)], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+    return r.stdout, called.exists()
+
+
+def test_gpu_step_skips_a_bind_already_ok_at_this_rec(tmp_path):
+    out, called = _run_gpu(tmp_path, "[r9e1-bind:map-banded:K2DC02_d1] harness finished\nZZR9E1BIND-map-banded-K2DC02_d1-OKZZ\n")
+    assert "RC=0" in out and "OK already" in out and "skipped" in out and not called, out
+
+
+def test_gpu_step_binds_and_passes_an_underscore_marker(tmp_path):
+    out, called = _run_gpu(tmp_path, None)                                         # no earlier .out: the bind runs; its marker must pass
+    assert called and "RC=0" in out and "mapb_K2DC02_d1 OK (ZZR9E1BIND-map-banded-K2DC02_d1-OKZZ)" in out and "FAIL" not in out, out
+
+
+def test_gpu_step_does_not_skip_a_failed_earlier_try(tmp_path):
+    out, called = _run_gpu(tmp_path, "[r9e1-bind:map-banded:K2DC02_d1] REFUSED\nZZR9E1BIND-map-banded-K2DC02_d1-REFUSEDZZ\n")
+    assert called and "RC=0" in out and "OK already" not in out, out
+
+
+def test_restart_norecords_reads_e3s_own_records_ready_line(tmp_path):
+    code = "\n".join(_code(_t("restart_e3.sh")))
+    assert "grep -c ' $V-RECORDS-READY at $RC12 '" in code and "ZZRECQ28-DONE-E3ONLYZZ) ;;" not in code
+    st = tmp_path / "s.status"
+    st.write_bytes(STATUS_1124.encode())
+    def n(v):
+        r = subprocess.run([_bash(), "-c", f"grep -c ' {v}-RECORDS-READY at a49c964032cd ' '{st.as_posix()}'"], capture_output=True, text=True)
+        return r.stdout.strip()
+    assert n("K2DC02") == "1"                                                      # E3's records are ready despite the D1 FAIL line
+    assert n("K2DC02_d1") == "0"                                                   # D1's are not: never read as E3's

@@ -27,7 +27,9 @@ TG=$(th "df -BG --output=avail / | tail -1" | tr -d ' G')
 SH=$(th "df -BG --output=used /dev/shm | tail -1" | tr -d ' G')
 [ "$SH" -le 5 ] 2>/dev/null || bad THORSHM "Thor /dev/shm holds ${SH} GB (> 5): orphan torch_* segments starve the gate smoke; attribute and sweep first"
 QS=$R/logs/recq28_$RC12.status
-case "$(th "tail -1 $QS")" in ZZRECQ28-DONEZZ|ZZRECQ28-DONE-E3ONLYZZ) ;; *) bad NORECORDS "queue 28 has not ended ZZRECQ28-DONEZZ / ZZRECQ28-DONE-E3ONLYZZ ($QS: $(th "tail -1 $QS" | cut -c1-120))";; esac
+# E3 needs only ITS OWN two records: the queue writes "<V>-RECORDS-READY at <c12>" right after both E3 binds pass, before any D1 step, so a later D1
+# failure (MEASURED 2026-11-24: a marker-regex miss on K2DC02_d1) cannot void them. D1's records are d1_restart.sh's guard, not this one.
+[ "$(th "grep -c ' $V-RECORDS-READY at $RC12 ' $QS")" -ge 1 ] 2>/dev/null || bad NORECORDS "queue 28 has no ' $V-RECORDS-READY at $RC12 ' line in $QS (E3's own map-banded + box records; last line: $(th "tail -1 $QS" | cut -c1-120))"
 [ "$(th "grep -c 'QUEUE28-START $RC12 code .* k2 $V ' $QS")" -ge 1 ] 2>/dev/null || bad WRONGV "queue 28 did not bind $V ($QS)"
 [ "$(th "grep -c -E '(mapb|box)_$V OK ' $QS")" = 2 ] 2>/dev/null || bad NORECORDS "$QS lacks the two OK lines of map-banded + box $V"
 [ -n "$(th "test -s $R/kit/r9w_gsuite_precheck.py && echo y")" ] || bad NOKIT "no $R/kit/r9w_gsuite_precheck.py on Thor (prep_q28.sh ships the e3 kit)"

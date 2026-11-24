@@ -42,12 +42,20 @@ dry() {   # $1 tag, rest = bind args; any ZZR9E1BIND-DRY*OKZZ marker passes; ret
   fail "$tag dry-run FAILED: $(tail -2 $L/recq28_${C12}_${tag}.dry.out | tr '\n' ' ' | cut -c1-220)" "${tag}-DRY" 3
 }
 gpu() {   # $1 tag, rest = bind args; waits for the lock (never forces it); the step's own ZZR9E1BIND-<kind>-<arm>-OKZZ marker passes
-  local tag=$1 i w M; shift
+  local tag=$1 i w M f; shift
+  # Already bound at THIS REC (an earlier try's .out carries the step's own -OKZZ marker): skip it. A D1-only re-run (R9Q28_D1_ONLY=1) at the pause then
+  # binds only what is missing. The marker class includes `_` (arm K2DC02_d1): MEASURED 2026-11-24 00:22:57Z, `[A-Za-z0-9-]` missed
+  # ZZR9E1BIND-map-banded-K2DC02_d1-OKZZ and failed a bind that had succeeded.
+  for f in $L/recq28_${C12}_${tag}.[0-9].out; do
+    [ -f "$f" ] || continue
+    M=$(grep -oE 'ZZR9E1BIND-[A-Za-z0-9_-]*ZZ' "$f" | tail -1)
+    case "$M" in *-OKZZ) ev "$tag OK already ($M in $(basename "$f")): skipped"; return 0;; esac
+  done
   for i in 1 2 3 4 5 6; do
     for w in $(seq 1 1440); do flock -n $LOCKF true && break; sleep 60; done
     ev "$tag try $i: lock free, calling bind"
     bash $BIND "$@" > $L/recq28_${C12}_${tag}.$i.out 2>&1 < /dev/null
-    M=$(grep -oE 'ZZR9E1BIND-[A-Za-z0-9-]*ZZ' $L/recq28_${C12}_${tag}.$i.out | tail -1)
+    M=$(grep -oE 'ZZR9E1BIND-[A-Za-z0-9_-]*ZZ' $L/recq28_${C12}_${tag}.$i.out | tail -1)
     case "$M" in *-OKZZ) ev "$tag OK ($M)"; return 0;; esac
     grep -q "stayed held" $L/recq28_${C12}_${tag}.$i.out && { ev "$tag try $i lost the lock race; retry"; continue; }
     fail "$tag FAILED (${M:-no marker}): $(tail -3 $L/recq28_${C12}_${tag}.$i.out | tr '\n' ' ' | cut -c1-240)" "$tag"
