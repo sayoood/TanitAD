@@ -17,6 +17,7 @@ INTEGRATION_PENDING (printed, not a failure): the checks that need the built tra
 from __future__ import annotations
 
 import hashlib
+import inspect
 import os
 import re
 import shutil
@@ -676,6 +677,13 @@ def chk_field_reach_active_sample():
         frv = GC.field_reach(fcap([0.1, 5.0, 0.1, 0.1], valid=torch.tensor([False, True, True, True])), None)   # an unlabelled sample is skipped; first ACTIVE labelled = 2
         ok(frv["labelled"] == 3 and frv["active_index"] == 2, frv.get("active_index"))
         ok(GC.judge_field_reach({"ran": True, "labelled": 0}, 2.0) != [] and GC.judge_field_reach({"ran": False}, 2.0) != [], "unchanged: unlabelled / not run")
+        # 1c (MM 2026-11-24): G-LIVE's evidence form of EVERY result shape -- the Fs gate crashed in check_live on 1b's `losses` list, a caller these lines never reached
+        for f_ in (fr, fr0, fr_n, frv, {"ran": False}, {"ran": True, "labelled": 0}):
+            d_ = GC.field_reach_detail(f_)
+            ok(set(d_) == set(f_) and all(d_[k] == f_[k] for k in f_ if not isinstance(f_[k], dict)), d_)
+        d_ = GC.field_reach_detail(fr)
+        ok(set(d_["declared"]) == {"loss", "groups"} and set(d_["zero"]) == {"loss", "groups"} and d_["losses"] == fr["losses"] and d_["n_active"] == 2 and d_["active_index"] == 2, d_)
+        ok("det[\"field_reach\"] = field_reach_detail(fr)" in inspect.getsource(GC.check_live), "check_live builds its field_reach evidence through field_reach_detail")
     finally:
         if old is None:
             sys.modules.pop("field_loss", None)
@@ -747,6 +755,10 @@ MUTATIONS = [
     ("gate_checks.py", "    return abs(float(np.asarray(np.clip(float(navsim_value), 0.0, 1.0), dtype=label_dtype)) - float(label_value))", "    return abs(float(np.clip(float(navsim_value), 0.0, 1.0)) - float(label_value))", "l5_identity_dtype"),   # compare at float64 regardless of the label dtype (the gate-2 FAIL)
     ("gate_checks.py", "    if hasattr(res, \"iloc\"):\n        row = res.iloc[0]", "    if True:\n        row = res.iloc[0]", "l5_identity_dtype"),   # always .iloc (the gate-2 AttributeError)
     ("gate_checks.py", "    out[\"active_index\"] = idx[active[0]]\n    sl = slice(idx[active[0]], idx[active[0]] + 1)", "    out[\"active_index\"] = idx[0]\n    sl = slice(idx[0], idx[0] + 1)", "field_reach_active"),   # always probe idx[0] (the Fs defect)
+    ("gate_checks.py", "    return {k: ({\"loss\": v[\"loss\"], \"groups\": v[\"groups\"]} if isinstance(v, dict) else v) for k, v in fr.items()}\n",
+     "    return {k: (v if k in (\"ran\", \"labelled\") else {\"loss\": v[\"loss\"], \"groups\": v[\"groups\"]}) for k, v in fr.items()}\n", "field_reach_active"),   # 1c: the 1b-era form (TypeError on `losses`)
+    ("gate_checks.py", "        det[\"field_reach\"] = field_reach_detail(fr)\n",
+     "        det[\"field_reach\"] = {k: (v if k in (\"ran\", \"labelled\") else {\"loss\": v[\"loss\"], \"groups\": v[\"groups\"]}) for k, v in fr.items()}\n", "field_reach_active"),   # 1c: check_live bypasses the helper (the Fs crash)
 ]
 
 
