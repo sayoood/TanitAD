@@ -169,7 +169,7 @@ def chk_p_arms():
         p = L.PROFILES[nm]
         ok(p["name"] == nm and p["scorerft_rules"] is True and p["scorerft_arm"] == a_ and p["rank_heads"] == "pick" and "rank_L" in p["live_terms"], nm)
         ok(p["required_flags"]["--rank-heads"] == "pick" and "--rank-ep-gap" not in p["required_flags"] and "--rank-gate-topk" not in p["required_flags"], nm)
-        ok("rank_census" not in p and p["traj_label_required"] is True and "REFE_RANK_MUTATE" in p["forbidden_env"], nm)
+        ok(p.get("rank_census") == L.SCORERFT_P_RANK_CENSUS and p["rank_census"] != L.SCORERFT_RANK_CENSUS and p["traj_label_required"] is True and "REFE_RANK_MUTATE" in p["forbidden_env"], nm)   # P carries ITS OWN census pin (2026-11-25), never T's
         ok(p["required_flags"]["--seed"] == ("0" if a_ == "P" else "1"), nm)
         ok(any(e.get("script") == "test_rank_loss.py" and e["token"] == "ZZRANK_PASS" for e in p["suite"]), nm)
         ok(sum(1 for e in p["suite"] if e.get("script") == "test_clip_probe.py") == 1 and {"script": "test_clip_probe.py", "token": "ZZCLIPPROBE_PASS"} in p["suite"], nm + ": P / Ps carry test_clip_probe.py in G-SUITE")
@@ -487,6 +487,8 @@ def torch_term(logits, labels, msk, batch, heads, ep_gap, gate_topk, mutate=None
                 af = torch.where(m_, a, torch.zeros_like(a))
                 total = total + msk[b] * (af * F.softplus(-z)).sum() / af.sum() / float(batch)
     out = total
+    if mutate == "zero":
+        out = s.new_zeros(())                                             # a term that always returns exactly 0.0 (no graph)
     if mutate == "drop":
         out = total.detach()                                              # computed, never reaches the loss
     return out, {"pairs": pairs}
@@ -906,9 +908,208 @@ def chk_l5_identity_dtype():
     ok(GC.identity_diff(1.25, 1.0, np.float32) == 0.0 and GC.identity_diff(-0.5, 0.0, np.float32) == 0.0, "L5: NAVSIM's value is clipped to [0, 1] first")
 
 
+def reach_cap_multi(y, msk=None, heads="ep,gate", w=W_FIX):
+    """a capture whose first batch has len(y) samples (the pod's batch is 4), labels `y` (B, M, 6) and per-sample mask `msk`."""
+    import torch
+    B = y.shape[0]
+    img = torch.randn(B, 8)
+    return SimpleNamespace(model=make_model(False), first_batch=(img, torch.zeros(B, 5), torch.zeros(B, 2), None),
+                           rank_first=[{"labels": y, "msk": np.ones(B, np.float32) if msk is None else np.asarray(msk, np.float32)}],
+                           args=SimpleNamespace(rank_w=w, rank_heads=heads, rank_ep_gap=0.02, rank_gate_topk=8))
+
+
+def _pairless(y, i):
+    """sample i's labels made identical on every proposal: no EP gap, no safe / unsafe split, no proposal PDMS-better than another: the term forms NO pair (exactly 0.0, no gradient)."""
+    y = y.copy()
+    y[i] = 1.0
+    return y
+
+
+def chk_reach_scan():
+    """MM 2026-11-25 (the pod gate FAIL of ecac87ed98de, L3 read exactly zero on every row): `rank_reach` probes the FIRST labelled sample whose declared-weight term loss is non-zero, not sample 0.
+    sample 0 pairless + sample k paired => passes on k (sample_index / scanned recorded); all pairless => FAIL; a masked sample is not scanned; R-DROP, an always-0 term and R-HEAD stay RED."""
+    install_fake_rank_module()
+    FakeRank.mutate = None
+    _, y = make_sets(seed=5, B=4, M=16)
+    f0 = GC.rank_reach(reach_cap_multi(y), {}, None)
+    ok(f0["sample_index"] == 0 and f0["scanned"] == 1 and f0["found"] is True and GC.judge_rank_reach(f0, "ep,gate") == [], ("paired sample 0 is probed as before", f0["sample_index"], f0["scanned"]))
+    y1 = _pairless(y, 0)
+    fr = GC.rank_reach(reach_cap_multi(y1), {}, None)
+    ok(fr["sample_index"] == 1 and fr["scanned"] == 2 and fr["found"] is True and fr["labelled"] == 1, (fr["sample_index"], fr["scanned"]))
+    ok(GC.judge_rank_reach(fr, "ep,gate") == [], GC.judge_rank_reach(fr, "ep,gate"))
+    ok(all(v["abs_sum"] == 0.0 for v in fr["zero"]["groups"].values()), "the weight-0 control (on the SAME sample) reads exactly 0.0")
+    y2 = _pairless(_pairless(y1, 1), 2)
+    fr2 = GC.rank_reach(reach_cap_multi(y2), {}, None)
+    ok(fr2["sample_index"] == 3 and fr2["scanned"] == 4 and GC.judge_rank_reach(fr2, "ep,gate") == [], (fr2["sample_index"], fr2["scanned"]))
+    y_all = y.copy()
+    for i in range(4):
+        y_all = _pairless(y_all, i)
+    fa = GC.rank_reach(reach_cap_multi(y_all), {}, None)
+    ok(fa["found"] is False and fa["sample_index"] == 0 and fa["scanned"] == 4, (fa["found"], fa["sample_index"], fa["scanned"]))
+    ra = GC.judge_rank_reach(fa, "ep,gate")
+    ok(any("EXACTLY zero" in x for x in ra), ("all pairless => FAIL", ra))
+    fm = GC.rank_reach(reach_cap_multi(y, msk=[0, 1, 1, 1]), {}, None)
+    ok(fm["sample_index"] == 1 and fm["scanned"] == 1 and fm["labelled"] == 1, ("a masked sample is not scanned", fm["sample_index"], fm["scanned"]))
+    fn = GC.rank_reach(reach_cap_multi(y, msk=[0, 0, 0, 0]), {}, None)
+    ok(fn["labelled"] == 0 and GC.judge_rank_reach(fn, "ep,gate") != [], "no labelled sample is not a pass")
+    for mut, frag in (("drop", "does not reach a head it trains"), ("zero", "EXACTLY zero"), ("head_swap", "row TTC")):
+        FakeRank.mutate = mut
+        try:
+            r = GC.judge_rank_reach(GC.rank_reach(reach_cap_multi(y1), {}, None), "ep,gate")
+            ok(r != [] and any(frag in x for x in r), (mut, "stays RED with a pairless sample 0", r))
+        finally:
+            FakeRank.mutate = None
+    cap_l = reach_cap_multi(y1)
+    cap_l.model = make_model(True)
+    ok(any("trajectory side" in x for x in GC.judge_rank_reach(GC.rank_reach(cap_l, {}, None), "ep,gate")), "R-LEAK stays RED on the scanned sample")
+    # the REAL term, head `pick`: sample 0 constant labels (nothing is PDMS-better than the scorer's pick: no pair), the others random
+    RLr = _real_rank_loss()
+    old_mod = sys.modules.get("rank_loss")
+    sys.modules["rank_loss"] = RLr
+    try:
+        done = False
+        for seed in range(8):
+            _, yp = make_sets(seed=40 + seed, B=4, M=16)
+            frp = GC.rank_reach(reach_cap_multi(_pairless(yp, 0), heads="pick"), {}, None)
+            if not frp["found"]:
+                continue
+            done = True
+            ok(frp["sample_index"] >= 1 and GC.judge_rank_reach(frp, "pick") == [], (seed, frp["sample_index"], GC.judge_rank_reach(frp, "pick")))
+            break
+        ok(done, "no seed gave the stand-in model a non-oracle pick on a sample >= 1")
+        fpa = GC.rank_reach(reach_cap_multi(_pairless(_pairless(_pairless(_pairless(yp, 0), 1), 2), 3), heads="pick"), {}, None)
+        ok(fpa["found"] is False and GC.judge_rank_reach(fpa, "pick") != [], "pick: every sample pairless is FAIL")
+    finally:
+        if old_mod is None:
+            sys.modules.pop("rank_loss", None)
+        else:
+            sys.modules["rank_loss"] = old_mod
+    # the capture detail keeps the new keys (rank_live_rows copies every non-scalar value into a loss / groups dict)
+    install_fake_rank_module()
+    cap = reach_cap_multi(y1)
+    cap.metrics = [{"event": "rank"}] + [{"step": i, "traj_L1": 1.0, "rank_L": 0.4, "rank_pairs_ep": 4, "rank_pairs_gate": 1} for i in range(2)]
+    cap.rank_calls = [audit_call(None)]
+    cap.lab_submits = []
+    _, det = GC.rank_live_rows(cap, {}, None)
+    ok(det["rank_reach"]["sample_index"] == 1 and det["rank_reach"]["scanned"] == 2 and det["rank_reach"]["found"] is True, det["rank_reach"])
+
+
+P_CENSUS_FIX = {"heads": ["pick"], "ep_gap": 0.02, "gate_topk": 8, "label_backend": "pdm", "NOT_A_DECISION": False, "init_from": L.SCORERFT_DEFAULT_INIT, "rule": {"status": "SELECT", "rank_w": 0.125},
+                "pairs_by_head": {"pick": 212}, "sets_with_pairs_by_head": {"pick": 13}, "labelled_sets": 32}       # the fields of the pod's weight_rule_rank_p.json that L2 judges (MEASURED 2026-11-25)
+
+
+def _p_args(arm="P"):
+    """the args the gate's L2 sees for arm P: the REAL trainer parser on P's REAL argv (so --rank-ep-gap / --rank-gate-topk are the trainer's DEFAULTS, which P's argv does not name)."""
+    import train as T
+    return T.build_parser().parse_args(L.scorerft_argv(arm, rank_w=0.125))
+
+
+def _p_cases(td, facts_json, rl_file, pin_base):
+    """[(name, reasons)] for the census fixture mutations; `pin_base` = the pin of P (path / sha256 are replaced per case)."""
+    import json
+    sys.modules["rank_loss"].__file__ = str(rl_file)
+    a = _p_args()
+    out = []
+
+    def run(name, over=None, pin_over=None, args_over=None):
+        d = json.loads(json.dumps(facts_json))
+        d.update(over or {})
+        path = Path(td) / f"pc_{len(out)}.json"
+        path.write_text(json.dumps(d), encoding="utf-8")
+        pin = dict(pin_base, path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+        pin.update(pin_over or {})
+        prof = {"rank_census": pin}
+        aa = SimpleNamespace(**{**vars(a), **(args_over or {})})
+        out.append((name, GC.judge_census_head("pick", GC.rank_census_facts(prof), aa, prof)))
+    run("valid")
+    run("wrong_sha", pin_over={"sha256": "ab" * 32})
+    run("wrong_heads", over={"heads": ["ep", "gate"]})
+    run("heads_empty", over={"heads": []})
+    run("wrong_rank_w", over={"rule": {"status": "SELECT", "rank_w": 0.0625}})
+    run("wrong_init", over={"init_from": "/x/other.pt"})
+    run("wrong_ep_gap", over={"ep_gap": 0.05})
+    run("wrong_topk", over={"gate_topk": 16})
+    run("wrong_backend", over={"label_backend": "synthetic"})
+    run("not_a_decision", over={"NOT_A_DECISION": True})
+    run("wrong_rank_loss_sha", pin_over={"rank_loss_sha256": "cd" * 32})
+    run("pairs_zero", over={"pairs_by_head": {"pick": 0}})
+    run("sets_zero", over={"sets_with_pairs_by_head": {"pick": 0}})
+    run("args_w_differs", args_over={"rank_w": 0.5})
+    run("args_init_differs", args_over={"init_from": "/y/z.pt"})
+    return out
+
+
+def chk_p_census():
+    """MM 2026-11-25 (pod gate FAIL D1): P / Ps register their OWN census pin, `judge_census_head("pick", rank_census_facts(profile), args, profile)` returns [] on the pod's pulled census under P's real argv, and EACH
+    condition goes RED when mutated (sha, heads, rank_w, init, ep_gap, top-k, backend, NOT_A_DECISION, rank_loss sha, zero pairs / sets, the declared args).  The trainer's parser DEFAULTS for the two flags P's argv does not
+    name equal the census's 0.02 / 8 (the census is judged against args.rank_ep_gap / args.rank_gate_topk)."""
+    import json
+    pin = L.SCORERFT_P_RANK_CENSUS
+    ok(set(pin) == {"path", "sha256", "rank_loss_sha256"} and all(len(pin[k]) == 64 and pin[k] == pin[k].lower() for k in ("sha256", "rank_loss_sha256")), pin)
+    ok(pin["sha256"] == "ef1c36bf4071f8a667432a2198e531c1611c9cd29f9eaa0706a6af166f8a4e1f" and pin["path"] == "/workspace/data/refe_p5c/scorerft/weight_rule_rank_p.json", "the pins are the MM's (the pod's pulled census)")
+    for nm, arm in P_NAMES.items():
+        ok(L.PROFILES[arm]["rank_census"] == pin and L.scorerft_profile(nm)["rank_census"] == pin, nm)
+    for arm in ("T", "Ts"):
+        ok(L.scorerft_profile(arm)["rank_census"] == L.SCORERFT_RANK_CENSUS, "T / Ts keep their own pin")
+    ok("rank_census" not in L.scorerft_profile("C") and "rank_census" not in L.scorerft_profile("Cs"), "controls carry no census")
+    ok(pin["rank_loss_sha256"] == hashlib.sha256((HERE / "rank_loss.py").read_bytes().replace(b"\r", b"")).hexdigest(), "P's pinned rank_loss sha256 is THIS tree's rank_loss.py (CR stripped): T's pin (c0e027d2) is the pre-pick file and would fail here")
+    a = _p_args()
+    ok(a.rank_heads == "pick" and a.rank_ep_gap == 0.02 and a.rank_gate_topk == 8 and a.init_from == L.SCORERFT_DEFAULT_INIT and a.rank_w == 0.125, (a.rank_heads, a.rank_ep_gap, a.rank_gate_topk))
+    ok("--rank-ep-gap" not in L.scorerft_argv("P") and "--rank-gate-topk" not in L.scorerft_argv("P"), "P's argv names neither: the trainer defaults are what the gate compares")
+    old_mod = sys.modules.get("rank_loss")
+    sys.modules["rank_loss"] = types.ModuleType("rank_loss")
+    td = Path(tempfile.mkdtemp(prefix="pcen_"))
+    try:
+        res = _p_cases(td, P_CENSUS_FIX, HERE / "rank_loss.py", dict(pin))
+        ok(res[0][0] == "valid" and res[0][1] == [], res[0])
+        for nm, r in res[1:]:
+            ok(len(r) == 1 and r[0].startswith("L2 head 'pick' formed ZERO pairs over the whole smoke (structurally dead: the 'built, tested, unreachable' class); the registered census does not prove it: "), (nm, r))
+        real = Path(os.environ.get("SCORERFT_P_CENSUS_LOCAL", pin["path"]))
+        if real.is_file():
+            ok(hashlib.sha256(real.read_bytes()).hexdigest() == pin["sha256"], "the real census file is the pinned bytes")
+            full = json.loads(real.read_text(encoding="utf-8"))
+            sys.modules["rank_loss"].__file__ = str(HERE / "rank_loss.py")
+            prof = {"rank_census": dict(pin, path=str(real))}
+            ok(GC.judge_census_head("pick", GC.rank_census_facts(prof), a, prof) == [], "the REAL census passes L2 for P's real argv")
+            for nm, mod in (("heads", lambda d: d.update(heads=["ep"])), ("rank_w", lambda d: d["rule"].update(rank_w=0.5)), ("init", lambda d: d.update(init_from="/x")), ("pairs", lambda d: d.update(pairs_by_head={"pick": 0}))):
+                d2 = json.loads(json.dumps(full))
+                mod(d2)
+                q = td / f"real_mut_{nm}.json"
+                q.write_text(json.dumps(d2), encoding="utf-8")
+                prof2 = {"rank_census": dict(pin, path=str(q), sha256=hashlib.sha256(q.read_bytes()).hexdigest())}
+                ok(GC.judge_census_head("pick", GC.rank_census_facts(prof2), a, prof2) != [], f"the real census with {nm} mutated is RED")
+            prof3 = {"rank_census": dict(pin, path=str(real), sha256="00" * 32)}
+            ok(GC.judge_census_head("pick", GC.rank_census_facts(prof3), a, prof3) != [], "the real census under a wrong pinned sha is RED")
+            print("  p_census: the REAL census file was judged", flush=True)
+        else:
+            print("  p_census: the real census file is absent here (not the pod): judged on the fixture only", flush=True)
+        # the gate row end to end: zero smoke pick pairs (the trainer logs the LAST rank call of a step) + the census
+        install_fake_rank_module()
+        sys.modules["rank_loss"].__file__ = str(HERE / "rank_loss.py")
+        path = td / "row.json"
+        path.write_text(json.dumps(P_CENSUS_FIX), encoding="utf-8")
+        prof = {"rank_census": dict(pin, path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest())}
+        cap = reach_cap(heads="pick")
+        cap.args.init_from = L.SCORERFT_DEFAULT_INIT
+        cap.args.rank_w = 0.125
+        cap.metrics = [{"event": "rank"}] + [{"step": i, "traj_L1": 1.0, "rank_L": 0.4, "rank_pairs_pick": 0} for i in range(2)]
+        cap.rank_calls = [audit_call(None, heads="pick")]
+        cap.lab_submits = []
+        r, det = GC.rank_live_rows(cap, prof, None)
+        ok([x for x in r if x.startswith("L2")] == [] and det["census"]["verdict"]["pick"] == {"source": "census", "ok": True}, (r, det.get("census")))
+        r2, det2 = GC.rank_live_rows(cap, {}, None)
+        ok(any(x.startswith("L2 head 'pick'") and "no registered census" in x for x in r2), "without a registered census a zero-pick smoke is refused (the 2026-11-25 FAIL)")
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+        if old_mod is None:
+            sys.modules.pop("rank_loss", None)
+        else:
+            sys.modules["rank_loss"] = old_mod
+
+
 CHECKS = {"registry": chk_registry, "existing_unchanged": chk_existing_unchanged, "argv_delta": chk_argv_delta, "p_arms": chk_p_arms, "pick_rows": chk_pick_rows, "route_real": chk_route_real, "pins_refuse": chk_pins_refuse, "levers": chk_levers, "fresh_out": chk_fresh_out,
           "live_wiring": chk_live_wiring, "h_generalised": chk_h_generalised, "reach_and_regressions": chk_reach_and_regressions, "audit": chk_audit, "dvb_rows": chk_dvb_rows,
-          "live_rows": chk_live_rows_control_and_t, "census_l2": chk_census_l2, "field_reach_active": chk_field_reach_active_sample, "l5_identity_dtype": chk_l5_identity_dtype, "trainer_integration": chk_trainer_integration, "no_scipy": chk_no_scipy}
+          "live_rows": chk_live_rows_control_and_t, "census_l2": chk_census_l2, "p_census": chk_p_census, "reach_scan": chk_reach_scan, "field_reach_active": chk_field_reach_active_sample, "l5_identity_dtype": chk_l5_identity_dtype, "trainer_integration": chk_trainer_integration, "no_scipy": chk_no_scipy}
 
 # (file, old, new, the check that must go RED): ONE emitting line of a COPY of this tree is neutralised.
 MUTATIONS = [
@@ -934,6 +1135,10 @@ MUTATIONS = [
     ("gate_checks.py", "        if x is not None and x[\"abs_sum\"] != 0.0:\n            out.append(f\"L3 rank-only backward reaches the trajectory side", "        if False:\n            out.append(f\"L3 rank-only backward reaches the trajectory side", "reach_and_regressions"),
     ("gate_checks.py", "        if rows.get(h, 0.0) != 0.0:\n            out.append(f\"L3 rank-only backward reaches score_head row", "        if False:\n            out.append(f\"L3 rank-only backward reaches score_head row", "reach_and_regressions"),
     ("gate_checks.py", "    c = census or {}\n    if not c.get(\"ran\"):", "    return []\n    c = census or {}\n    if not c.get(\"ran\"):", "census_l2"),                        # judge_census_head returns [] unconditionally (L2 amendment)
+    ("gate_checks.py", "    for i in labelled_idx:                                           # the FIRST labelled sample whose declared-weight term loss is non-zero\n", "    for i in labelled_idx[:1]:                                           # the FIRST labelled sample whose declared-weight term loss is non-zero\n", "reach_scan"),   # the probe is pinned to sample 0 again (the pod gate FAIL, L3)
+    ("gate_checks.py", "        if not force and float(loss.detach()) == 0.0:\n            return None\n", "        if False:\n            return None\n", "reach_scan"),                                               # a pairless sample is probed, not skipped
+    ("launch_gate.py", "        prof[\"rank_census\"] = dict(SCORERFT_P_RANK_CENSUS if arm in SCORERFT_P_ARMS else SCORERFT_RANK_CENSUS)", "        prof[\"rank_census\"] = dict(SCORERFT_RANK_CENSUS)", "p_census"),   # P carries T's census pin again
+    ("launch_gate.py", "    if ranking:\n        prof[\"rank_census\"]", "    if ranking and arm not in SCORERFT_P_ARMS:\n        prof[\"rank_census\"]", "p_census"),   # P carries no census again (the 2026-11-25 FAIL)
     ("gate_checks.py", "    return abs(float(np.asarray(np.clip(float(navsim_value), 0.0, 1.0), dtype=label_dtype)) - float(label_value))", "    return abs(float(np.clip(float(navsim_value), 0.0, 1.0)) - float(label_value))", "l5_identity_dtype"),   # compare at float64 regardless of the label dtype (the gate-2 FAIL)
     ("gate_checks.py", "    if hasattr(res, \"iloc\"):\n        row = res.iloc[0]", "    if True:\n        row = res.iloc[0]", "l5_identity_dtype"),   # always .iloc (the gate-2 AttributeError)
     ("gate_checks.py", "    out[\"active_index\"] = idx[active[0]]\n    sl = slice(idx[active[0]], idx[active[0]] + 1)", "    out[\"active_index\"] = idx[0]\n    sl = slice(idx[0], idx[0] + 1)", "field_reach_active"),   # always probe idx[0] (the Fs defect)

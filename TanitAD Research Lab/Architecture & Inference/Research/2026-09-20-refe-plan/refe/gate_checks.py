@@ -2222,9 +2222,12 @@ def rank_dvb_rows(a, b, s, profile=None) -> list:
 
 
 def rank_reach(cap, profile, arm=None) -> dict:
-    """L3 (DESIGN 3.3): `rank_w x L_rank` ALONE, backward through the smoke's real model on ONE labelled micro-batch (the first captured (labels, mask)), at the declared weight and at weight 0.0.  Per parameter group the |grad| sum
+    """L3 (DESIGN 3.3): `rank_w x L_rank` ALONE, backward through the smoke's real model on ONE labelled sample of the first captured (labels, mask) batch, at the declared weight and at weight 0.0.  Per parameter group the |grad| sum
     and the number of parameters with NO path, and per ROW of `score_head.weight` the |grad| sum.  The term is the TRAINER's own (`rank_loss.RankLoss`, built with the rule the arm declares); the probe widens the gate's top-k to the
-    whole set for this probe only (the captured labels belong to the proposals of an EARLIER weight state, so the live top-k may hold no unsafe proposal; a wider k changes WHICH pairs exist, never which parameters a pair reaches)."""
+    whole set for this probe only (the captured labels belong to the proposals of an EARLIER weight state, so the live top-k may hold no unsafe proposal; a wider k changes WHICH pairs exist, never which parameters a pair reaches).
+    WHICH sample (MM 2026-11-25, the pod gate FAIL of ecac87ed98de): the labelled samples are scanned IN INDEX ORDER and the probe runs on the FIRST whose declared-weight term loss is non-zero.  A SPARSE head (`pick`: 13 of 32 sets
+    form a pair) forms no pair on sample 0 about 60 % of the time, and a term that forms no pair is exactly 0.0 with no gradient, so a probe pinned to sample 0 read every row as zero (a statement about the sample, not the term).
+    The output records `sample_index` (the probed sample) and `scanned` (how many labelled samples were forwarded); when NO scanned sample forms a pair the probe falls back to sample 0 and its zero reads FAIL in `judge_rank_reach`, as before."""
     import torch
     import rank_loss as RL
     m = cap.model
@@ -2233,21 +2236,27 @@ def rank_reach(cap, profile, arm=None) -> dict:
     lab_np, msk_np = cap.rank_first[0]["labels"], cap.rank_first[0]["msk"]
     img, ego, goal, calib = cap.first_batch
     dev = next(m.parameters()).device
-    sl = slice(0, 1)
-    cal = calib[sl].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
     a = cap.args
     heads = ",".join(sorted(_rank_heads_set(a.rank_heads)))
     term = RL.RankLoss(heads=heads, ep_gap=a.rank_ep_gap, gate_topk=int(lab_np.shape[1]))
-    labels = torch.as_tensor(np.asarray(lab_np)[sl], dtype=torch.float32, device=dev)
-    msk = torch.ones(1, dtype=torch.float32, device=dev)
+    msk_a = np.asarray(msk_np).reshape(-1)
+    n_s = int(min(np.asarray(lab_np).shape[0], img.shape[0]))
+    labelled_idx = [i for i in range(n_s) if i < msk_a.size and float(msk_a[i]) > 0.0]
     m.train()
-    out = {"ran": True, "labelled": int(float(np.asarray(msk_np)[0]) > 0.0) if np.size(msk_np) else 0}
-    for tag, scale in (("declared", float(a.rank_w)), ("zero", 0.0)):
+
+    def one(i, scale, force):
+        """one forward + (backward) at `scale` on sample i; the record, or None when the loss is exactly 0.0 and not `force`."""
+        sl = slice(i, i + 1)
+        cal = calib[sl].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+        labels = torch.as_tensor(np.asarray(lab_np)[sl], dtype=torch.float32, device=dev)
+        msk = torch.ones(1, dtype=torch.float32, device=dev)
         m.zero_grad(set_to_none=True)
         score = m(img[sl].to(dev), ego[sl].to(dev), goal[sl].to(dev), calib=cal)[1]
         r = term.term(score.float(), labels, msk, 1)
         r = r[0] if isinstance(r, tuple) else r
         loss = r * scale
+        if not force and float(loss.detach()) == 0.0:
+            return None
         if loss.requires_grad:                                        # a term that returns a graph-less value (R-DROP) reads zero everywhere
             loss.backward()
         groups: dict = {}
@@ -2260,7 +2269,23 @@ def rank_reach(cap, profile, arm=None) -> dict:
                 g_["abs_sum"] += float(p.grad.double().abs().sum())
         wg = m.score_head.weight.grad
         rowsum = {h: (0.0 if wg is None else float(wg[k].double().abs().sum())) for h, k in RANK_HEAD_COLS.items()}
-        out[tag] = {"loss": float(loss.detach()), "groups": groups, "score_head_rows": rowsum}
+        return {"loss": float(loss.detach()), "groups": groups, "score_head_rows": rowsum}
+
+    declared = float(a.rank_w)
+    pick, rec, scanned = 0, None, 0
+    for i in labelled_idx:                                           # the FIRST labelled sample whose declared-weight term loss is non-zero
+        scanned += 1
+        rec = one(i, declared, False)
+        if rec is not None:
+            pick = i
+            break
+    found = rec is not None
+    if not found:                                                    # no pair on any labelled sample: the probe reads sample 0 as it always did (and FAILs on its zeros)
+        pick = 0
+        rec = one(0, declared, True)
+    out = {"ran": True, "labelled": int(pick < msk_a.size and float(msk_a[pick]) > 0.0) if msk_a.size else 0, "sample_index": int(pick), "scanned": int(scanned), "found": bool(found)}
+    out["declared"] = rec
+    out["zero"] = one(pick, 0.0, True)
     m.zero_grad(set_to_none=True)
     return out
 
@@ -2593,7 +2618,7 @@ def rank_live_rows(cap, profile, arm=None) -> tuple:
     except Exception as e:                                                                    # noqa: BLE001
         fr = {"ran": False}
         reasons.append(f"L3 rank reach probe could not run: {type(e).__name__}: {e}")
-    det["rank_reach"] = {k: (v if k in ("ran", "labelled") else {"loss": v["loss"], "groups": v["groups"], "score_head_rows": v["score_head_rows"]}) for k, v in fr.items()}
+    det["rank_reach"] = {k: (v if k in ("ran", "labelled", "sample_index", "scanned", "found") else {"loss": v["loss"], "groups": v["groups"], "score_head_rows": v["score_head_rows"]}) for k, v in fr.items()}
     reasons += judge_rank_reach(fr, heads)
     tr = getattr(cap, "rank_traj_reach", None)
     det["traj_reach"] = tr

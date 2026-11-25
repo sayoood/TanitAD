@@ -28,6 +28,12 @@ import clip_probe as CP  # noqa: E402
 import test_p6_levers as P6  # noqa: E402
 import test_rank_loss as TR  # noqa: E402
 
+# THE PROBE'S READER AND ITS IMPORT CLOSURE (MM 2026-11-25; pod gate FAIL D3: `clip_probe.judge` imports scorerft_read from <package>/eval/scorerft, which the package did not carry, so this file raised
+# ModuleNotFoundError in G-SUITE while the probe itself ran from a side copy).  They are NAMED HERE AS LITERALS so that `p7_ship_list derive` (a static scan of every string constant that resolves to a file) lists
+# them and `build_pkg.py` ships them with every profile whose suite carries this test (P / Ps); scorerft_read imports p5c_read and field_read by sys.path, field_read imports field_rawdac (MEASURED, import trace).
+# A reader import added later is not found by the scan: `main` asserts the whole closure imports from the package tree and that no other eval/ module is loaded.
+SCORERFT_READ_FILES = ("eval/scorerft/scorerft_read.py", "eval/p5c/p5c_read.py", "eval/field/field_read.py", "eval/field/field_rawdac.py")
+
 N = 0
 
 
@@ -249,7 +255,21 @@ def chk_logging_changes_no_behaviour(td):
     ok(SR.S0_RANK_ONLY.match("grad_norm_pre") and SR.S0_RANK_ONLY.match("clip_coef") and not SR.S0_RANK_ONLY.match("grad_norm_post"), "S0_RANK_ONLY")
 
 
+def chk_reader_closure():
+    """the reader the probe's `judge` imports is part of the PACKAGE (the pod G-SUITE failure): every file of SCORERFT_READ_FILES exists under the package root, and importing scorerft_read loads exactly those eval/ modules."""
+    pkg = HERE.parent
+    ok(all((pkg / f).is_file() for f in SCORERFT_READ_FILES), [f for f in SCORERFT_READ_FILES if not (pkg / f).is_file()])
+    sys.path.insert(0, str(pkg / "eval" / "scorerft"))
+    import scorerft_read as SR
+    loaded = sorted(Path(m.__file__).resolve().relative_to(pkg.resolve()).as_posix() for m in list(sys.modules.values())
+                    if getattr(m, "__file__", None) and str(pkg.resolve()).lower() in str(Path(m.__file__).resolve()).lower() and Path(m.__file__).resolve().relative_to(pkg.resolve()).parts[0] == "eval")
+    ok(loaded == sorted(SCORERFT_READ_FILES), ("the reader's loaded eval/ modules differ from SCORERFT_READ_FILES (add the new one, so the ship list carries it):", loaded))
+    ok(hasattr(SR, "ctrl_s0"), "scorerft_read.ctrl_s0")
+
+
 def main() -> int:
+    chk_reader_closure()
+    print(f"  reader_closure: ok ({N})", flush=True)
     chk_v1_and_red()
     print(f"  v1_and_red: ok ({N})", flush=True)
     chk_clip_coef_precision()

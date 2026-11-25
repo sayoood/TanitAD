@@ -720,10 +720,16 @@ SCORERFT_ARM_RANK = {"T": True, "C": False, "Ts": True, "Cs": False, "P": True, 
 # ARM P (O3 of PREREG_SCORER_FT section 9: "the heads rank, the pick does not"): the DECISION-LEVEL term, head `pick` ALONE (every proposal the harness PDMS ranks above the scorer's own navsim_v1 pick is paired against that
 # pick, weight = the PDMS gap).  P reuses C (same init, seed, steps): argv(P) - argv(C) = {--rank-w (value), --rank-heads pick, --out}; no gap / top-k is named (the trainer refuses them without `ep` / `gate`).  Ps = P with --seed 1
 # (argv(Ps) - argv(P) = {--seed, --out}), run only if the card says so.  PINS THE MM FILLS (None = REFUSE): SCORERFT_P_RANK_W, the output of weight_rule_rank.py on P's own argv (the pod).  No census pin: `pick` forms a pair on
-# (almost) every real set, so L2 is met by the smoke; a smoke that sees zero `pick` pairs is then REFUSED (no registered census proves it), which is the correct reading of a smoke that cannot rank.
+# (almost) every real set -- WRONG on a 7-set smoke (2026-11-25 pod gate): see SCORERFT_P_RANK_CENSUS below, the registered census that is now P's L2 evidence.
 SCORERFT_P_ARMS = ("P", "Ps")
 SCORERFT_P_RANK_W = 0.125                                      # FILLED BY THE MM: --rank-w of P / Ps = weight_rule_rank.py's rule output on P's own argv (smallest w with r(w) >= 1.0); the gate may only veto it
 SCORERFT_P_RANK_HEADS = "pick"
+# P's registered census (MM 2026-11-25, the pod gate FAIL of ecac87ed98de): `pick` is a SPARSE head in the smoke's eyes (the trainer logs `rank_pairs_pick` of the LAST rank call of each step only, so the smoke's logged sum reads 0 on most
+# smokes), and the gate's designed evidence for a sparse head is a pinned census, not the smoke.  This is weight_rule_rank.py's own JSON on P's argv (real navtrain, init C1, w* 0.125, heads ['pick'], 212 pairs on 13 of 32 labelled sets).
+# rank_loss_sha256 = the CURRENT rank_loss.py (pick form, b0264acb) with CR stripped: T's pin above is the pre-pick file and is a different hash.  A new census (other w / init / rank_loss.py) needs a new pin; the gate compares all of them.
+SCORERFT_P_RANK_CENSUS = {"path": "/workspace/data/refe_p5c/scorerft/weight_rule_rank_p.json",
+                          "sha256": "ef1c36bf4071f8a667432a2198e531c1611c9cd29f9eaa0706a6af166f8a4e1f",
+                          "rank_loss_sha256": "d3f0ad40f2ddb51a5b22ef16c90b47f20e7de912686ef4d6f65b841549710291"}
 SCORERFT_ARM_HEADS = {"T": SCORERFT_RANK_HEADS, "Ts": SCORERFT_RANK_HEADS, "P": SCORERFT_P_RANK_HEADS, "Ps": SCORERFT_P_RANK_HEADS}      # the registered heads of each ranking arm
 
 
@@ -787,8 +793,8 @@ def scorerft_profile(arm: str) -> dict:
                  "init_from_sha256": SCORERFT_BASE_SHA256, "traj_label_sha256": P5C_LABEL_TABLE_SHA256, "traj_label_rank_policy": P5C_RANK_POLICY,
                  "rank_w": (float(_scorerft_w(arm)) if _scorerft_w(arm) is not None else None) if ranking else 0.0,
                  "rank_heads": SCORERFT_ARM_HEADS[arm] if ranking else "", "rank_ep_gap": SCORERFT_RANK_EP_GAP, "rank_gate_topk": SCORERFT_RANK_GATE_TOPK})
-    if ranking and arm not in SCORERFT_P_ARMS:
-        prof["rank_census"] = dict(SCORERFT_RANK_CENSUS)        # G-LIVE L2's registered census (control arms: no ranking term, so no census)
+    if ranking:
+        prof["rank_census"] = dict(SCORERFT_P_RANK_CENSUS if arm in SCORERFT_P_ARMS else SCORERFT_RANK_CENSUS)        # G-LIVE L2's registered census (control arms: no ranking term, so no census)
     return prof
 
 
