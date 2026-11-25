@@ -722,7 +722,7 @@ SCORERFT_ARM_RANK = {"T": True, "C": False, "Ts": True, "Cs": False, "P": True, 
 # (argv(Ps) - argv(P) = {--seed, --out}), run only if the card says so.  PINS THE MM FILLS (None = REFUSE): SCORERFT_P_RANK_W, the output of weight_rule_rank.py on P's own argv (the pod).  No census pin: `pick` forms a pair on
 # (almost) every real set, so L2 is met by the smoke; a smoke that sees zero `pick` pairs is then REFUSED (no registered census proves it), which is the correct reading of a smoke that cannot rank.
 SCORERFT_P_ARMS = ("P", "Ps")
-SCORERFT_P_RANK_W = None                                       # FILLED BY THE MM: --rank-w of P / Ps = weight_rule_rank.py's rule output on P's own argv (smallest w with r(w) >= 1.0); the gate may only veto it
+SCORERFT_P_RANK_W = 0.125                                      # FILLED BY THE MM: --rank-w of P / Ps = weight_rule_rank.py's rule output on P's own argv (smallest w with r(w) >= 1.0); the gate may only veto it
 SCORERFT_P_RANK_HEADS = "pick"
 SCORERFT_ARM_HEADS = {"T": SCORERFT_RANK_HEADS, "Ts": SCORERFT_RANK_HEADS, "P": SCORERFT_P_RANK_HEADS, "Ps": SCORERFT_P_RANK_HEADS}      # the registered heads of each ranking arm
 
