@@ -1,0 +1,107 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD141",
+ "tier": "T1-kin/hb0.2 (kinematic rollout on the model's own actions, logged camera frames; the lead does not react; not driving performance)",
+ "controls": {
+  "c1": {
+   "PASS": true,
+   "n_contact_cells": 126,
+   "runs_differing": []
+  },
+  "c2": {
+   "PASS": true,
+   "n_windows_X_S": 70,
+   "n_sample": 20,
+   "n_sample_checked": 20,
+   "max_abs_dev_m": 3.552713678800501e-15,
+   "tol_m": 0.001,
+   "problems": []
+  },
+  "c3": {
+   "PASS": true,
+   "planted_reads_plus_2": true,
+   "unchanged_reads_main_value": true,
+   "planted_deviation": 0.0
+  },
+  "c4": {
+   "PASS": true,
+   "n_passed": 15,
+   "tests_out_sha256": "247e671d7d53eb7451f545ffcc81285da083b30e39560682c38c93385154c5a6"
+  }
+ },
+ "values": {
+  "Q1": {
+   "value": 1.1896041402875825,
+   "interval": [
+    -0.2608796993576029,
+    4.080228222575448
+   ],
+   "n_a": 19,
+   "n_b": 51
+  },
+  "Q2": {
+   "value": 0.0,
+   "interval": [
+    0.0,
+    0.0
+   ],
+   "n_a": 19,
+   "n_b": 51
+  },
+  "Q3": {
+   "value": 0.0,
+   "interval": [
+    0.0,
+    0.0
+   ],
+   "n_a": 51,
+   "n_b": null
+  },
+  "beside_Q1_UE_contact_only": {
+   "value": -1.1966337449410382,
+   "interval": [
+    -2.431050778963627,
+    0.39248910877439713
+   ],
+   "n_a": 5,
+   "n_b": 51
+  },
+  "beside_Q3_ego_minus_imagined_lead_speed": {
+   "value": 0.5910514920365577,
+   "interval": [
+    0.19791480473109654,
+    0.8306471586227417
+   ],
+   "n_a": 51,
+   "n_b": null
+  },
+  "counts": {
+   "0": {
+    "X": 6,
+    "S": 18,
+    "Y": 2
+   },
+   "1": {
+    "X": 5,
+    "S": 17,
+    "Y": 1
+   },
+   "2": {
+    "X": 8,
+    "S": 16,
+    "Y": 2
+   }
+  },
+  "n_X": 19,
+  "n_S": 51,
+  "n_Y": 5
+ },
+ "name": "CONTACTRH10K-UNRESOLVED",
+ "name_reason": "no name condition met; |X| = 19",
+ "families": [
+  "LONGITUDINAL: read here (where the contacts of RH under readout K are made, reader form, T1-kin/hb0.2)",
+  "LATERAL: not read by this card; n = 0",
+  "TACTICAL: not read by this card; n = 0",
+  "STRATEGIC: not read by this card; n = 0"
+ ],
+ "limits": "T1-kin only: the lead moves as logged, the reader reads logged frames. Contact windows of three model seeds over one evaluation set, so X is small and the intervals are wide. The interval answers what another draw of evaluation episodes would say, not what another training run or another inference run would say. A gap error is defined on windows where the reader reports a lead; a missed lead is counted in Q2 and not in Q1."
+}
