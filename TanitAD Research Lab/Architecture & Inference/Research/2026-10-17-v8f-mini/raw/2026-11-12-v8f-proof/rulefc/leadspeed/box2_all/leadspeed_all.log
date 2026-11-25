@@ -1,0 +1,155 @@
+step 10000 loss100 0.3385 s 544.3
+step 20000 loss100 0.236 s 1074.1
+step 30000 loss100 0.1902 s 1614.6
+{
+ "card": "PREREG_V8F_PROOF_ADD149",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "controls": {
+  "c2_disjoint": {
+   "fit_and_held_out": 0,
+   "fit_and_eval": 0,
+   "PASS": true
+  },
+  "c5_token_bytes": {
+   "fit_equal": [
+    50,
+    50
+   ],
+   "held_out_equal": [
+    20,
+    20
+   ],
+   "eval_equal": [
+    20,
+    20
+   ],
+   "planted_offset_differs": true,
+   "PASS": true
+  },
+  "c1_run": {
+   "guard_violations": 0,
+   "steps_done": 30000,
+   "PASS": true
+  },
+  "c4_checkpoint": {
+   "sha256_at_save": "83faaa6d355562f7341b946d7c2ccee4b3c39b349bd848c4b94af9d4f0cc41d5",
+   "sha256_at_read": "83faaa6d355562f7341b946d7c2ccee4b3c39b349bd848c4b94af9d4f0cc41d5",
+   "PASS": true
+  },
+  "c3_planted_read": {
+   "S": 0.9999999999999999,
+   "A": 1.0,
+   "PASS": true
+  }
+ },
+ "leadspeed_py_sha256": "3466cd8164d325f384c32e4517aba5742a16f4c99caa90225deec0d6e77932df",
+ "seeds": {
+  "split": 148,
+  "train": 148
+ },
+ "split": {
+  "with_labels": 4427,
+  "fit_all": 3984,
+  "fit_used": 3984,
+  "held_out": 443,
+  "eval": 141
+ },
+ "guard": {
+  "amendment": "AM1+AM2+AM3",
+  "commit_avail_at_start_GB": 16.18,
+  "own_commit_at_start_GB": 1.059,
+  "need_GB": 7.34,
+  "violations": 0
+ },
+ "load": {
+  "tokens": "read-only memmap (amendment 3)",
+  "touch_check": 512,
+  "fit_clips": 3984,
+  "seconds": 443.3,
+  "commit_avail_after_GB": 16.2,
+  "own_commit_after_GB": 1.134
+ },
+ "train": {
+  "steps": 30000,
+  "windows_fit": 366304,
+  "seconds": 1614.6,
+  "loss_first1000": 0.6313,
+  "loss_last1000": 0.1871,
+  "finite": true,
+  "ckpt_sha256": {
+   "10000": "640c3975e3438aaeebed5f1c3ac38719f65a1e044db235c0d76e62a3fa6c5375",
+   "20000": "c9144e821fee0d76ecd9c3c76ca26cf4eb453173c8a2f6a5cf11dc6cd71af3b8",
+   "30000": "83faaa6d355562f7341b946d7c2ccee4b3c39b349bd848c4b94af9d4f0cc41d5"
+  }
+ },
+ "ref": {
+  "ckpt": "D:/tanitad/leadspeed/full/head_30000.pt",
+  "sha256": "7048714afbb5301664dbe1544c19945cded571f07e4930380f94361babdf37c4"
+ },
+ "held_out": {
+  "S": 0.3927809440031215,
+  "n_S": 11623,
+  "A": 0.20534482775305724,
+  "n_A": 10325,
+  "gap_mae_m": 6.213212954692703,
+  "presence_auc": 0.8986903068098735
+ },
+ "paired_vs_ref_held_out": {
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; episodes (clips) only, one training seed per arm",
+  "S_head": 0.3927809440031215,
+  "S_ref": 0.2877359893295343,
+  "dS": 0.10504495467358721,
+  "dS_ci95": [
+   -0.01502899122445805,
+   0.2264509926796013
+  ],
+  "A_head": 0.20534482775305724,
+  "A_ref": 0.19120802261869796,
+  "dA": 0.014136805134359276,
+  "dA_ci95": [
+   -0.021965895204152527,
+   0.04982281665967199
+  ],
+  "n_clips": 443
+ },
+ "held_out_halves": [
+  {
+   "S": 0.34684598245370646,
+   "n_S": 6122,
+   "A": 0.21145967178184968,
+   "n_A": 5468,
+   "gap_mae_m": 6.012469364948084,
+   "presence_auc": 0.9024651215512135
+  },
+  {
+   "S": 0.4400964719627688,
+   "n_S": 5501,
+   "A": 0.19827384086657301,
+   "n_A": 4857,
+   "gap_mae_m": 6.432165128223109,
+   "presence_auc": 0.8954862528703466
+  }
+ ],
+ "eval141": {
+  "S": 0.4255526531822995,
+  "n_S": 3430,
+  "A": 0.1764766096086841,
+  "n_A": 3035,
+  "gap_mae_m": 4.894606798223504,
+  "presence_auc": 0.8984897884092067
+ },
+ "token_reader_ADD146_beside": {
+  "A": [
+   0.0872,
+   0.0714
+  ],
+  "S": [
+   0.3337,
+   0.2731
+  ]
+ },
+ "controls_all_pass": true,
+ "name": "LEADSPEEDFULL10K-SPEED-ONLY",
+ "consequence": "CLOSING-ONLY: the head is the closing input without the acceleration (successor card)"
+}
+QUEUE-COMPLETE 2026-11-25T23:46:46

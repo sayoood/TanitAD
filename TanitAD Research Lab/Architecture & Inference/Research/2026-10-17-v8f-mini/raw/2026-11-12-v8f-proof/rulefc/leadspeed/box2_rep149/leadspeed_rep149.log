@@ -1,0 +1,157 @@
+step 10000 loss100 0.2094 s 525.6
+step 20000 loss100 0.128 s 1046.8
+step 30000 loss100 0.0894 s 1573.4
+D:\tanitad\leadspeed\train_full_box2.py:145: RuntimeWarning: overflow encountered in exp
+  P[e] = 1.0 / (1.0 + np.exp(-o[:, 0]))
+{
+ "card": "PREREG_V8F_PROOF_ADD149",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "controls": {
+  "c2_disjoint": {
+   "fit_and_held_out": 0,
+   "fit_and_eval": 0,
+   "PASS": true
+  },
+  "c5_token_bytes": {
+   "fit_equal": [
+    50,
+    50
+   ],
+   "held_out_equal": [
+    20,
+    20
+   ],
+   "eval_equal": [
+    20,
+    20
+   ],
+   "planted_offset_differs": true,
+   "PASS": true
+  },
+  "c1_run": {
+   "guard_violations": 0,
+   "steps_done": 30000,
+   "PASS": true
+  },
+  "c4_checkpoint": {
+   "sha256_at_save": "3967c9df285b5c33aa4c5b6a83e30f2e2cf4380ddda61e2419856f75a5762b47",
+   "sha256_at_read": "3967c9df285b5c33aa4c5b6a83e30f2e2cf4380ddda61e2419856f75a5762b47",
+   "PASS": true
+  },
+  "c3_planted_read": {
+   "S": 0.9999999999999999,
+   "A": 1.0,
+   "PASS": true
+  }
+ },
+ "leadspeed_py_sha256": "3466cd8164d325f384c32e4517aba5742a16f4c99caa90225deec0d6e77932df",
+ "seeds": {
+  "split": 148,
+  "train": 149
+ },
+ "split": {
+  "with_labels": 4427,
+  "fit_all": 3984,
+  "fit_used": 1500,
+  "held_out": 443,
+  "eval": 141
+ },
+ "guard": {
+  "amendment": "AM1+AM2+AM3",
+  "commit_avail_at_start_GB": 16.23,
+  "own_commit_at_start_GB": 1.058,
+  "need_GB": 7.09,
+  "violations": 0
+ },
+ "load": {
+  "tokens": "read-only memmap (amendment 3)",
+  "touch_check": 806,
+  "fit_clips": 1500,
+  "seconds": 6.7,
+  "commit_avail_after_GB": 16.16,
+  "own_commit_after_GB": 1.107
+ },
+ "train": {
+  "steps": 30000,
+  "windows_fit": 137906,
+  "seconds": 1573.4,
+  "loss_first1000": 0.6175,
+  "loss_last1000": 0.0952,
+  "finite": true,
+  "ckpt_sha256": {
+   "10000": "93a88839879b8a142c9ab7d4bb5fbc9c7dc3ae602faae25618e15fa3e5b2791c",
+   "20000": "b599957be5db501ecef986006c678f5a89cc1d3cb5aeaa34809455fe9e7985d8",
+   "30000": "3967c9df285b5c33aa4c5b6a83e30f2e2cf4380ddda61e2419856f75a5762b47"
+  }
+ },
+ "ref": {
+  "ckpt": "D:/tanitad/leadspeed/full/head_30000.pt",
+  "sha256": "7048714afbb5301664dbe1544c19945cded571f07e4930380f94361babdf37c4"
+ },
+ "held_out": {
+  "S": 0.2285812289382183,
+  "n_S": 11623,
+  "A": 0.20338907024455122,
+  "n_A": 10325,
+  "gap_mae_m": 8.013507388775208,
+  "presence_auc": 0.8693223817288944
+ },
+ "paired_vs_ref_held_out": {
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; episodes (clips) only, one training seed per arm",
+  "S_head": 0.2285812289382183,
+  "S_ref": 0.2877359893295343,
+  "dS": -0.05915476039131601,
+  "dS_ci95": [
+   -0.228078083140505,
+   0.11598950019167852
+  ],
+  "A_head": 0.20338907024455122,
+  "A_ref": 0.19120802261869796,
+  "dA": 0.012181047625853259,
+  "dA_ci95": [
+   -0.022365259349683135,
+   0.04530955894197779
+  ],
+  "n_clips": 443
+ },
+ "held_out_halves": [
+  {
+   "S": 0.25266555151483056,
+   "n_S": 6122,
+   "A": 0.21981163134138462,
+   "n_A": 5468,
+   "gap_mae_m": 7.636912759080712,
+   "presence_auc": 0.8660673891292223
+  },
+  {
+   "S": 0.1988134865613626,
+   "n_S": 5501,
+   "A": 0.18323210342632446,
+   "n_A": 4857,
+   "gap_mae_m": 8.424261290388637,
+   "presence_auc": 0.8711140294656309
+  }
+ ],
+ "eval141": {
+  "S": 0.3820510190279126,
+  "n_S": 3430,
+  "A": 0.16538763285054747,
+  "n_A": 3035,
+  "gap_mae_m": 6.927101377455854,
+  "presence_auc": 0.8719159340152938
+ },
+ "token_reader_ADD146_beside": {
+  "A": [
+   0.0872,
+   0.0714
+  ],
+  "S": [
+   0.3337,
+   0.2731
+  ]
+ },
+ "controls_all_pass": true,
+ "name": "LEADSPEEDFULL10K-NOT-CARRIED",
+ "consequence": "BLOCKER-NAMED: no successor arm from this read; the blocker is named with the measured values (more fit clips needing a disk for the token store, or a second seed)"
+}
+QUEUE-COMPLETE 2026-11-25T23:07:30
