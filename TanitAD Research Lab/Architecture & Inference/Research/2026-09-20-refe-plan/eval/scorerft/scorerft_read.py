@@ -82,7 +82,7 @@ ALLOWED_SEED = {"--seed", "--out"}                                              
 PICK_PREREG_SHA256 = "7c39a57bfc69e9d27b000fd0e5acba05d3ee8403b9611b45d0d27bb0f9fd21c9"  # sha256 of the FROZEN card file (PREREG_SCORERFT_PICK.md)
 PICK_TRAIN_SHA256 = "b1f475185237c7518bb86ebcc70f83813951bcf9f317f20f573efb6d14d854b8"  # sha256 of the RAW bytes of PK/refe/train.py as landed (LF); equals git show <P land>:PK/refe/train.py | sha256sum
 PICK_CODE_TAG = None                 # MM at launch: "code_<8 hex>" of P's pod code dir (P's argv[0])
-CLIP_PROBE_SHA256 = None             # MM at the probe: sha256 of the banked CTRL-CLIP probe JSON (clip_probe.py; card 3.2 / 5.1)
+CLIP_PROBE_SHA256 = "17e0eeba9ca16a6bc54777789ad95c229b2fa9380eb4c34aa4d164190f9a44c1"  # MM at the probe: sha256 of the banked CTRL-CLIP probe JSON (clip_probe.py; card 3.2 / 5.1)
 C_METRICS_SHA256 = "97a8631cc863d95cf646932ef3833206affbc7a0857d21bff5d5e8b78ff04eed"      # o3/card/evidence/metrics_scorerft_c.jsonl (3,046 lines; MM-banked, framed, = the pod's)
 T_METRICS_SHA256 = "09cdaf83c611fba9af7bafef250affc7195af71aa9c40bfcf461888d712b0f6a"      # .../metrics_scorerft_t.jsonl (3,047 lines): the Stage 1 positive control of CTRL-S0 / CTRL-ORDER
 S0_KEYS_TRAIN_STAGE1 = ("assign_d", "batch", "bce_c", "bce_dac", "bce_ddc", "bce_ep", "bce_nc", "bce_ttc", "epoch", "lr", "pos", "pos_L1", "samples",
