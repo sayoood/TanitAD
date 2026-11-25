@@ -195,6 +195,28 @@ def _train_with(mod, td, tag, argv_extra=()):
     return _final_tensors(td / f"id_{tag}")
 
 
+def _clip_coef_f32(g):
+    """The trainer's clip_coef recomputed the way train.py computes it: in FLOAT32 on a tensor (gn_pre is a float32 tensor there). EXACT equality is the bar, no tolerance."""
+    return float(torch.clamp(1.0 / (torch.tensor(g, dtype=torch.float32) + 1e-6), max=1.0))
+
+
+def _clip_coef_f64(g):
+    """The OLD recomputation: 1.0 / (g + 1e-6) evaluated in python DOUBLE, cast to float32 only afterwards. Kept ONLY as the RED arm."""
+    return float(torch.clamp(torch.tensor(1.0 / (g + 1e-6)), max=1.0))
+
+
+def chk_clip_coef_precision():
+    """The precision of the clip_coef recomputation: the float32 path is bit-exact against the trainer's tensor op on float32 norms; the old double path is not (RED)."""
+    gen = torch.Generator().manual_seed(20261124)
+    g32 = 1.0 + 9.0 * torch.rand(5000, generator=gen, dtype=torch.float32)  # float32 norms in [1, 10)
+    trainer = torch.clamp(1.0 / (g32 + 1e-6), max=1.0)  # the trainer's op: float32 tensor in, float32 tensor out
+    vals = [float(v) for v in g32]  # the logged form: float(gn_pre), a python float holding the float32 value exactly
+    bad32 = sum(1 for v, t in zip(vals, trainer.tolist()) if _clip_coef_f32(v) != t)
+    ok(bad32 == 0, f"CONTROL: the float32 recomputation is bit-exact on 5000 float32 norms (mismatches {bad32})")
+    bad64 = sum(1 for v, t in zip(vals, trainer.tolist()) if _clip_coef_f64(v) != t)
+    ok(bad64 >= 1, f"RED: the old double-precision recomputation DIFFERS from the trainer on at least one norm (mismatches {bad64})")
+
+
 def chk_logging_changes_no_behaviour(td):
     """2b: the parameters after 3 steps are bit-identical with and without the grad_norm_pre / clip_coef logging."""
     src = (HERE / "train.py").read_text(encoding="utf-8")
@@ -218,7 +240,7 @@ def chk_logging_changes_no_behaviour(td):
     # the new keys are in every logged row and in the metrics of the unmodified run
     rows = [json.loads(ln) for ln in (td / "id_cur1" / "metrics.jsonl").read_text(encoding="utf-8").splitlines()]
     tr = [r for r in rows if "traj_L1" in r]
-    ok(tr and all(math.isfinite(r["grad_norm_pre"]) and 0.0 < r["clip_coef"] <= 1.0 and r["clip_coef"] == float(torch.clamp(torch.tensor(1.0 / (r["grad_norm_pre"] + 1e-6)), max=1.0)) for r in tr), tr[:1])
+    ok(tr and all(math.isfinite(r["grad_norm_pre"]) and 0.0 < r["clip_coef"] <= 1.0 and r["clip_coef"] == _clip_coef_f32(r["grad_norm_pre"]) for r in tr), tr[:1])
     nl_rows = [json.loads(ln) for ln in (td / "id_nolog" / "metrics.jsonl").read_text(encoding="utf-8").splitlines()]
     ok(not any("grad_norm_pre" in r for r in nl_rows), "the variant logs no norm")
     # the S0 allow-list: the keys are rank-only for CTRL-S0 (a P-only key), the way T's rank keys were
@@ -230,6 +252,8 @@ def chk_logging_changes_no_behaviour(td):
 def main() -> int:
     chk_v1_and_red()
     print(f"  v1_and_red: ok ({N})", flush=True)
+    chk_clip_coef_precision()
+    print(f"  clip_coef_precision: ok ({N})", flush=True)
     td = P6._mkdtemp("clipprobe_")
     chk_states_and_invalid(td)
     print(f"  states_and_invalid: ok ({N})", flush=True)

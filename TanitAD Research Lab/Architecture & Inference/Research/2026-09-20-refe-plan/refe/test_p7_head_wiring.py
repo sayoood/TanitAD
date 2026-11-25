@@ -521,7 +521,7 @@ def s_census() -> None:
     old_l, new_l = raw.decode("utf-8").splitlines(), src.splitlines()
     sm = difflib.SequenceMatcher(None, old_l, new_l, autojunk=False)
     hunks = [(tag, i1, i2, j1, j2) for tag, i1, i2, j1, j2 in sm.get_opcodes() if tag != "equal"]
-    stray = [(i1 + 1, "\n".join(old_l[i1:i2] + new_l[j1:j2])[:160]) for tag, i1, i2, j1, j2 in hunks if not re.search(r"aux|AUX|P7\.1|WP YAW|ego_yaw|EYT\.|ego_t\[|P5-C|traj_label|TLT\.|tgt_t|rank|RK\.|SCORER-FT", "\n".join(old_l[i1:i2] + new_l[j1:j2]))]       # SCORER-FT (2026-11-20): the ranking-term hunks are named too; P5-C (2026-11-12): the label-table hunks are named too; WP YAW (2026-11-06): the yaw-table hunks are a later, separate lever
+    stray = [(i1 + 1, "\n".join(old_l[i1:i2] + new_l[j1:j2])[:160]) for tag, i1, i2, j1, j2 in hunks if not re.search(r"aux|AUX|P7\.1|WP YAW|ego_yaw|EYT\.|ego_t\[|P5-C|traj_label|TLT\.|tgt_t|rank|RK\.|SCORER-FT|gn_pre|grad_norm_pre|clip_coef|CTRL-CLIP", "\n".join(old_l[i1:i2] + new_l[j1:j2]))]       # CTRL-CLIP (2026-11-25): the pre-clip norm / clip_coef logging hunks of the arm-P trainer are named too (no behaviour change: test_clip_probe 2b); SCORER-FT (2026-11-20): the ranking-term hunks are named too; P5-C (2026-11-12): the label-table hunks are named too; WP YAW (2026-11-06): the yaw-table hunks are a later, separate lever
     ck("S6 every changed hunk of train.py relative to the frozen tip mentions the head (nothing else moved)", not stray and len(hunks) >= 20, f"{len(hunks)} hunks; unrelated: {stray[:3]}")
 
 

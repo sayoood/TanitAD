@@ -44,6 +44,9 @@ W_FIX = 0.25                                                       # a fixture r
 # so a fixture value would be refused), else the fixture. MM 2026-11-21: with W_FIX here this file went RED as soon as the pin was filled, and it is in
 # SCORERFT_SUITE_EXTRA, so T's G-SUITE would have refused T (MEASURED on a scratch copy with SCORERFT_RANK_W = 0.5).
 W_ARGV = float(L.SCORERFT_RANK_W) if L.SCORERFT_RANK_W is not None else W_FIX
+# ARM P / Ps carry THEIR OWN registered weight SCORERFT_P_RANK_W (the pod weight rule on P's own argv): once the MM fills it the P profiles REQUIRE that exact --rank-w, so the P template argv and the filled P profile
+# must use it, not T's (MEASURED 2026-11-25 on a scratch copy with SCORERFT_P_RANK_W = 0.0625: "refe_scorerft_p requires --rank-w 0.0625; the argv has --rank-w 0.03125", i.e. P's G-SUITE would have refused P).
+WP_ARGV = float(L.SCORERFT_P_RANK_W) if L.SCORERFT_P_RANK_W is not None else W_ARGV
 ARMS = ("T", "C", "Ts", "Cs")
 NAMES = {"T": "refe_scorerft_t", "C": "refe_scorerft_c", "Ts": "refe_scorerft_t_s1", "Cs": "refe_scorerft_c_s1"}
 P_NAMES = {"P": "refe_scorerft_p", "Ps": "refe_scorerft_p_s1"}                # O3's decision-level arm (head `pick`) and its seed-1 replicate
@@ -153,13 +156,13 @@ def _real_rank_loss():
 def chk_p_arms():
     """ARM P (O3: the pick-anchored decision-level term, head `pick`): argv(P) - argv(C) = {--rank-w, --rank-heads, --out} and NOTHING else (no gap / top-k, which the trainer refuses without ep / gate); argv(Ps) - argv(P) =
     {--seed, --out}; the weight pin SCORERFT_P_RANK_W refuses while unfilled; with the pins filled the template is clean; every lever the card names is refused when it moves; the control C is unchanged by the new arms."""
-    P_, Ps_ = (L.scorerft_argv(a, rank_w=W_ARGV) for a in ("P", "Ps"))
+    P_, Ps_ = (L.scorerft_argv(a, rank_w=WP_ARGV) for a in ("P", "Ps"))
     C_, Cs_ = targv("C"), targv("Cs")
     ok(delta(P_, C_) == {"--rank-w", "--rank-heads", "--out"}, delta(P_, C_))
     ok(delta(Ps_, P_) == {"--seed", "--out"}, delta(Ps_, P_))
     ok(delta(Ps_, Cs_) == {"--rank-w", "--rank-heads", "--out"}, delta(Ps_, Cs_))
     fP = flagset(P_)
-    ok(fP["--rank-heads"] == ["pick"] and float(fP["--rank-w"][0]) == W_ARGV and "--rank-ep-gap" not in fP and "--rank-gate-topk" not in fP, fP)
+    ok(fP["--rank-heads"] == ["pick"] and float(fP["--rank-w"][0]) == WP_ARGV and "--rank-ep-gap" not in fP and "--rank-gate-topk" not in fP, fP)
     ok(flagset(P_)["--seed"] == ["0"] and flagset(Ps_)["--seed"] == ["1"] and flagset(P_)["--init-from"] == [L.SCORERFT_DEFAULT_INIT] and flagset(P_)["--steps"] == ["1000"], "P recipe = C's")
     ok(L.SCORERFT_ARM_NAME["P"] == "refe_scorerft_p" and L.SCORERFT_ARM_NAME["Ps"] == "refe_scorerft_p_s1" and flagset(P_)["--out"] != flagset(C_)["--out"], "names / out")
     for a_, nm in P_NAMES.items():
@@ -184,12 +187,12 @@ def chk_p_arms():
     if L.SCORERFT_P_RANK_W is None:
         ok(p0["rank_w"] is None and "finite float" in refusals(p0, P_) and "SCORERFT_P_RANK_W" in refusals(p0, P_), "an unfilled P weight REFUSES the argv: " + refusals(p0, P_))
     for a_ in ("P", "Ps"):
-        argv = L.scorerft_argv(a_, rank_w=W_ARGV)
+        argv = L.scorerft_argv(a_, rank_w=WP_ARGV)
         pf = L.scorerft_profile(a_)
         pf["init_from_sha256"] = HEX_BASE
-        pf["rank_w"] = W_ARGV
+        pf["rank_w"] = WP_ARGV
         ok(refusals(pf, argv) == "", f"{a_}: the template with the pins filled must be clean: {refusals(pf, argv)}")
-        for nm, bad in (("heads ep,gate", mv(argv, "--rank-heads", "ep,gate")), ("heads ep,pick", mv(argv, "--rank-heads", "ep,pick")), ("rank-w moved", mv(argv, "--rank-w", repr(W_ARGV + 0.5))),
+        for nm, bad in (("heads ep,gate", mv(argv, "--rank-heads", "ep,gate")), ("heads ep,pick", mv(argv, "--rank-heads", "ep,pick")), ("rank-w moved", mv(argv, "--rank-w", repr(WP_ARGV + 0.5))),
                         ("steps", mv(argv, "--steps", "2000")), ("no heads", drop(argv, "--rank-heads")), ("no rank-w (R-CTRL)", drop(argv, "--rank-w")),
                         ("gap named", argv + ["--rank-ep-gap", "0.05"]), ("topk named", argv + ["--rank-gate-topk", "8"]), ("seed", mv(argv, "--seed", "1" if a_ == "P" else "0")), ("extra", argv + ["--w-field", "2.0"])):
             ok(refusals(pf, bad) != "", f"{a_} must refuse: {nm}")
