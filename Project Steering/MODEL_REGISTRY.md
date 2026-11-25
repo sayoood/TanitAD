@@ -5667,7 +5667,8 @@ Every row is MEASURED from the harness CSV on the dev box, under `E:/Projects/Ta
 | against the goal | **BELOW GOAL**: 94.55 (DriveZero A13, PUBLISHED; the logged human scores 94.55 [93.78, 95.23] on our harness). C1 is the best REFe; gap 2.00 |
 | verdict | card rule: **GUARD-FAIL, qualifier TM+C, NOT ADOPTED** (`PK/raw/2026-11-20-p5c-read/VERDICT.txt`); C1 is the base of SCORER-FT (`H-SCORERFT-1`) and of the seed-1 replicate C1r |
 | determinism | C1 seam re-run identical (12,145 common tokens, max abs dpose 0.0, pick agreement 1.0; `seam_determinism_c1.json`) |
-| caveats | one training seed each (C1r pending, `H-ESTIM-SEED-1`); deterministic planner; not closed loop. Detail `PK/raw/2026-11-20-p5c-read/report.md` |
+| caveats | deterministic planner; not closed loop. Detail `PK/raw/2026-11-20-p5c-read/report.md` |
+| seed replicate C1r (added 2026-11-25, MM) | **C1r** = C1's recipe at `--seed 1` (argv differs by `--seed` and `--out` only; code NEUTRAL). `model_final.pt` sha256 `6e39a57c9a2e3ead0fef2b0d00d1684a708c901b6602ffe0717444f6180654a8`, HF `p5c/c1r`. Full navtest, T1-class: **C1r 92.6706 [91.9481, 93.3795]**. **C1r - C1 = +0.1158 [-0.1783, +0.4007]** (paired log-cluster bootstrap), so **R-NULL**, and the PDMS seed floor is F_REFe = 0.1158 (one draw, 1 df). Seed alone separates 21 of 70 family components, so single-seed REFe family separations need a replicate. C1r is NOT adopted (card rule: selection on noise); **C1 stays the quoted REFe best**. Card `PK/raw/2026-11-25-c1r-read/PREREG_C1R_READ.md`; verdict `PK/raw/2026-11-25-c1r-read/VERDICT_c1r.txt`; GAC `H-ESTIM-SEED-1-REFE` |
 
 ## 15. refcv7-r101-s0 — refcv6 + FIX-1..5 + NEW-1/NEW-2 + A9 box head [NON-PARITY · NavSim zero-shot · ONE SEED]
 

@@ -1,0 +1,40 @@
+{
+ "decision": "NEUTRAL",
+ "packages": {
+  "C1": "code_33824420 == mirror commit 33824420 (all 232 refe/*.py sha256-equal to the pod)",
+  "C1r": "code_bce4f9a7: train.py, field_loss.py, planner.py, rank_loss.py, weight_rule_rank.py sha256-equal to mirror commit c98e6114; gate_checks.py/launch_gate.py are the later C1r-profile bytes (launch-time only)"
+ },
+ "exports": "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/c1r/read/tmp/pk/r1 (C1 refe) and r2 (C1r refe)",
+ "training_path_hunks": [
+  {
+   "file": "train.py",
+   "hunks": "SCORER-FT --rank-* term: import rank_loss; rank_refusals; rank built only if a.rank_w>0.0 (default 0.0 -> None); identity keys + defaults; monitor/log rows only under rank is not None",
+   "argv_evidence": "C1/C1r argv carry no --rank-* flag; config rank_w 0.0, rank_heads '', so term not built",
+   "pinned_test": "refe/test_rank_loss.py chk_off_path_identity(--pristine <C1 refe dir>): OFF path == pre-change trainer, logged losses and final weights bit-identical"
+  },
+  {
+   "file": "field_loss.py",
+   "hunks": "sample_sdf grid_sample -> explicit gather",
+   "argv_evidence": "--w-field 0.0 in both argv, field_labels null: field_loss never called (train.py:1854-1856 gated on field labels)",
+   "pinned_test": "refe/test_field_loss.py (frozen old grid_sample reference vs new lookup)"
+  },
+  {
+   "file": "planner.py",
+   "hunks": "_image_for: one retry + named miss reason on frame-load failure (eval-time image loader)",
+   "argv_evidence": "identical frames when the first decode succeeds",
+   "pinned_test": "refe/test_planner_image_retry.py T4 healthy container"
+  },
+  {
+   "file": "rank_loss.py, weight_rule_rank.py",
+   "hunks": "new modules, imported only; not executed in the C1 recipe",
+   "pinned_test": "test_rank_loss.py"
+  }
+ ],
+ "tests_run": {
+  "test_rank_loss.py --pristine r1 (C1 refe)": "rc 0, ZZRANK_PASS 145, off_path_identity ok (OFF path == pre-change trainer, bit-identical); out/ctrl_code/test_rank_loss.log",
+  "test_field_loss.py": "rc 0, ZZTEST_PASS 54; out/ctrl_code/test_field_loss.log",
+  "test_planner_image_retry.py": "rc 0, ZZTEST_PASS 21 under venvs/driverl-eval (the tanitad venv has no cv2: ModuleNotFoundError, environment); out/ctrl_code/test_planner_image_retry.driverl.log",
+  "run_by": "MM 2026-11-25, on export tmp/pk/r2 (C1r package code_bce4f9a7 refe)"
+ },
+ "note": "set decision to NEUTRAL only after the three pinned tests were RUN on r2 (and --pristine r1) and passed; else SEED+CODE"
+}
