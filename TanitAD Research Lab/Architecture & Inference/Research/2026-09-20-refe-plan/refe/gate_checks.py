@@ -2221,13 +2221,50 @@ def rank_dvb_rows(a, b, s, profile=None) -> list:
     return rows
 
 
+def _agg_v1(p):
+    """navsim_v1 on probabilities / labels [..., 6] (the same expression as rank_loss.navsim_v1; local so a stand-in `rank_loss` module without it cannot break the probe's diagnostics)."""
+    return p[..., 0] * p[..., 1] * (p[..., 2] * 5.0 + p[..., 3] * 5.0 + p[..., 4] * 2.0) / 12.0
+
+
+def _pick_v1(RL, s):
+    f = getattr(RL, "pick_index", None)
+    if f is not None:
+        return f(s)
+    import torch
+    with torch.no_grad():
+        return _agg_v1(torch.sigmoid(s.detach())).argmax(1)
+
+
+def forced_pick_labels(score):
+    """FORCED-PAIR labels for ONE set (score [1, M, 6] logits): all-zero rows except j* (the proposal the scorer ranks LOWEST under navsim_v1(sigmoid), forced != the pick) = all ones.  Returns (labels [1, M, 6] float32, j*, pick)."""
+    import torch
+    import rank_loss as RL
+    with torch.no_grad():
+        s = score.detach().float()
+        M = int(s.shape[1])
+        pk = int(_pick_v1(RL, s)[0])
+        j = int(_agg_v1(torch.sigmoid(s))[0].argmin())
+        if j == pk:                                                  # all-tied scores: argmin and argmax coincide
+            j = (pk + 1) % M
+        lab = torch.zeros(s.shape, dtype=torch.float32, device=s.device)
+        lab[0, j, :] = 1.0
+    return lab, j, pk
+
+
 def rank_reach(cap, profile, arm=None) -> dict:
     """L3 (DESIGN 3.3): `rank_w x L_rank` ALONE, backward through the smoke's real model on ONE labelled sample of the first captured (labels, mask) batch, at the declared weight and at weight 0.0.  Per parameter group the |grad| sum
     and the number of parameters with NO path, and per ROW of `score_head.weight` the |grad| sum.  The term is the TRAINER's own (`rank_loss.RankLoss`, built with the rule the arm declares); the probe widens the gate's top-k to the
     whole set for this probe only (the captured labels belong to the proposals of an EARLIER weight state, so the live top-k may hold no unsafe proposal; a wider k changes WHICH pairs exist, never which parameters a pair reaches).
     WHICH sample (MM 2026-11-25, the pod gate FAIL of ecac87ed98de): the labelled samples are scanned IN INDEX ORDER and the probe runs on the FIRST whose declared-weight term loss is non-zero.  A SPARSE head (`pick`: 13 of 32 sets
     form a pair) forms no pair on sample 0 about 60 % of the time, and a term that forms no pair is exactly 0.0 with no gradient, so a probe pinned to sample 0 read every row as zero (a statement about the sample, not the term).
-    The output records `sample_index` (the probed sample) and `scanned` (how many labelled samples were forwarded); when NO scanned sample forms a pair the probe falls back to sample 0 and its zero reads FAIL in `judge_rank_reach`, as before."""
+    The output records `sample_index` (the probed sample) and `scanned` (how many labelled samples were forwarded).
+    FORCED PAIR (MM 2026-11-25, the pod gate FAIL of 99ddf53d1461): a `pick` pair depends on the SCORER's own pick (`k = argmax navsim_v1(sigmoid(s))`), and the probe forwards the POST-SMOKE model in fp32, whose pick is not the pick
+    of the trainer's call 0 (the term of step 0 lowered exactly that pick; the same smoke showed 41 pairs on call 0 and the probe found none on the 4 labelled samples of the same batch).  So when the real scan finds no pair AND `pick` is a
+    declared head, the probe runs on the first labelled sample with the labels REWRITTEN so a pair MUST exist: every proposal gets an all-zero row (pdms 0) except j* = the proposal the current scorer ranks LOWEST under the term's own
+    aggregate (never the pick), whose row is all ones (pdms 1).  Pair (j*, pick) then has weight 1, and the routing of rank_loss.py is live on every cell of the five aggregate heads: on the pick y = 0 < p (the term lowers s_pick),
+    on j* y = 1 > p (the term raises s_j*); DDC is outside the aggregate and stays exactly 0.0.  This is the pick analogue of the top-k widening for `gate`: a rewritten label changes WHICH pair exists, never which parameters a pair
+    reaches -- the question L3 asks.  A real-data pair is still proved by L2 (census / smoke), L4 (the trainer's own value == the numpy reference on the captured calls) and CTRL-ROUTE.  `found` keeps the real scan's answer;
+    `forced` / `forced_j` / `forced_pick` record the rewrite; `scan` records, per scanned sample, the probe's pick against the label pdms (and `trainer_pick` the pick of the trainer's call 0 when captured)."""
     import torch
     import rank_loss as RL
     m = cap.model
@@ -2244,17 +2281,34 @@ def rank_reach(cap, profile, arm=None) -> dict:
     labelled_idx = [i for i in range(n_s) if i < msk_a.size and float(msk_a[i]) > 0.0]
     m.train()
 
-    def one(i, scale, force):
-        """one forward + (backward) at `scale` on sample i; the record, or None when the loss is exactly 0.0 and not `force`."""
+    scan = []
+
+    def one(i, scale, force, forced=False):
+        """one forward + (backward) at `scale` on sample i; the record, or None when the loss is exactly 0.0 and not `force`.  `forced`: the labels are rewritten by `forced_pick_labels` (see the docstring)."""
         sl = slice(i, i + 1)
         cal = calib[sl].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
         labels = torch.as_tensor(np.asarray(lab_np)[sl], dtype=torch.float32, device=dev)
         msk = torch.ones(1, dtype=torch.float32, device=dev)
         m.zero_grad(set_to_none=True)
         score = m(img[sl].to(dev), ego[sl].to(dev), goal[sl].to(dev), calib=cal)[1]
+        fj = fpk = None
+        if forced:
+            labels, fj, fpk = forced_pick_labels(score)
         r = term.term(score.float(), labels, msk, 1)
         r = r[0] if isinstance(r, tuple) else r
         loss = r * scale
+        if not forced and scale == declared:
+            try:                                                      # diagnostics only: never able to break the probe
+                with torch.no_grad():
+                    pdm = _agg_v1(labels.double())[0]
+                    pk_ = int(_pick_v1(RL, score.float())[0])
+                    row_ = {"i": int(i), "probe_pick": pk_, "pdms_pick": float(pdm[pk_]), "pdms_max": float(pdm.max()), "loss": float(loss.detach())}
+                    if getattr(cap, "rank_calls", None) and "logits" in cap.rank_calls[0] and i < len(cap.rank_calls[0]["logits"]):
+                        tl = torch.as_tensor(np.asarray(cap.rank_calls[0]["logits"])[i:i + 1], dtype=torch.float32)
+                        row_["trainer_pick"] = int(_pick_v1(RL, tl)[0])
+                    scan.append(row_)
+            except Exception as e:                                    # noqa: BLE001
+                scan.append({"i": int(i), "diag_error": f"{type(e).__name__}: {e}"})
         if not force and float(loss.detach()) == 0.0:
             return None
         if loss.requires_grad:                                        # a term that returns a graph-less value (R-DROP) reads zero everywhere
@@ -2269,7 +2323,7 @@ def rank_reach(cap, profile, arm=None) -> dict:
                 g_["abs_sum"] += float(p.grad.double().abs().sum())
         wg = m.score_head.weight.grad
         rowsum = {h: (0.0 if wg is None else float(wg[k].double().abs().sum())) for h, k in RANK_HEAD_COLS.items()}
-        return {"loss": float(loss.detach()), "groups": groups, "score_head_rows": rowsum}
+        return {"loss": float(loss.detach()), "groups": groups, "score_head_rows": rowsum, "forced_j": fj, "forced_pick": fpk}
 
     declared = float(a.rank_w)
     pick, rec, scanned = 0, None, 0
@@ -2280,12 +2334,15 @@ def rank_reach(cap, profile, arm=None) -> dict:
             pick = i
             break
     found = rec is not None
-    if not found:                                                    # no pair on any labelled sample: the probe reads sample 0 as it always did (and FAILs on its zeros)
-        pick = 0
-        rec = one(0, declared, True)
-    out = {"ran": True, "labelled": int(pick < msk_a.size and float(msk_a[pick]) > 0.0) if msk_a.size else 0, "sample_index": int(pick), "scanned": int(scanned), "found": bool(found)}
+    forced = False
+    if not found:
+        forced = "pick" in _rank_heads_set(a.rank_heads)             # a SPARSE, score-dependent head: rewrite the labels so a pair must exist (docstring)
+        pick = labelled_idx[0] if (forced and labelled_idx) else 0   # else: the probe reads sample 0 as it always did (and FAILs on its zeros)
+        rec = one(pick, declared, True, forced)
+    out = {"ran": True, "labelled": int(pick < msk_a.size and float(msk_a[pick]) > 0.0) if msk_a.size else 0, "sample_index": int(pick), "scanned": int(scanned), "found": bool(found),
+           "forced": bool(forced), "forced_j": rec.get("forced_j") if forced else None, "forced_pick": rec.get("forced_pick") if forced else None, "scan": scan}
     out["declared"] = rec
-    out["zero"] = one(pick, 0.0, True)
+    out["zero"] = one(pick, 0.0, True, forced)
     m.zero_grad(set_to_none=True)
     return out
 
@@ -2618,7 +2675,7 @@ def rank_live_rows(cap, profile, arm=None) -> tuple:
     except Exception as e:                                                                    # noqa: BLE001
         fr = {"ran": False}
         reasons.append(f"L3 rank reach probe could not run: {type(e).__name__}: {e}")
-    det["rank_reach"] = {k: (v if k in ("ran", "labelled", "sample_index", "scanned", "found") else {"loss": v["loss"], "groups": v["groups"], "score_head_rows": v["score_head_rows"]}) for k, v in fr.items()}
+    det["rank_reach"] = {k: (v if k in ("ran", "labelled", "sample_index", "scanned", "found", "forced", "forced_j", "forced_pick", "scan") else {"loss": v["loss"], "groups": v["groups"], "score_head_rows": v["score_head_rows"]}) for k, v in fr.items()}
     reasons += judge_rank_reach(fr, heads)
     tr = getattr(cap, "rank_traj_reach", None)
     det["traj_reach"] = tr

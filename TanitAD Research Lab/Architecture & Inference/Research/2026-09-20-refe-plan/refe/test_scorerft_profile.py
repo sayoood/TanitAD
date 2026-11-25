@@ -978,7 +978,9 @@ def chk_reach_scan():
             break
         ok(done, "no seed gave the stand-in model a non-oracle pick on a sample >= 1")
         fpa = GC.rank_reach(reach_cap_multi(_pairless(_pairless(_pairless(_pairless(yp, 0), 1), 2), 3), heads="pick"), {}, None)
-        ok(fpa["found"] is False and GC.judge_rank_reach(fpa, "pick") != [], "pick: every sample pairless is FAIL")
+        ok(fpa["found"] is False and fpa["forced"] is True and GC.judge_rank_reach(fpa, "pick") == [], ("pick: every sample pairless -> the FORCED pair probe runs and proves the reach", GC.judge_rank_reach(fpa, "pick")))
+        fpe = GC.rank_reach(reach_cap_multi(_pairless(_pairless(_pairless(_pairless(y, 0), 1), 2), 3), heads="ep,gate"), {}, None)
+        ok(fpe["found"] is False and fpe["forced"] is False and GC.judge_rank_reach(fpe, "ep,gate") != [], "a DENSE head set is never forced: every sample pairless stays FAIL")
     finally:
         if old_mod is None:
             sys.modules.pop("rank_loss", None)
@@ -992,6 +994,81 @@ def chk_reach_scan():
     cap.lab_submits = []
     _, det = GC.rank_live_rows(cap, {}, None)
     ok(det["rank_reach"]["sample_index"] == 1 and det["rank_reach"]["scanned"] == 2 and det["rank_reach"]["found"] is True, det["rank_reach"])
+
+
+def _wrapped_rank_module(kind):
+    """the REAL rank_loss module with a RankLoss whose `term` is broken in the way `kind` names (the forced-pair probe's RED arms): 'drop' = a graph-less value (R-DROP), 'zero' = a term that is always exactly 0.0 with a graph,
+    'head' = the aggregate reads the DDC logit where it must read C (R-HEAD)."""
+    RLr = _real_rank_loss()
+    mod = types.ModuleType("rank_loss")
+    mod.navsim_v1, mod.pick_index, mod.HEADS = RLr.navsim_v1, RLr.pick_index, RLr.HEADS
+
+    class Broken(RLr.RankLoss):
+        def term(self, score, labels, msk, batch):
+            if kind == "head":
+                score = score[..., [0, 1, 2, 3, 5, 4]]
+            r = super().term(score, labels, msk, batch)
+            if kind == "drop":
+                return r.detach()
+            if kind == "zero":
+                return score.sum() * 0.0
+            return r
+    mod.RankLoss = Broken
+    return mod
+
+
+def chk_forced_pick():
+    """MM 2026-11-25 (99ddf53d1461: G-LIVE L3 read exactly zero because no scanned sample formed a PICK pair, while the trainer's own call 0 had 41): when the real scan finds no pair and `pick` is declared, `rank_reach`
+    rewrites the labels of the first labelled sample so a pair MUST exist and proves the reach on that.  (1) pairless real scan -> forced, j* != the pick, every expected row non-zero, DDC / trajectory side / weight-0 control
+    exactly 0.0; (2) a real pair on sample 0 -> no forcing, as before; (3) the forced probe with a dead term is RED: R-DROP, an always-0 term, R-HEAD, R-LEAK."""
+    old_mod = sys.modules.get("rank_loss")
+    RLr = _real_rank_loss()
+    sys.modules["rank_loss"] = RLr
+    try:
+        _, y = make_sets(seed=77, B=4, M=16)
+        yall = y
+        for i in range(4):
+            yall = _pairless(yall, i)
+        fr = GC.rank_reach(reach_cap_multi(yall, heads="pick"), {}, None)
+        ok(fr["found"] is False and fr["forced"] is True and fr["sample_index"] == 0 and fr["scanned"] == 4, (fr["found"], fr["forced"], fr["sample_index"], fr["scanned"]))
+        ok(fr["forced_j"] is not None and fr["forced_pick"] is not None and fr["forced_j"] != fr["forced_pick"], (fr["forced_j"], fr["forced_pick"]))
+        ok(fr["declared"]["loss"] > 0.0 and len(fr["scan"]) == 4 and all(r["pdms_pick"] == r["pdms_max"] for r in fr["scan"]), fr["scan"])
+        rows = fr["declared"]["score_head_rows"]
+        ok(all(rows[h] > 0.0 for h in ("nc", "dac", "ep", "ttc", "c")) and rows["ddc"] == 0.0, rows)
+        g = fr["declared"]["groups"]
+        ok(g["traj_head"]["abs_sum"] == 0.0 and g["backbone.lora"]["abs_sum"] > 0 and g["scene_proj"]["abs_sum"] > 0 and g["score_dec"]["abs_sum"] > 0, g)
+        ok(all(v["abs_sum"] == 0.0 for v in fr["zero"]["groups"].values()) and all(v == 0.0 for v in fr["zero"]["score_head_rows"].values()), "the weight-0 control (on the SAME forced labels) reads exactly 0.0")
+        ok(GC.judge_rank_reach(fr, "pick") == [], GC.judge_rank_reach(fr, "pick"))
+        lab, j, pk = GC.forced_pick_labels(__import__("torch").zeros(1, 5, 6))                     # all-tied scores: argmin == argmax == 0, the forced j* is moved off the pick
+        ok(j != pk and float(lab[0, j].min()) == 1.0 and float(lab.sum()) == 6.0, (j, pk))
+        # (2) a real pair on sample 0 -> the real scan is used, nothing is forced
+        done = False
+        for seed in range(8):
+            _, yp = make_sets(seed=40 + seed, B=4, M=16)
+            f2 = GC.rank_reach(reach_cap_multi(yp, heads="pick"), {}, None)
+            if f2["found"]:
+                done = True
+                ok(f2["forced"] is False and f2["forced_j"] is None and f2["scanned"] >= 1 and GC.judge_rank_reach(f2, "pick") == [], (seed, f2["forced"], f2["scanned"]))
+                break
+        ok(done, "no seed gave a real pick pair")
+        # (3) the RED arms under forcing
+        for kind, frag in (("drop", "EXACTLY zero"), ("zero", "EXACTLY zero"), ("head", "row C")):
+            sys.modules["rank_loss"] = _wrapped_rank_module(kind)
+            try:
+                fk = GC.rank_reach(reach_cap_multi(yall, heads="pick"), {}, None)
+                r = GC.judge_rank_reach(fk, "pick")
+                ok(fk["forced"] is True and r != [] and any(frag in x for x in r), (kind, fk["forced"], r))
+            finally:
+                sys.modules["rank_loss"] = RLr
+        cap_l = reach_cap_multi(yall, heads="pick")
+        cap_l.model = make_model(True)
+        r = GC.judge_rank_reach(GC.rank_reach(cap_l, {}, None), "pick")
+        ok(any("trajectory side" in x for x in r), ("R-LEAK stays RED under forcing", r))
+    finally:
+        if old_mod is None:
+            sys.modules.pop("rank_loss", None)
+        else:
+            sys.modules["rank_loss"] = old_mod
 
 
 P_CENSUS_FIX = {"heads": ["pick"], "ep_gap": 0.02, "gate_topk": 8, "label_backend": "pdm", "NOT_A_DECISION": False, "init_from": L.SCORERFT_DEFAULT_INIT, "rule": {"status": "SELECT", "rank_w": 0.125},
@@ -1109,7 +1186,7 @@ def chk_p_census():
 
 CHECKS = {"registry": chk_registry, "existing_unchanged": chk_existing_unchanged, "argv_delta": chk_argv_delta, "p_arms": chk_p_arms, "pick_rows": chk_pick_rows, "route_real": chk_route_real, "pins_refuse": chk_pins_refuse, "levers": chk_levers, "fresh_out": chk_fresh_out,
           "live_wiring": chk_live_wiring, "h_generalised": chk_h_generalised, "reach_and_regressions": chk_reach_and_regressions, "audit": chk_audit, "dvb_rows": chk_dvb_rows,
-          "live_rows": chk_live_rows_control_and_t, "census_l2": chk_census_l2, "p_census": chk_p_census, "reach_scan": chk_reach_scan, "field_reach_active": chk_field_reach_active_sample, "l5_identity_dtype": chk_l5_identity_dtype, "trainer_integration": chk_trainer_integration, "no_scipy": chk_no_scipy}
+          "live_rows": chk_live_rows_control_and_t, "census_l2": chk_census_l2, "p_census": chk_p_census, "reach_scan": chk_reach_scan, "forced_pick": chk_forced_pick, "field_reach_active": chk_field_reach_active_sample, "l5_identity_dtype": chk_l5_identity_dtype, "trainer_integration": chk_trainer_integration, "no_scipy": chk_no_scipy}
 
 # (file, old, new, the check that must go RED): ONE emitting line of a COPY of this tree is neutralised.
 MUTATIONS = [
@@ -1137,6 +1214,8 @@ MUTATIONS = [
     ("gate_checks.py", "    c = census or {}\n    if not c.get(\"ran\"):", "    return []\n    c = census or {}\n    if not c.get(\"ran\"):", "census_l2"),                        # judge_census_head returns [] unconditionally (L2 amendment)
     ("gate_checks.py", "    for i in labelled_idx:                                           # the FIRST labelled sample whose declared-weight term loss is non-zero\n", "    for i in labelled_idx[:1]:                                           # the FIRST labelled sample whose declared-weight term loss is non-zero\n", "reach_scan"),   # the probe is pinned to sample 0 again (the pod gate FAIL, L3)
     ("gate_checks.py", "        if not force and float(loss.detach()) == 0.0:\n            return None\n", "        if False:\n            return None\n", "reach_scan"),                                               # a pairless sample is probed, not skipped
+    ("gate_checks.py", "        forced = \"pick\" in _rank_heads_set(a.rank_heads)", "        forced = False", "forced_pick"),                                  # the forced-pair probe is switched off again (the 99ddf53d FAIL, L3)
+    ("gate_checks.py", "        if j == pk:                                                  # all-tied scores", "        if False:                                                    # all-tied scores", "forced_pick"),   # j* may equal the pick: no pair
     ("launch_gate.py", "        prof[\"rank_census\"] = dict(SCORERFT_P_RANK_CENSUS if arm in SCORERFT_P_ARMS else SCORERFT_RANK_CENSUS)", "        prof[\"rank_census\"] = dict(SCORERFT_RANK_CENSUS)", "p_census"),   # P carries T's census pin again
     ("launch_gate.py", "    if ranking:\n        prof[\"rank_census\"]", "    if ranking and arm not in SCORERFT_P_ARMS:\n        prof[\"rank_census\"]", "p_census"),   # P carries no census again (the 2026-11-25 FAIL)
     ("gate_checks.py", "    return abs(float(np.asarray(np.clip(float(navsim_value), 0.0, 1.0), dtype=label_dtype)) - float(label_value))", "    return abs(float(np.clip(float(navsim_value), 0.0, 1.0)) - float(label_value))", "l5_identity_dtype"),   # compare at float64 regardless of the label dtype (the gate-2 FAIL)
