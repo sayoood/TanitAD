@@ -1,0 +1,25 @@
+cells H_RLcE1_s0 done
+cells H_RLcE1_s1 done
+cells H_RLcE1_s2 done
+cells H_RLcFC_s0 done
+cells H_RLcFC_s1 done
+cells H_RLcFC_s2 done
+cells H_RLcE1FC_s0 done
+cells H_RLcE1FC_s1 done
+cells H_RLcE1FC_s2 done
+cells H_RLcK_s0 done
+cells H_RLcK_s1 done
+cells H_RLcK_s2 done
+TIER: T1-kin/hb0.2 (kinematic rollout on the model's own actions; logged camera frames; the lead does not react); never driving performance
+== controls
+   r1 PASS {"file": "R1_CHECK.json", "PASS": true, "checks": {"dumps": true, "rule_log": true, "rule_log_mid": true, "p1_first": true, "ticks": true, "readout_log": true, "fc_log": true}}
+   r4_runs PASS {"PASS": true}
+   r4_partner PASS {"PASS": true}
+   reader_controls PASS {"headway": true, "families": true, "route_goal": true, "headway_counts": {"n_windows_total": 2399, "n_lead_windows": 642, "PASS": true}, "PASS": true}
+== names
+   E1    RULEFC10K-E1-U-LOWER  families {'LONGITUDINAL': 'NOT-SEPARATED', 'LATERAL': 'NOT-SEPARATED', 'TACTICAL': 'NOT-SEPARATED', 'STRATEGIC': 'NOT-SEPARATED'}
+   FC    RULEFC10K-FC-U-LOWER  families {'LONGITUDINAL': 'NOT-SEPARATED', 'LATERAL': 'NOT-SEPARATED', 'TACTICAL': 'NOT-SEPARATED', 'STRATEGIC': 'NOT-SEPARATED'}
+   E1FC  RULEFC10K-E1FC-U-LOWER  families {'LONGITUDINAL': 'NOT-SEPARATED', 'LATERAL': 'NOT-SEPARATED', 'TACTICAL': 'NOT-SEPARATED', 'STRATEGIC': 'NOT-SEPARATED'}
+== E1: H_RLcE1 minus H_RLcK  U {'per_seed': [-0.0142, -0.016, -0.0142], 'pooled': -0.0148, 'interval': [-0.0248, -0.0069]}  C {'per_seed': [0.0, 0.0, 0.0], 'pooled': 0.0, 'interval': [0.0, 0.0]}  F {'per_seed': [0.0016, 0.0031, 0.0031], 'pooled': 0.0026, 'interval': [0.0004, 0.0057]}
+== FC: H_RLcFC minus H_RLcK  U {'per_seed': [-0.0089, -0.0214, -0.0107], 'pooled': -0.0136, 'interval': [-0.0247, -0.0035]}  C {'per_seed': [0.0, 0.0, 0.0], 'pooled': 0.0, 'interval': [0.0, 0.0]}  F {'per_seed': [0.0062, 0.0109, 0.0187], 'pooled': 0.0119, 'interval': [0.0043, 0.0217]}
+== E1FC: H_RLcE1FC minus H_RLcK  U {'per_seed': [-0.0178, -0.0285, -0.0267], 'pooled': -0.0243, 'interval': [-0.0399, -0.0109]}  C {'per_seed': [0.0, 0.0, 0.0], 'pooled': 0.0, 'interval': [0.0, 0.0]}  F {'per_seed': [0.0093, 0.0125, 0.0187], 'pooled': 0.0135, 'interval': [0.0065, 0.0224]}
