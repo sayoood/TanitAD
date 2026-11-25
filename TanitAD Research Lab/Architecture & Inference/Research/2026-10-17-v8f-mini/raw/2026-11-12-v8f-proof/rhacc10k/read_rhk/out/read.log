@@ -1,0 +1,27 @@
+cells H_RLcK_s0 done
+cells H_RLcK_s1 done
+cells H_RLcK_s2 done
+cells H_RQ50K_s0 done
+cells H_RQ50K_s1 done
+cells H_RQ50K_s2 done
+cells U_RLcK_s0 done
+cells U_RLcK_s1 done
+cells U_RLcK_s2 done
+cells U_RQ50K_s0 done
+cells U_RQ50K_s1 done
+cells U_RQ50K_s2 done
+cells H_RLcK_P30_s0 done
+cells H_RLcK_P30_s1 done
+cells H_RLcK_P30_s2 done
+cells U_RLcK_P30_s0 done
+cells U_RLcK_P30_s1 done
+cells U_RLcK_P30_s2 done
+TIER: T1-kin/hb0.2 (kinematic rollout on the model's own actions; logged camera frames; the lead does not react); never driving performance
+== controls (q1 to q4 and the reader controls)
+   q1_complete PASS {"PASS": true}
+   q2_models PASS {"note": "hashes compared as recorded (INPUTS.json vs the queue table and the card prefixes); a checkpoint is not hashed here", "PASS": true}
+   q2_argv PASS {"PASS": true}
+   q3_partners PASS {"note": "sha256 of every listed file vs PARTNERS_ADD139_SHA.txt; extra files are reported, not failed", "PASS": true}
+   q4_identity PASS {"note": "i = H_RLcK against U_RLcK (every dump file hashed); k and l compared as sorted (clip, t0) lists", "PASS": true}
+   e_reader_controls FAIL {"headway": true, "families": true, "route_goal": true, "r3_grid_engines_and_tick_controls": false, "headway_counts": {"n_windows_total": 2399, "n_lead_windows": 642, "PASS": true}, "PASS": false}
+== a control did not pass: no name, no level, no difference; the read is reported as written
