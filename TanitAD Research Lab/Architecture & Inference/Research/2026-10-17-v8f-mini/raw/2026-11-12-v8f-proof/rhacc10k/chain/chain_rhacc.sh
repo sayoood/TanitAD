@@ -7,6 +7,7 @@
 # Markers on stdout (this chain's own log): ZZRHACC-END <state> <utc>. Script polling, not model turns.
 set -u
 JOB=${1:?job}
+MATCH=${2:-rhacc10k}   # python command lines the temperature rule stops (card ADD149: a job outside rhacc10k passes its own)
 B=/c/Users/Admin/box2_ship
 SSH="ssh -o BatchMode=yes -o ConnectTimeout=20 tanitad-box2"
 LOG='D:\tanitad\logs\'"$JOB"'.log'
@@ -28,13 +29,17 @@ tl() { ps1 "Get-Content D:/tanitad/logs/telemetry_full.csv -Tail 1"; }
 sleep 45; t1=$(tl); sleep 35; t2=$(tl)
 [[ $t2 == 20* && $t2 != "$t1" ]] || end no-fresh-telemetry
 echo "$(ts) telemetry fresh"
+cnt() { ps1 "if (Test-Path '$LOG') { @(Select-String -Path '$LOG' -Pattern 'QUEUE-PAUSED|QUEUE-COMPLETE').Count } else { 0 }"; }
+N0=$(cnt); [[ "$N0" =~ ^[0-9]+$ ]] || end no-marker-count
+echo "$(ts) end markers already in the job log: $N0 (the queue ends on a new one; card ADD149)"
 o=$($SSH "powershell -NoProfile -ExecutionPolicy Bypass -File D:\\tanitad\\launch.ps1 -Job D:\\tanitad\\jobs\\$JOB.cmd -Log $LOG" 2>/dev/null | tr -d '\r'); echo "$(ts) queue: $o"
 [[ $o == *"rc=0"* ]] || end launch-failed
 hi=0
 while :; do
   sleep 60
-  q=$(ps1 "if (Test-Path D:/tanitad/rhacc10k/STOP.txt) { 'Q-STOP' } elseif (Select-String -Path '$LOG' -Pattern 'QUEUE-PAUSED|QUEUE-COMPLETE' -Quiet) { 'Q-END' } else { 'Q-RUN' }")
-  case "$q" in Q-STOP) end queue-stop ;; Q-END) end queue-end ;; esac
+  q=$(ps1 "if (Test-Path D:/tanitad/rhacc10k/STOP.txt) { 'Q-STOP' } else { 'Q-RUN' }")
+  [ "$q" = "Q-STOP" ] && end queue-stop
+  c=$(cnt); [[ "$c" =~ ^[0-9]+$ ]] && [ "$c" -gt "$N0" ] && end queue-end
   b=$(ps1 "(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToString('o')")
   [ -n "$b" ] && [ "$b" != "$boot0" ] && end box2-rebooted
   t=$(ps1 "Get-Content D:/tanitad/logs/telemetry_full.csv -Tail 20" | grep -E '^20' | cut -d, -f11 | grep -E '^[0-9]+$')
@@ -42,7 +47,7 @@ while :; do
     n61=$(echo "$t" | awk '$1 >= 61' | wc -l); m=$(echo "$t" | sort -n | tail -1)
     [ "$m" -gt "$hi" ] && { hi=$m; echo "$(ts) new max USB temp $m C"; }
     if [ "$n61" -ge 4 ] || [ "$m" -ge 63 ]; then
-      ps1 "Get-CimInstance Win32_Process -Filter \\\"Name = 'python.exe'\\\" | Where-Object { \$_.CommandLine -match 'rhacc10k' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force; 'stopped ' + \$_.ProcessId }"
+      ps1 "Get-CimInstance Win32_Process -Filter \\\"Name = 'python.exe'\\\" | Where-Object { \$_.CommandLine -match '$MATCH' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force; 'stopped ' + \$_.ProcessId }"
       end temperature
     fi
   fi
