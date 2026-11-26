@@ -1,0 +1,62 @@
+{
+ "tokens_asked": 50,
+ "rows": 50,
+ "misses": 0,
+ "miss_examples": [],
+ "ckpt": "E:/Projects/TanitAD-artifacts/trkscore/arms/C1/model_final.pt",
+ "select": "best",
+ "rule": "navsim_v1",
+ "repair_last_heading": true,
+ "sanitize_goal": false,
+ "goal_fix": "pdm_route",
+ "nav_mode": "command",
+ "driving_command_set": 50,
+ "frame_control": {
+  "n": 50,
+  "max_m": 7.229248575812844e-15,
+  "median_m": 1.7796372940916377e-15,
+  "bar_m": 0.001,
+  "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+ },
+ "interpolation_residual": {
+  "n": 50,
+  "max_m": 0.04217361241739709,
+  "median_m": 0.008103572161281266,
+  "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; reported, not gated"
+ },
+ "seconds": 110.1,
+ "proposals": {
+  "n": 50,
+  "M": 64,
+  "ade_selected_m": 1.9423,
+  "ade_random_m": 2.1131,
+  "ade_oracle_m": 0.369,
+  "oracle_index_distinct": 28,
+  "oracle_index_top5": [
+   [
+    51,
+    6
+   ],
+   [
+    54,
+    5
+   ],
+   [
+    11,
+    4
+   ],
+   [
+    16,
+    4
+   ],
+   [
+    58,
+    3
+   ]
+  ],
+  "selected_index_distinct": 27,
+  "endpoint_spread_m": 3.334,
+  "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = the planner's pick; random = mean over the M proposals (a random selector's expectation); oracle = best of M; oracle_index_* = how many proposals are ever best (WTA collapse if few); endpoint_spread = mean distance of the M endpoints from their centroid"
+ },
+ "proposal_dump": "E:\\Projects\\TanitAD-artifacts\\trkscore\\work\\smoke\\stage2_trk_smoke_c1.proposals.npz"
+}

@@ -1,0 +1,82 @@
+{
+ "meta": {
+  "n": 50,
+  "code": {
+   "trk_lib.py": "73fa19c77c8cc6225453472ecf2e7e13ade0080db3944991dd6773473fce107b",
+   "trk_select.py": "52bb0a0a57ef38021dce1e92e7b30c82ce508f5a7bde70263ef47763412597a8",
+   "refe_navtest_seam.py": "81595570af40e23875bb8097c02cb627895b58b27ddf3e4b169775da81ed0499",
+   "planner.py": "91437cd09362ff872a861c6166b3c00eee98ce9b98c4e85b6a95ca133e29e211",
+   "model.py": "e6011cd83c846dfbd9756301ae731f4b84541b7b8e07a139a2c2c2b663a8a46d",
+   "navsim": "F:\\Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896\\navsim\\__init__.py"
+  },
+  "red_mod": 10,
+  "red_all": true,
+  "wrapped_rc": 0,
+  "t_trk_mean_s": 0.28893442630767824
+ },
+ "switch_k_trk_ne_k_ship": 26,
+ "controls": {
+  "CTRL-SET": {
+   "pass": true,
+   "n_seam": 50,
+   "n_dump": 50,
+   "n_props": 50,
+   "n_banked": 12146,
+   "expect_n": 0
+  },
+  "CTRL-ID": {
+   "pass": true,
+   "match": 50,
+   "n": 50,
+   "id_maxdiff_max": 0.0
+  },
+  "CTRL-DET": {
+   "pass": true,
+   "pick_eq": 50,
+   "ship_row_eq": 50,
+   "props_eq": 50,
+   "props_max_abs_diff": 0.0,
+   "n": 50
+  },
+  "CTRL-RED": {
+   "pass": true,
+   "red_tokens": 50,
+   "red_d0_min": 0.9999999996465465,
+   "k_red_ne_k_trk": 29,
+   "need_at_least": 1
+  },
+  "CTRL-SUB": {
+   "pass": true,
+   "row_eq_planned_props_k_trk": 50,
+   "props_pick_eq_k_trk": 50,
+   "pick20_equals_seam": true,
+   "n": 50
+  },
+  "CTRL-SEAM": {
+   "pass": true,
+   "rows": 50,
+   "misses": 0,
+   "frame_control_max_m": 7.229248575812844e-15,
+   "frame_control_declared_ok": true,
+   "seam_log_device_cuda": true,
+   "ckpt": "E:/Projects/TanitAD-artifacts/trkscore/arms/C1/model_final.pt",
+   "wrapped_rc": 0
+  },
+  "CTRL-PARITY": {
+   "pass": true,
+   "as_written_pass": false,
+   "bar": "AMENDMENT_1 (sha256 d5fc1d57...): tracked |dx|,|dy| <= 1e-4 m, |dh| <= 1e-4 rad; start pose exact; other start components <= 1.2e-7 max(1,|cache|)",
+   "max": {
+    "xy": 4.6938657760620117e-07,
+    "heading": 1.4765670464100822e-08,
+    "s0": 4.48347369896851e-07,
+    "s0_pose": 0.0,
+    "s0_rest_over_f32_bar": 0.4483157363712245,
+    "nobatch_vs_batch": 0.0
+   },
+   "n": 50,
+   "what": "in-seam tracked states (seam venv, planner EgoState, 64 proposals only) vs the harness route (navsim-crun, metric cache ego_state, PDM-Closed in row 0)"
+  }
+ },
+ "all_pass": true
+}
