@@ -1,0 +1,40 @@
+# refe/launch_gate.py patch for L2 SAFE-HEAD (PREREG_SAFEHEAD.md 7). 3 hunks, +12 lines, no existing line changed.
+# base: tip 1df04b58 PK/refe/launch_gate.py sha256 604589926c36b8ead0c88304538bcd2a5749d1df0c9f1af968a7c9cfc4a4f698
+# after: sha256 3a1df19491bc8d0f03d4d509cadd02060985f1795b42bec249c679f07e2e3c22  (apply: git apply --directory=<PK>/refe, or patch -p1 inside PK/refe after fixing the a/ b/ paths)
+diff --git a/launch_gate.py b/launch_gate.py
+index 63980be..09cd977 100644
+--- a/launch_gate.py
++++ b/launch_gate.py
+@@ -1445,6 +1445,12 @@ PROFILES["refe_vdac_p6"] = {**copy.deepcopy(PROFILES["refe_aux_s1c"]), "name": "
+                                                "--aux-drv-exclude-logs": None, "--aux-drv-exclude-sha256": VDAC_H48_SHA256, "--epochs": str(VDAC_EPOCHS), "--ckpt": None, "--navtest-logs": None, "--navtest-tokens": None}}
+ 
+ 
++# L2 SAFE-HEAD (PK/raw/2026-11-27-safehead/PREREG_SAFEHEAD.md): the HEAD-ONLY trainer refe/safehead_train.py.  Its three arm profiles (refe_safehead_s0 / _s1 / _red),
++# rules and checks live in refe/safehead_gate.py (runner "safehead").  They are NEW dicts: no existing profile's fingerprint moves (test_safehead.py pins all 40).
++import safehead_gate as SHG  # noqa: E402
++PROFILES.update(SHG.profiles())
++
++
+ def parse_args_string(s: str) -> list:
+     return GT.argv_from_string(s)
+ 
+@@ -1524,6 +1530,8 @@ def profile_refusals(prof: dict, argv: list) -> list:
+         out += p7field_refusals(prof, argv)
+     if prof.get("scorerft_rules"):
+         out += scorerft_refusals(prof, argv)
++    if prof.get("safehead_rules"):                       # L2 SAFE-HEAD: the exact flag set, G-DVB coverage of every parser dest, a fresh --out
++        out += SHG.refusals(prof, argv)
+     if prof.get("field_arm"):
+         got = GT.flag_values(argv, "--w-field")
+         try:
+@@ -2164,6 +2172,10 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
+         if "G-CLOCK" in want:
+             emit(C.evidence("G-CLOCK", "NA", [prof.get("clock_na", "no label clock in this profile")], {}, arm=arm, rehearsal=rehearsal))
+         return status
++    if prof.get("runner") == "safehead":                 # refe/safehead_train.py (L2 SAFE-HEAD): its own BUILD / SMOKE runs and checks, refe/safehead_gate.py
++        SHG.run_checks(prof, argv, pkg, out_dir, want=want, emit=emit, arm=arm, rehearsal=rehearsal, data=data,
++                       suite=lambda: suite_check(prof, pkg, evidence=suite_evidence, key=key, commit=commit, arm=arm, rehearsal=rehearsal))
++        return status
+     b_argv, s_argv = derived_argvs(prof, argv, work, gate_sets, gate_pdm, gate_bank)
+     prof2 = dict(prof)
+     # G-CKPT runs FIRST (R43, MEASURED 2026-10-16, P6 pod): its round trip runs two real trainings in SUBPROCESSES, and the CUDA context this
