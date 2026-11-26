@@ -735,7 +735,7 @@ def test_a_deliberately_worse_heldout_arm_IS_STOPPED():
     assert r2["_diagnostics_are_not_the_rule"] == HG.REFUSED_PRIMARY
 
 
-def test_THE_LOOP_READS_THE_GATE_and_stops_early():
+def test_THE_LOOP_READS_THE_GATE_and_stops_early(tmp_path):
     """⭐ A val loop whose result nothing reads is exactly the defect being fixed.
 
     This drives the REAL ``_training_loop`` (via ``smoke_loop``) with a gate that
@@ -768,7 +768,10 @@ def test_THE_LOOP_READS_THE_GATE_and_stops_early():
                                 diagnostics={"ade_0_2s": 0.1})
 
     gate = _StoppingGate()
-    out = T4.smoke_loop(heldout_gate=gate)
+    # tmp_dir=tmp_path: without it smoke_loop() falls back to tempfile.mkdtemp(prefix="v4smoke_"), which nothing removes.
+    # MEASURED 2026-11-26: 113 such dirs (2,516 MB) had piled up in Thor's /tmp, one per gate-suite run since 2026-10-14.
+    # test_smoke_loop_tmpdir.py pins that every test caller passes tmp_dir.
+    out = T4.smoke_loop(tmp_dir=str(tmp_path), heldout_gate=gate)
     assert out["early_stopped"] is True
     assert out["final_step"] < 5, out["final_step"]        # budget was 6 steps
     assert len(out["heldout_history"]) >= 3
