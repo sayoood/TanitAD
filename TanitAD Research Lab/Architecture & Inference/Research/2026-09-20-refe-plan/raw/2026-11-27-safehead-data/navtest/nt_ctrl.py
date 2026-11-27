@@ -2,7 +2,7 @@
 """NAVTEST controls (each can FAIL). No PDMS, no aggregate.
   nt_ctrl.py smoke [--n 2]   controls on the first n logs' files found in navtest/  -> navtest/ctrl_smoke.json
   nt_ctrl.py full            controls on all 136 logs, requires 12,146 tokens, writes navtest/index.csv (token,log,split,file,sha256) -> navtest/ctrl_full.json
-CTRL-PICK-FULL: my pick == anchor table pick (bar: 0 mismatches, 0 missing). CTRL-LOGIT: score_head(s) from the checkpoint's head == cached logits (<= 1e-5).
+CTRL-PICK-FULL: my pick == anchor table pick (bar: 0 mismatches, 0 missing). CTRL-LOGIT: score_head(s) from the checkpoint's head == cached logits (<= 1e-4, AMENDMENT NT-1; was 1e-5).
 CTRL-SELECT: navsim_v1 aggregate argmax of cached logits == pick (the contract's validate()). CTRL-SHAPE: shapes, finite, pick in 0..63, log/split scalars."""
 import argparse
 import csv
@@ -69,7 +69,7 @@ def main():
     res = {}
     res["CTRL-PICK-FULL"] = {"pass": not mism and not missing and ntok > 0, "n_tokens_checked": ntok, "n_expected": nexp, "mismatches": len(mism), "missing": len(missing),
                              "first_mismatch": mism[:5], "bar": "0 mismatches vs anchor full_C1_s{0,1}of2.jsonl pick, 0 missing"}
-    res["CTRL-LOGIT"] = {"pass": wl <= 1e-5 and ntok > 0, "max_abs_diff": wl, "bar": "<= 1e-5 (s float32)"}
+    res["CTRL-LOGIT"] = {"pass": wl <= 1e-4 and ntok > 0, "max_abs_diff": wl, "bar": "<= 1e-4 (s float32; AMENDMENT NT-1 2026-11-27: = PREREG_SAFEHEAD CTRL-FEAT, the binding bar; the old 1e-5 sat inside float32 accumulation noise, 8 ulp at |logit| 19.8)", "old_bar_1e-5_pass": wl <= 1e-5}
     res["CTRL-SELECT"] = {"pass": bad_sel == 0 and ntok > 0, "n_pick_ne_argmax_agg32": bad_sel}
     res["CTRL-SHAPE"] = {"pass": not shape_bad, "problems": shape_bad[:10]}
     res["COVERAGE"] = {"pass": a.mode == "smoke" or ntok == 12146, "mode": a.mode, "logs": len(want), "tokens": ntok}
