@@ -1,0 +1,77 @@
+  registry: ok (42)
+  existing_unchanged: ok (111)
+  argv_delta: ok (129)
+  p_arms: ok (180)
+F:\safehead_tmp\patched\refe\test_scorerft_profile.py:220: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  ok(abs(float(v) - ref["L"]) <= 1e-6 * max(1.0, abs(ref["L"])), (seed, float(v), ref["L"]))
+  pick_rows: ok (203)
+  route_real: ok (215)
+  pins_refuse: ok (237)
+  levers: ok (263)
+  fresh_out: ok (265)
+  live_wiring: ok (270)
+  h_generalised: ok (274)
+  reach_and_regressions: ok (286)
+  audit: ok (299)
+  dvb_rows: ok (313)
+  live_rows: ok (320)
+  census_l2: ok (360)
+  p_census: the real census file is absent here (not the pod): judged on the fixture only
+  p_census: ok (387)
+  reach_scan: ok (405)
+  forced_pick: ok (419)
+  field_reach_active: ok (436)
+  l5_identity_dtype: ok (444)
+  trainer_integration: ok (450)
+  no_scipy: ok (452)
+  mutation RED as required: launch_gate.py [if prof.get("scorerft_rules"):
+        out += scorerft_r] -> levers
+  mutation RED as required: launch_gate.py [if not _p5c_hex64(prof.get("init_from_sha256")):
+       ] -> pins_refuse
+  mutation RED as required: launch_gate.py [elif ranking and not rw > 0.0:] -> pins_refuse
+  mutation RED as required: launch_gate.py [elif not ranking and rw != 0.0:] -> pins_refuse
+  mutation RED as required: launch_gate.py [for ev in tuple(prof.get("forbidden_env", ())) + SCORERF] -> levers
+  mutation RED as required: launch_gate.py [if not ranking and "rank_L" in terms:] -> levers
+  mutation RED as required: launch_gate.py [for f in sorted(set(got) - set(want) - {"--resume"}):
+  ] -> levers
+  mutation RED as required: launch_gate.py [a[a.index("--seed") + 1] = str(SCORERFT_ARM_SEED[arm])] -> argv_delta
+  mutation RED as required: launch_gate.py [rk = ["--rank-w", "0.0"]] -> argv_delta
+  mutation RED as required: launch_gate.py [if arm in SCORERFT_P_ARMS:
+            rk = ["--rank-w",] -> p_arms
+  mutation RED as required: launch_gate.py [if ranking and arm in SCORERFT_P_ARMS:
+        req.updat] -> p_arms
+  mutation RED as required: launch_gate.py [(SCORERFT_ARM_HEADS[arm], SCORERFT_RANK_EP_GAP, SCORERFT] -> p_arms
+  mutation RED as required: gate_checks.py [| ({"ttc", "c"} if "pick" in _rank_heads_set(heads) else] -> pick_rows
+  mutation RED as required: gate_checks.py [if not (j == pick_k and pdms[i] > pdms[j]):] -> pick_rows
+  mutation RED as required: gate_checks.py [if profile.get("scorerft_rules"):                       ] -> live_wiring
+  mutation RED as required: gate_checks.py [needs_table = profile["traj_label_required"] if "traj_la] -> h_generalised
+  mutation RED as required: gate_checks.py [ok=bool(calls) and len(mult) == len(calls) and all(math.] -> dvb_rows
+  mutation RED as required: gate_checks.py [elif not math.isclose(v, ref["L"], rel_tol=RANK_REL_TOL,] -> audit
+  mutation RED as required: gate_checks.py [if x is not None and x["abs_sum"] != 0.0:
+            ou] -> reach_and_regressions
+  mutation RED as required: gate_checks.py [if rows.get(h, 0.0) != 0.0:
+            out.append(f"L3 ] -> reach_and_regressions
+  mutation RED as required: gate_checks.py [c = census or {}
+    if not c.get("ran"):] -> census_l2
+  mutation RED as required: gate_checks.py [for i in labelled_idx:                                  ] -> reach_scan
+  mutation RED as required: gate_checks.py [if not force and float(loss.detach()) == 0.0:
+          ] -> reach_scan
+  mutation RED as required: gate_checks.py [forced = "pick" in _rank_heads_set(a.rank_heads)] -> forced_pick
+  mutation RED as required: gate_checks.py [if j == pk:                                             ] -> forced_pick
+  mutation RED as required: launch_gate.py [prof["rank_census"] = dict(SCORERFT_P_RANK_CENSUS if arm] -> p_census
+  mutation RED as required: launch_gate.py [if ranking:
+        prof["rank_census"]] -> p_census
+  mutation RED as required: gate_checks.py [return abs(float(np.asarray(np.clip(float(navsim_value),] -> l5_identity_dtype
+  mutation RED as required: gate_checks.py [if hasattr(res, "iloc"):
+        row = res.iloc[0]] -> l5_identity_dtype
+  mutation RED as required: gate_checks.py [out["active_index"] = idx[active[0]]
+    sl = slice(idx[] -> field_reach_active
+  mutation RED as required: gate_checks.py [return {k: ({"loss": v["loss"], "groups": v["groups"]} i] -> field_reach_active
+  mutation RED as required: gate_checks.py [det["field_reach"] = field_reach_detail(fr)] -> field_reach_active
+  mutation RED as required: gate_checks.py [if fr["dead_nonzero"] > 0 or fr["pick_nc_nonzero"] > 0 o] -> route_real
+  mutation RED as required: gate_checks.py [out["dead_nonzero"] += 1] -> route_real
+  mutation RED as required: gate_checks.py [if "pick" in heads:                                     ] -> route_real
+  mutation RED as required: gate_checks.py [if not fr["n_pick_nc1"] > 0:] -> route_real
+  mutation RED as required: gate_checks.py [live = (d_ < 0.0) if role[m] == 1 else (d_ > 0.0)] -> route_real
+ZZSCORERFTPROF_PASS 526

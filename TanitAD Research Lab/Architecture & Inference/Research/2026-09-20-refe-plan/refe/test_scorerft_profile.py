@@ -119,7 +119,8 @@ def chk_existing_unchanged():
     for nm, fp in FP_PINS.items():
         got = hashlib.sha256(repr(sorted(L.PROFILES[nm].items())).encode()).hexdigest()[:16]
         ok(got == fp, f"{nm}: fingerprint moved {fp} -> {got}")
-    ok(set(L.PROFILES) == set(FP_PINS) | set(NAMES.values()) | set(P_NAMES.values()), sorted(set(L.PROFILES) ^ (set(FP_PINS) | set(NAMES.values()) | set(P_NAMES.values()))))
+    SH_NAMES = {"refe_safehead_red", "refe_safehead_s0", "refe_safehead_s1"}   # PREREG_SAFEHEAD 2026-11-27: three new profiles; no existing fingerprint moves
+    ok(set(L.PROFILES) == set(FP_PINS) | set(NAMES.values()) | set(P_NAMES.values()) | SH_NAMES, sorted(set(L.PROFILES) ^ (set(FP_PINS) | set(NAMES.values()) | set(P_NAMES.values()) | SH_NAMES)))
     for nm in FP_PINS:
         ok(not any(k.startswith(("scorerft", "rank_")) or k == "traj_label_required" for k in L.PROFILES[nm]), nm)
 

@@ -1445,6 +1445,12 @@ PROFILES["refe_vdac_p6"] = {**copy.deepcopy(PROFILES["refe_aux_s1c"]), "name": "
                                                "--aux-drv-exclude-logs": None, "--aux-drv-exclude-sha256": VDAC_H48_SHA256, "--epochs": str(VDAC_EPOCHS), "--ckpt": None, "--navtest-logs": None, "--navtest-tokens": None}}
 
 
+# L2 SAFE-HEAD (PK/raw/2026-11-27-safehead/PREREG_SAFEHEAD.md): the HEAD-ONLY trainer refe/safehead_train.py.  Its three arm profiles (refe_safehead_s0 / _s1 / _red),
+# rules and checks live in refe/safehead_gate.py (runner "safehead").  They are NEW dicts: no existing profile's fingerprint moves (test_safehead.py pins all 40).
+import safehead_gate as SHG  # noqa: E402
+PROFILES.update(SHG.profiles())
+
+
 def parse_args_string(s: str) -> list:
     return GT.argv_from_string(s)
 
@@ -1524,6 +1530,8 @@ def profile_refusals(prof: dict, argv: list) -> list:
         out += p7field_refusals(prof, argv)
     if prof.get("scorerft_rules"):
         out += scorerft_refusals(prof, argv)
+    if prof.get("safehead_rules"):                       # L2 SAFE-HEAD: the exact flag set, G-DVB coverage of every parser dest, a fresh --out
+        out += SHG.refusals(prof, argv)
     if prof.get("field_arm"):
         got = GT.flag_values(argv, "--w-field")
         try:
@@ -2163,6 +2171,10 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
             emit(C.check_egr(egr_json, arm=arm, rehearsal=rehearsal, require_ckpt=bool(prof.get("egr_require_ckpt", True))))
         if "G-CLOCK" in want:
             emit(C.evidence("G-CLOCK", "NA", [prof.get("clock_na", "no label clock in this profile")], {}, arm=arm, rehearsal=rehearsal))
+        return status
+    if prof.get("runner") == "safehead":                 # refe/safehead_train.py (L2 SAFE-HEAD): its own BUILD / SMOKE runs and checks, refe/safehead_gate.py
+        SHG.run_checks(prof, argv, pkg, out_dir, want=want, emit=emit, arm=arm, rehearsal=rehearsal, data=data,
+                       suite=lambda: suite_check(prof, pkg, evidence=suite_evidence, key=key, commit=commit, arm=arm, rehearsal=rehearsal))
         return status
     b_argv, s_argv = derived_argvs(prof, argv, work, gate_sets, gate_pdm, gate_bank)
     prof2 = dict(prof)
