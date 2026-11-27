@@ -14,6 +14,12 @@ Checks: G-HYG, G-DVB, G-LIVE, G-EVAL, G-CKPT, G-SUITE (G-CLOCK: NA, a fixed seal
   G-CKPT  sh_ckpt_bias_dropped (the saved file is not the in-memory head)    | sh_ckpt_nondet (two identical runs differ)
   G-SUITE suite_failing_test (gate_checks.check_suite's own arm)
 
+L2-NEXT (PREREG_SHMLP.md, PREREG_EPHEAD.md, PK/raw/2026-11-27-l2next/): six more NEW profiles, same runner, same checks:
+  refe_shmlp_{s0,s1,red}   SH-MLP: SAFE-HEAD's recipe + --mlp-hidden 64 (residual MLP, zero-init last layer; 66,052 parameters)
+  refe_ephead_{s0,s1,red}  EP-HEAD: row 2 (EP) alone, SOFT label tr_ep, --select cv5 (5-fold log CV over all navtrain logs); red = labels permuted across tokens
+  extra deliberate-regression arms: sh_mlp_off (G-DVB: --mlp-hidden ignored) | sh_mlp_nonzero_init (G-DVB + G-EVAL: the last layer is not zero) | sh_cv_token_folds (G-DVB: folds by
+  token, not by log: a log would sit in train AND test)
+
     python launch_gate.py refusals --profile refe_safehead_s0 --args "$ARGS"
     python launch_gate.py run --profile refe_safehead_s0 --pkg <pkg> --args "$ARGS" --out-dir <gate dir> --commit <landed 40-hex>
     python launch_gate.py verify --profile refe_safehead_s0 --token <PASS_*.json> --args "$ARGS" --pkg <pkg>
@@ -55,8 +61,48 @@ SUITE = [{"script": "test_safehead.py", "args": ["--fast"], "token": "ZZSAFEHEAD
 #   output  = where it writes (fresh)                                          control = gate-only switch, FORBIDDEN in a launch argv
 DVB = {"cache_index": "data", "init_from": "data", "heldout_logs": "data", "navtest_logs": "data", "out": "output", "seed": "built", "steps": "built",
        "lr": "built", "batch": "built", "gamma": "built", "rows": "built", "save_steps": "built", "permute_labels_seed": "built",
+       "mlp_hidden": "built", "select": "built",                                        # L2-NEXT: judged in check_dvb (the built value, the parameter count, the zero-init last layer, the CV folds)
        "smoke_steps": "control", "build_only": "control"}
 REGISTERED_BUILT = {"optimizer": "Adam", "betas": [0.9, 0.999], "eps": 1e-8, "weight_decay": 0.0, "loss": "qfocal"}
+
+
+# ---- L2-NEXT: the SH-MLP and EP-HEAD families (new profile names; the three SAFE-HEAD dicts below are untouched) ------------------------------------------------
+SUITE_NEXT = SUITE + [{"script": "test_safehead_next.py", "args": ["--fast"], "token": "ZZSHNEXT_PASS"}]
+FAMILIES = {
+    "shmlp": {"registered": {**REGISTERED, "--mlp-hidden": "64"}, "live_terms": LIVE_TERMS, "card": "PK/raw/2026-11-27-l2next/PREREG_SHMLP.md",
+              "name": {"s0": "refe_shmlp_s0", "s1": "refe_shmlp_s1", "red": "refe_shmlp_red"}},
+    "ephead": {"registered": {**REGISTERED, "--rows": "2", "--select": "cv5"}, "live_terms": ("qfl_ep",), "card": "PK/raw/2026-11-27-l2next/PREREG_EPHEAD.md",
+               "name": {"s0": "refe_ephead_s0", "s1": "refe_ephead_s1", "red": "refe_ephead_red"}},
+}
+NEXT_PROFILE_NAMES = tuple(n for f in FAMILIES.values() for n in f["name"].values())
+
+
+def family_of_argv(argv: list) -> str:
+    import gate_token as GT
+    sel, mh = GT.flag_values(argv, "--select"), GT.flag_values(argv, "--mlp-hidden")
+    if sel and sel[0] == "cv5":
+        return "ephead"
+    if mh and int(mh[0]) > 0:
+        return "shmlp"
+    return "safehead"
+
+
+def _next_profiles() -> dict:
+    out = {}
+    for fam, F in FAMILIES.items():
+        for arm, spec in ARMS.items():
+            req = {**{f: None for f in DATA_FLAGS + OUTPUT_FLAGS}, **F["registered"], "--seed": str(spec["seed"])}
+            if spec["perm"] is not None:
+                req["--permute-labels-seed"] = str(spec["perm"])
+            name = F["name"][arm]
+            out[name] = {"name": name, "runner": "safehead", "safehead_rules": True, "safehead_arm": arm, "safehead_family": fam, "trainer": "refe/safehead_train.py",
+                         "parser_module": "safehead_train", "trainer_src": "safehead_train.py", "namespace_funcs": ("build_config", "run"),
+                         "live_terms": F["live_terms"], "data_flags": DATA_FLAGS, "output_flags": OUTPUT_FLAGS,
+                         "forbidden_flags": CONTROL_FLAGS + (() if spec["perm"] is not None else ("--permute-labels-seed",)),
+                         "required_flags": req, "registered": dict(F["registered"]), "suite": [dict(e) for e in SUITE_NEXT], "checks": CHECKS, "na_ok": ("G-CLOCK",),
+                         "clock_na": "the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock",
+                         "mintable": True, "require_commit": True, "rehearsal": False, "init_from_sha256": C1_SHA256, "smoke_steps": SMOKE_STEPS, "card": F["card"]}
+    return out
 
 
 def profiles() -> dict:
@@ -74,18 +120,21 @@ def profiles() -> dict:
                      "clock_na": "SAFE-HEAD has no label clock: its labels are a fixed, sealed cache bound by sha256 (--cache-index)",
                      "mintable": True, "require_commit": True, "rehearsal": False, "init_from_sha256": C1_SHA256, "smoke_steps": SMOKE_STEPS,
                      "card": "PK/raw/2026-11-27-safehead/PREREG_SAFEHEAD.md"}
+    out.update(_next_profiles())
     return out
 
 
 def profile_name_for_argv(argv: list) -> str:
     import gate_token as GT
+    fam = family_of_argv(argv)
+    names = PROFILE_NAME if fam == "safehead" else FAMILIES[fam]["name"]
     perm = GT.flag_values(argv, "--permute-labels-seed")
     if perm and int(perm[0]) >= 0:
-        return PROFILE_NAME["red"]
+        return names["red"]
     seed = GT.flag_values(argv, "--seed")
     for arm, spec in ARMS.items():
         if spec["perm"] is None and seed and int(seed[0]) == spec["seed"]:
-            return PROFILE_NAME[arm]
+            return names[arm]
     raise SystemExit(f"REFUSED: the argv is no registered SAFE-HEAD arm (seed {seed}, permute {perm})")
 
 
@@ -110,10 +159,11 @@ def refusals(prof: dict, argv: list) -> list:
     for f, n in sorted(seen.items()):
         if n > 1:
             out.append(f"{name}: {f} is carried {n} times")
-    for f in ("--rows", "--save-steps"):
+    reg = prof.get("registered", REGISTERED)
+    for f in ("--rows", "--save-steps", "--mlp-hidden", "--select"):
         got = GT.flag_values(argv, f)
-        if got and got[0] != REGISTERED[f]:
-            out.append(f"{name} PINS {f} {REGISTERED[f]}; the argv has {f} {got[0]}")
+        if f in reg and got and got[0] != reg[f]:
+            out.append(f"{name} PINS {f} {reg[f]}; the argv has {f} {got[0]}")
     o = GT.flag_values(argv, "--out")
     if o and Path(o[0]).is_dir() and any(Path(o[0]).iterdir()):
         out.append(f"{name}: --out {o[0]} exists and is not empty (a run never writes over another)")
@@ -192,9 +242,10 @@ def check_dvb(prof: dict, argv: list, work: Path, data: dict, arm=None, rehearsa
         reasons.append(f"the BUILD run failed (rc {r.returncode}): {_tail(r)}")
         return C.verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
     b = json.loads(bj.read_text(encoding="utf-8"))
-    det["built"] = {k: b.get(k) for k in ("seed", "steps", "lr", "batch", "gamma", "rows", "save_steps", "permute_labels_seed", "optimizer", "loss")}
+    det["built"] = {k: b.get(k) for k in ("seed", "steps", "lr", "batch", "gamma", "rows", "save_steps", "permute_labels_seed", "optimizer", "loss", "mlp_hidden", "select",
+                                          "n_trainable_params", "mlp_last_layer_abs_sum_init")}
     want = {"seed": ns.seed, "steps": ns.steps, "batch": ns.batch, "gamma": ns.gamma, "permute_labels_seed": ns.permute_labels_seed,
-            "save_steps": list(T._ints(ns.save_steps))}
+            "save_steps": list(T._ints(ns.save_steps)), "mlp_hidden": ns.mlp_hidden, "select": ns.select}
     for k, v in want.items():
         if b.get(k) != v:
             reasons.append(f"G-DVB {k}: argv {v!r} != built {b.get(k)!r}")
@@ -210,7 +261,21 @@ def check_dvb(prof: dict, argv: list, work: Path, data: dict, arm=None, rehearsa
     if any(list(x) != REGISTERED_BUILT["betas"] for x in b.get("betas", [None])) or any(x != REGISTERED_BUILT["eps"] for x in b.get("eps", [None])) \
             or any(x != REGISTERED_BUILT["weight_decay"] for x in b.get("weight_decay", [None])):
         reasons.append(f"G-DVB Adam constants {b.get('betas')}/{b.get('eps')}/{b.get('weight_decay')} != registered {REGISTERED_BUILT}")
-    if b.get("live_terms") != [dict(zip((0, 1, 3, 5), LIVE_TERMS))[r] for r in rows]:
+    H = int(ns.mlp_hidden)
+    n_exp = len(rows) * ((D.MLP_IN * H + H + H + 1) if H else (D.D_S + 1))
+    det["n_trainable_params_expected"] = n_exp
+    if b.get("n_trainable_params") != n_exp:
+        reasons.append(f"G-DVB trainable parameters: the optimiser holds {b.get('n_trainable_params')}, the argv implies {n_exp} ({len(rows)} rows, mlp_hidden {H})")
+    if H and b.get("mlp_last_layer_abs_sum_init") != 0.0:
+        reasons.append(f"G-DVB zero-init: the MLP's last layer has |w|+|b| = {b.get('mlp_last_layer_abs_sum_init')!r} at init, not EXACTLY 0.0 (step 0 would not be C1)")
+    if ns.select == "cv5":
+        idx = D.read_index(ns.cache_index)
+        exp = {lg: [i % T.N_FOLDS] for i, lg in enumerate(sorted({r["log"] for r in idx if r["split"] in D.SPLITS_NAVTRAIN}))}
+        det["cv_logs"] = len(exp)
+        if b.get("cv_fold_of_log") != exp:
+            bad = sorted(k for k in set(exp) | set(b.get("cv_fold_of_log") or {}) if (b.get("cv_fold_of_log") or {}).get(k) != exp.get(k))
+            reasons.append(f"G-DVB cv5 folds: {len(bad)} log(s) are not in the one fold (sorted-name index mod 5) (first {bad[:2]}): a log must be in exactly one fold")
+    if b.get("live_terms") != [T.TERM_OF_ROW[r] for r in rows]:
         reasons.append(f"G-DVB live terms {b.get('live_terms')} do not match the trained rows {rows}")
     if b.get("init_sha256") != prof["init_from_sha256"]:
         reasons.append(f"G-DVB init-from sha256 {str(b.get('init_sha256'))[:16]} is not C1's {prof['init_from_sha256'][:16]} (MODEL_REGISTRY 14.6)")
@@ -224,6 +289,14 @@ def _metrics(p: Path) -> list:
     return [json.loads(ln) for ln in p.read_text(encoding="utf-8").splitlines() if ln.strip()] if p.is_file() else []
 
 
+def _row_moved(h0: dict, hN: dict, g: int, rows) -> float:
+    """How far row g's TRAINED parameters moved between two heads: |W - W0| + |b - b0| (schema /1) or the residual-MLP arrays' change (schema /2)."""
+    if hN.get("mlp") is not None:
+        i = list(rows).index(g)
+        return float(sum(np.abs(hN["mlp"][k][i] - h0["mlp"][k][i]).sum() for k in D.MLP_KEYS))
+    return float(np.abs(hN["W"][g] - h0["W"][g]).sum() + abs(hN["b"][g] - h0["b"][g]))
+
+
 def check_live(prof: dict, argv: list, smoke: Path, r, data: dict, arm=None, rehearsal=False) -> dict:
     T = importlib.import_module(prof["parser_module"])
     reasons, det = [], {"smoke_rc": r.returncode}
@@ -231,7 +304,7 @@ def check_live(prof: dict, argv: list, smoke: Path, r, data: dict, arm=None, reh
         reasons.append(f"the real-data smoke failed (rc {r.returncode}): {_tail(r)}")
         return C.verdict("G-LIVE", reasons, det, arm=arm, rehearsal=rehearsal)
     rows = list(T._ints(T.build_parser().parse_args(argv).rows))
-    terms = [dict(zip((0, 1, 3, 5), LIVE_TERMS))[x] for x in rows]
+    terms = [T.TERM_OF_ROW[x] for x in rows]
     M = _metrics(smoke / "metrics.jsonl")
     det["steps"] = len(M)
     if len(M) != SMOKE_STEPS:
@@ -250,7 +323,7 @@ def check_live(prof: dict, argv: list, smoke: Path, r, data: dict, arm=None, reh
     if b.get("rows") != rows:
         reasons.append(f"trained rows {rows} but the optimiser holds {b.get('rows')} (a trained row outside the optimiser never moves)")
     h0, hN = D.load_head(smoke / "head_step00000.npz"), D.load_head(smoke / f"head_step{SMOKE_STEPS:05d}.npz")
-    moved = {D.ROW_NAMES[g]: float(np.abs(hN["W"][g] - h0["W"][g]).sum() + abs(hN["b"][g] - h0["b"][g])) for g in rows}
+    moved = {D.ROW_NAMES[g]: _row_moved(h0, hN, g, rows) for g in rows}
     det["row_moved_abs"] = moved
     for g, v in moved.items():
         if not v > 0.0:
@@ -271,15 +344,15 @@ def check_eval(prof: dict, smoke: Path, r, arm=None, rehearsal=False) -> dict:
     hN, h0 = D.load_head(smoke / f"head_step{SMOKE_STEPS:05d}.npz"), D.load_head(smoke / "head_step00000.npz")
     rows = list(hN["meta"]["rows"])
     rows_read = [(g + 1) % D.N_OUT for g in rows] if C.arm_is("sh_eval_rowshift", arm) else rows
-    if not (np.array_equal(hN["W"], p["W"]) and np.array_equal(hN["b"], p["b"])):
+    if not (np.array_equal(hN["W"], p["W"]) and np.array_equal(hN["b"], p["b"]) and (hN["mlp"] is None or all(np.array_equal(hN["mlp"][k], p[k]) for k in D.MLP_KEYS))):
         reasons.append("the saved head is not the trainer's in-memory head")
     # (b) the loader builds the SAME FUNCTION as the trainer: the loaded head on the same s vs the trainer's own torch forward
-    dd = float(np.abs(D.direct_logits(p["s"], hN["W"], hN["b"]) - p["torch_logits"]).max())
+    dd = float(np.abs(D.head_forward(p["s"], hN) - p["torch_logits"]).max())
     det["max_abs_loaded_head_vs_trainer_forward"] = dd
     if not dd <= EVAL_TOL:
         reasons.append(f"the loaded head differs from the trainer's forward by {dd:.3g} > {EVAL_TOL}")
     # (c) the read's delta form adds exactly the head's CHANGE on the trained rows (like for like: the cached logits carry the forward's own precision of s)
-    L = D.delta_logits(p["cached_logits"], p["s"], hN["W"], hN["b"], hN["W0"], hN["b0"], rows_read)
+    L = D.head_logits(p["cached_logits"], p["s"], hN, rows_read)
     chg = p["torch_logits"] - D.direct_logits(p["s"], hN["W0"], hN["b0"])
     d = float(np.abs((L - p["cached_logits"])[..., rows] - chg[..., rows]).max())
     fr = [g for g in range(D.N_OUT) if g not in rows]
@@ -288,7 +361,7 @@ def check_eval(prof: dict, smoke: Path, r, arm=None, rehearsal=False) -> dict:
         reasons.append(f"the read's change on the trained rows differs from the trainer's by {d:.3g} > {EVAL_TOL}")
     if not np.array_equal(L[..., fr], p["cached_logits"][..., fr]):
         reasons.append("the read changes an untrained row (EP/C)")
-    L0 = D.delta_logits(p["ho_logits"], p["ho_s"], h0["W"], h0["b"], h0["W0"], h0["b0"], rows_read)
+    L0 = D.head_logits(p["ho_logits"], p["ho_s"], h0, rows_read)
     det["step0_bitexact"] = bool(np.array_equal(L0, p["ho_logits"]))
     det["step0_pick_agree"] = int((D.select(L0) == p["cached_pick"]).sum())
     det["n_heldout"] = int(len(p["cached_pick"]))
@@ -312,9 +385,13 @@ def check_ckpt(prof: dict, argv: list, work: Path, arm=None, rehearsal=False) ->
     p = np.load(runs["A1"] / "probe.npz", allow_pickle=False)
     if not (np.array_equal(hA1["W"], p["W"]) and np.array_equal(hA1["b"], p["b"])):
         reasons.append("round trip: the loaded head is not the in-memory head that was saved")
+    if hA1.get("mlp") is not None and not all(k in p.files and np.array_equal(np.asarray(hA1["mlp"][k]), p[k]) for k in D.MLP_KEYS):
+        reasons.append("round trip: the loaded MLP arrays are not the in-memory MLP that was saved")   # MM 2026-11-27 CODE AMENDMENT 1: schema /2 trains ONLY the MLP
     det["sha_A1"], det["sha_A2"] = D.head_arrays_sha256(hA1), D.head_arrays_sha256(hA2)
     if det["sha_A1"] != det["sha_A2"] or (runs["A1"] / "metrics.jsonl").read_bytes() != (runs["A2"] / "metrics.jsonl").read_bytes():
         reasons.append("determinism: two runs of the same argv differ")
+    if (runs["A1"] / "cv_select.json").is_file() and (runs["A1"] / "cv_select.json").read_bytes() != (runs["A2"] / "cv_select.json").read_bytes():
+        reasons.append("determinism: the cross-validation report of two runs of the same argv differs")
     hp, hB = D.load_head(runs["A1"] / "head_step00002.npz"), D.load_head(runs["B"] / "head_step00002.npz")
     if D.head_arrays_sha256(hp) != D.head_arrays_sha256(hB):
         reasons.append("prefix: the step-2 head of a 4-step run is not the final head of a 2-step run")

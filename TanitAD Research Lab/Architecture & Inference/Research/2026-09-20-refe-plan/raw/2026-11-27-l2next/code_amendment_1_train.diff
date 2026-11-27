@@ -1,0 +1,28 @@
+--- E:/Projects/TanitAD-artifacts/mm/land/safehead_train.pre_ckptfix.py	2026-11-27 21:50:32.000000000 +0100
++++ F:/TanitAD_l2next_tmp/sb/patched/refe/safehead_train.py	2026-11-27 22:12:40.877492100 +0100
+@@ -245,7 +245,8 @@
+         loss.backward()
+         rec = {"step": step, "loss": float(loss)}
+         for i, r in enumerate(rows):
+-            if not (M.arm == "sh_live_term_dropped" and r == 3):
++            if not (M.arm == "sh_live_term_dropped" and r == (3 if 3 in rows else rows[-1])):   # MM 2026-11-27 CODE AMENDMENT 1: TTC when trained (SAFE-HEAD,
++                                                                                                # SH-MLP: unchanged), else the last trained row (EP-HEAD: the EP term)
+                 rec[TERM_OF_ROW[r]] = float(terms[i])
+         rec["grad_abs"] = M.grad_abs()
+         rec["frozen_grad_abs"] = M.frozen_grad_abs()
+@@ -367,8 +368,13 @@
+     shas, probe = {}, {}
+ 
+     def save_step(step, st):
+-        Wsave, bsave = st["W"], (b0.copy() if arm == "sh_ckpt_bias_dropped" else st["b"])
+-        shas[step] = D.save_head(out / f"head_step{step:05d}.npz", W=Wsave, b=bsave, W0=W0, b0=b0, meta={**meta0, "step": step}, mlp=st["mlp"])
++        Wsave, bsave, msave = st["W"], st["b"], st["mlp"]
++        if arm == "sh_ckpt_bias_dropped":                                                    # G-CKPT regression arm: the saved file is not the in-memory head
++            if msave is None:
++                bsave = b0.copy()                                                            # schema /1: the trained bias is replaced by C1's (SAFE-HEAD, unchanged)
++            else:                                                                            # schema /2 (MM 2026-11-27 CODE AMENDMENT 1): W, b ARE C1's there, so dropping b
++                msave = {**msave, "mlp_b2": np.zeros_like(np.asarray(msave["mlp_b2"]))}      # was a no-op; drop the trained MLP output bias instead
++        shas[step] = D.save_head(out / f"head_step{step:05d}.npz", W=Wsave, b=bsave, W0=W0, b0=b0, meta={**meta0, "step": step}, mlp=msave)
+         probe[step] = st
+     mf = open(out / "metrics.jsonl", "w", encoding="utf-8")
+     fit(M, S, YT, steps=n_steps, batch=cfg.batch, gamma=cfg.gamma, seed=cfg.seed, save=set(save), on_save=save_step, metrics=mf, extra_label=EXTRA)

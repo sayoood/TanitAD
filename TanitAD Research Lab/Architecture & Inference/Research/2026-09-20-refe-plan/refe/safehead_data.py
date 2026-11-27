@@ -36,6 +36,12 @@ SAFETY_ROWS = (0, 1, 3, 5)                       # NC, DAC, TTC, DDC (the card's
 FROZEN_ROWS = (2, 4)                             # EP, C
 LABELS = ("tr_nc", "tr_dac", "tr_ddc", "tr_ttc", "tr_ep", "tr_c", "tr_pdms")
 ROW_LABEL = {0: "tr_nc", 1: "tr_dac", 3: "tr_ttc", 5: "tr_ddc"}
+# L2-NEXT (PREREG_EPHEAD): row 2 (EP) may be a TRAINED row, with the SOFT label tr_ep (the cache's EP is a rebuilt metric cache; see PREREG_EPHEAD 2.3).  ROW_LABEL above is
+# unchanged (the SAFE-HEAD card and its read use it); ROW_LABEL_ALL names every output's label (also used by the gate's "a frozen row enters the loss" arm).
+ROW_LABEL_ALL = {0: "tr_nc", 1: "tr_dac", 2: "tr_ep", 3: "tr_ttc", 4: "tr_c", 5: "tr_ddc"}
+TRAINABLE_ROWS = (0, 1, 2, 3, 5)                 # SAFETY_ROWS + EP; row 4 (C) is never a parameter in any arm
+SCHEMA_HEAD_MLP = "safehead.head/2"              # a head whose trained rows carry a residual MLP (SH-MLP, card 8.1); the linear W, b are C1's, bit for bit
+MLP_IN = 256
 LABEL_VALUES = {"tr_nc": (0.0, 0.5, 1.0), "tr_dac": (0.0, 1.0), "tr_ttc": (0.0, 1.0), "tr_ddc": (0.0, 0.5, 1.0), "tr_c": (0.0, 1.0)}
 SPLITS_NAVTRAIN = ("train", "heldout")
 PDMS_TOL = 1e-6                                  # tr_pdms == NC*DAC*(5EP+5TTC+2C)/12 (NAVSIM v1.1; DDC does not enter: MEASURED on the C1 table, max diff 0)
@@ -306,11 +312,18 @@ def leak_problems(c: dict, heldout_logs, navtest_logs, navtest_tokens=()) -> lis
 
 
 # ------------------------------------------------------------------------------------------ the head file (npz, no pickle)
-def save_head(path, *, W, b, W0, b0, meta: dict) -> str:
+MLP_KEYS = ("mlp_w1", "mlp_b1", "mlp_w2", "mlp_b2")
+
+
+def save_head(path, *, W, b, W0, b0, meta: dict, mlp=None) -> str:
+    """`mlp` (SH-MLP only): {mlp_w1 [R,H,256], mlp_b1 [R,H], mlp_w2 [R,H], mlp_b2 [R]} over the trained rows in `meta["rows"]` order; the file is then schema /2.
+    Without it the file is schema /1 and byte-identical to what SAFE-HEAD wrote."""
     path = Path(path)
     tmp = path.with_suffix(".tmp.npz")
+    extra = {} if mlp is None else {k: np.asarray(mlp[k], np.float32) for k in MLP_KEYS}
+    schema = SCHEMA_HEAD if mlp is None else SCHEMA_HEAD_MLP
     np.savez(tmp, weight=np.asarray(W, np.float32), bias=np.asarray(b, np.float32), init_weight=np.asarray(W0, np.float32),
-             init_bias=np.asarray(b0, np.float32), meta=np.array(json.dumps({"schema": SCHEMA_HEAD, **meta}, sort_keys=True)))
+             init_bias=np.asarray(b0, np.float32), meta=np.array(json.dumps({"schema": schema, **meta}, sort_keys=True)), **extra)
     os.replace(tmp, path)
     return sha256_file(path)
 
@@ -318,19 +331,76 @@ def save_head(path, *, W, b, W0, b0, meta: dict) -> str:
 def load_head(path) -> dict:
     z = np.load(path, allow_pickle=False)
     meta = json.loads(str(z["meta"]))
-    if meta.get("schema") != SCHEMA_HEAD:
-        raise ContractError(f"{path}: not a {SCHEMA_HEAD} file")
-    h = {"W": z["weight"], "b": z["bias"], "W0": z["init_weight"], "b0": z["init_bias"], "meta": meta}
+    if meta.get("schema") not in (SCHEMA_HEAD, SCHEMA_HEAD_MLP):
+        raise ContractError(f"{path}: not a {SCHEMA_HEAD} / {SCHEMA_HEAD_MLP} file")
+    h = {"W": z["weight"], "b": z["bias"], "W0": z["init_weight"], "b0": z["init_bias"], "meta": meta, "mlp": None}
     if h["W"].shape != (N_OUT, D_S) or h["b"].shape != (N_OUT,):
         raise ContractError(f"{path}: head shape {h['W'].shape}/{h['b'].shape}")
-    frozen = [r for r in range(N_OUT) if r not in meta.get("rows", SAFETY_ROWS)]
+    rows = list(meta.get("rows", SAFETY_ROWS))
+    if meta["schema"] == SCHEMA_HEAD_MLP:
+        h["mlp"] = {k: z[k] for k in MLP_KEYS}
+        R, H = len(rows), int(meta["mlp_hidden"])
+        want = {"mlp_w1": (R, H, MLP_IN), "mlp_b1": (R, H), "mlp_w2": (R, H), "mlp_b2": (R,)}
+        bad = {k: h["mlp"][k].shape for k, v in want.items() if h["mlp"][k].shape != v}
+        if bad:
+            raise ContractError(f"{path}: mlp array shape(s) {bad}, expected {want}")
+        if not (np.array_equal(h["W"], h["W0"]) and np.array_equal(h["b"], h["b0"])):
+            raise ContractError(f"{path}: an SH-MLP head's LINEAR part must be C1's, bit for bit (the residual MLP is the only trained part)")
+        return h
+    frozen = [r for r in range(N_OUT) if r not in rows]
     if not (np.array_equal(h["W"][frozen], h["W0"][frozen]) and np.array_equal(h["b"][frozen], h["b0"][frozen])):
         raise ContractError(f"{path}: an untrained row ({[ROW_NAMES[r] for r in frozen]}) differs from C1's init")
     return h
 
 
+def mlp_forward(s, mlp) -> np.ndarray:
+    """The residual MLPs on s: z_r = W2_r . gelu(W1_r s + b1_r) + b2_r for each trained row r (torch exact-erf GELU, float32, CPU).  [..., 256] -> [..., R].
+    ONE definition, shared by the read and the gate (the trainer's own forward is the same arithmetic in torch)."""
+    import torch
+    s = torch.from_numpy(np.ascontiguousarray(np.asarray(s, np.float32)))
+    out = []
+    with torch.no_grad():
+        for i in range(mlp["mlp_w1"].shape[0]):
+            h = torch.nn.functional.gelu(s @ torch.from_numpy(np.asarray(mlp["mlp_w1"][i], np.float32)).T + torch.from_numpy(np.asarray(mlp["mlp_b1"][i], np.float32)))
+            out.append(h @ torch.from_numpy(np.asarray(mlp["mlp_w2"][i], np.float32)) + torch.from_numpy(np.asarray(mlp["mlp_b2"][i:i + 1], np.float32)))
+    return torch.stack(out, -1).numpy()
+
+
+def head_forward(s, h) -> np.ndarray:
+    """The deployed head on s: the linear part, plus the residual MLPs on the trained rows (schema /2).  [..., 256] -> [..., 6]."""
+    out = direct_logits(s, h["W"], h["b"])
+    if h.get("mlp") is not None:
+        rows = list(h["meta"]["rows"])
+        out = out.copy()
+        out[..., rows] = out[..., rows] + mlp_forward(s, h["mlp"])
+    return out
+
+
+def head_logits(base_logits, s, h, rows=None) -> np.ndarray:
+    """The READ's logits of ANY saved head (card 4.1, generalised): C1's banked float32 logits plus the head's CHANGE on the trained rows.  Schema /1: delta_logits
+    (the SAFE-HEAD form, unchanged).  Schema /2: base + the residual MLP on s (zero at step 0 by construction: the last layer is zero-initialised, so the untrained
+    head returns `base` BIT FOR BIT).  `rows` overrides the trained rows (the gate's row-shift arm only)."""
+    rows = list(h["meta"]["rows"]) if rows is None else list(rows)
+    if h.get("mlp") is None:
+        return delta_logits(base_logits, s, h["W"], h["b"], h["W0"], h["b0"], rows)
+    base = np.asarray(base_logits, np.float32)
+    out = base.copy()
+    out[..., rows] = base[..., rows] + mlp_forward(s, h["mlp"])
+    return out
+
+
+def cv_folds(logs, k: int = 5) -> dict:
+    """The fixed 5-fold log-level split of PREREG_EPHEAD 4.3: logs sorted by NAME, fold = index mod k.  -> {log: fold}."""
+    u = sorted(set(map(str, logs)))
+    return {lg: i % k for i, lg in enumerate(u)}
+
+
 def head_arrays_sha256(h: dict) -> str:
-    return sha256_bytes(b"".join(np.ascontiguousarray(h[k], np.float32).tobytes() for k in ("W", "b")))
+    """sha256 of the head's arrays.  Schema /1: W, b (unchanged).  Schema /2 also hashes the residual MLP arrays (W, b are C1's there: they alone would be blind)."""
+    parts = [np.ascontiguousarray(h[k], np.float32).tobytes() for k in ("W", "b")]
+    if h.get("mlp") is not None:
+        parts += [np.ascontiguousarray(h["mlp"][k], np.float32).tobytes() for k in MLP_KEYS]
+    return sha256_bytes(b"".join(parts))
 
 
 def c1_head_from_checkpoint(path) -> tuple:

@@ -1,0 +1,11 @@
+--- E:/Projects/TanitAD-artifacts/mm/land/safehead_gate.pre_ckptfix.py	2026-11-27 21:50:32.000000000 +0100
++++ F:/TanitAD_l2next_tmp/sb/patched/refe/safehead_gate.py	2026-11-27 21:50:43.056301600 +0100
+@@ -385,6 +385,8 @@
+     p = np.load(runs["A1"] / "probe.npz", allow_pickle=False)
+     if not (np.array_equal(hA1["W"], p["W"]) and np.array_equal(hA1["b"], p["b"])):
+         reasons.append("round trip: the loaded head is not the in-memory head that was saved")
++    if hA1.get("mlp") is not None and not all(k in p.files and np.array_equal(np.asarray(hA1["mlp"][k]), p[k]) for k in D.MLP_KEYS):
++        reasons.append("round trip: the loaded MLP arrays are not the in-memory MLP that was saved")   # MM 2026-11-27 CODE AMENDMENT 1: schema /2 trains ONLY the MLP
+     det["sha_A1"], det["sha_A2"] = D.head_arrays_sha256(hA1), D.head_arrays_sha256(hA2)
+     if det["sha_A1"] != det["sha_A2"] or (runs["A1"] / "metrics.jsonl").read_bytes() != (runs["A2"] / "metrics.jsonl").read_bytes():
+         reasons.append("determinism: two runs of the same argv differ")
