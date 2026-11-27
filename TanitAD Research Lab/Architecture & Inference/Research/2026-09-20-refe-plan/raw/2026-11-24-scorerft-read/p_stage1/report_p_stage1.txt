@@ -1,0 +1,35 @@
+VERDICT: OP6 | OP6: FAIL: the decision term made the pick WORSE. one seed per arm: training variance was NOT measured for this arm (a Stage-1 outcome is accepted on one seed, decided before data)
+NEXT ARM (committed in the card, Rule Zero): Z↑ ⇒ P-top8: the same routed, gap-weighted term, anchored on every proposal in the scorer's own top-8 by `navsim_v1` (the registered `SCORERFT_RANK_GATE_TOPK` = 8 set), not on the argmax alone. Pairs (j, i): i in the top-8, PDMS_j > PDMS_i. Routing per pair: the anchor's factors are live only where y < p, the better proposal's only where y > p. Same normalisation. New head key `pick8`; own card; C reused; ~14.2 L40-h + weight rule; PI go. The earlier gate-detached arm is subsumed by decision 10. M5 is reported beside the verdict
+tier: T1 (NAVSIM v1 PDMS, open-loop pseudo-simulation of the executed LQR-tracked plan; not closed loop, not T0)
+estimator: paired log-cluster bootstrap, 10000 draws, seed 20260927; answers: another draw of LOGS only; another TRAINING run = the seed pair (Ts - Cs, F = |Cs - C|; H-ESTIM-SEED-1); another INFERENCE run = none (deterministic argmax, CTRL-DET)
+look 1 of H-SCORERFT-PICK-1 (Stage 1: P, C); C's rows were read at look 1 of H-SCORERFT-1 (shared control); multiplicity across cards is not corrected; card sha256 7c39a57bfc69e9d27b000fd0e5acba05d3ee8403b9611b45d0d27bb0f9fd21c9
+n tokens 12146, logs 136; arms {'P': 'P', 'C': 'C'}; stage 1
+controls: CTRL-SET=PASS, CTRL-T=PASS, CTRL-T=PASS, CTRL-CSV=PASS, CTRL-CSV=PASS, CTRL-SEAM=PASS, CTRL-ARGV=PASS, CTRL-W0=PASS, CTRL-DET=PASS, CTRL-S0=PASS, CTRL-ORDER=PASS, CTRL-CODE=PASS, CTRL-HARNESS=PASS, CTRL-WRULE=PASS, CTRL-CLIP=PASS, CTRL-ID=PASS, CTRL-ID=PASS, CTRL-CREUSE=PASS  (all pass: True)
+CTRL-CLIP state (card 3.2; steps 0-7 only, P's full-run clip path UNMEASURED): CLIP-SAME occ=8/8
+P1 d0 = P - C PDMS (tracked): -2.5453 [-3.0485, -2.0851] -> FAIL
+G1 (P - C, tracked, none separated adverse): FAIL ['nc', 'dac', 'ttc']
+  sub nc: tracked -1.2679 [-1.6040, -0.9488] | transparent (no tracker in this number) -1.3297 [-1.7034, -0.9597]
+  sub dac: tracked -1.7125 [-2.2496, -1.2262] | transparent (no tracker in this number) -1.2185 [-1.8366, -0.6710]
+  sub ttc: tracked -4.0672 [-4.7763, -3.3829] | transparent (no tracker in this number) -3.8696 [-4.5794, -3.2130]
+  sub ep: tracked 0.6393 [0.0749, 1.1806] | transparent (no tracker in this number) 1.0627 [0.5331, 1.5670]
+  sub c: tracked -0.0247 [-0.0563, 0.0000] | transparent (no tracker in this number) -4.2977 [-5.2641, -3.3479]
+  sub ddc: tracked -0.9015 [-1.3097, -0.5112] | transparent (no tracker in this number) -0.8562 [-1.2817, -0.4594]  [DDC: reported, not a guard]
+P2: PENDING (Stage 2)
+P3: PENDING (Stage 2)
+GOAL 94.55: P 90.13 [89.11, 91.09] -> BELOW GOAL
+GOAL 94.55: C 92.67 [91.90, 93.40] -> BELOW GOAL
+M3 regret (oracle - pick) P - C: 2.5156 [2.0754, 3.0027] moved=False
+M4 oracle-of-64 P - C: -0.0297 [-0.0966, 0.0369] damaged=False
+M2 zeroed-pick rate P - C (pp): 2.8981 [2.3437, 3.4761] Zup=True
+M1 EP Spearman P - C (reported, NOT decisive): 0.1777 [0.1672, 0.1891] flag=True
+M5 train-side monitor (descriptive): REPORTED (descriptive; no outcome)
+transparent comfort P - C, transparent_20_pose_plan: -4.2977 [-5.2641, -3.3479] (descriptive, no clause)
+transparent comfort P - C, transparent_8_submitted_poses: -4.2730 [-5.4586, -3.1247] (descriptive, no clause)
+families (each stands alone, never pooled):
+  LONGITUDINAL: 22 components
+  LATERAL: 8 components
+  lead-agent (headway / time-gap / TTC): headway_min_m=OK n=6192, time_gap_min_s=OK n=5660, min_ttc_s=OK n=6192, lead_viol=OK n=6435, lead_at_risk=OK n=6435, lead_progress_ratio=OK n=5331
+  TACTICAL (b) selection quality: computed; (c) goal-setting: NOT COMPUTABLE (n = 12146)
+  STRATEGIC: REPORTED IN FULL (no bar; PI ruling 2026-11-16)
+  separated adverse qualifiers: LONGITUDINAL.time_gap_min_s, LONGITUDINAL.min_ttc_s, LONGITUDINAL.lead_viol, LONGITUDINAL.lead_progress_ratio, LONGITUDINAL.speed_mae_mps, LONGITUDINAL.speed_bias_mps, LONGITUDINAL.speed_rmse_mps, LONGITUDINAL.target_speed_acc.within_0.5_mps, LONGITUDINAL.target_speed_acc.within_1.0_mps, LONGITUDINAL.target_speed_acc.within_2.0_mps, LONGITUDINAL.along_mae_m, LONGITUDINAL.along_bias_m, LONGITUDINAL.along_final_bias_m, LONGITUDINAL.accel_mae_mps2, LONGITUDINAL.ego_progress.progress_ratio_mean, LONGITUDINAL.ego_progress.progress_ratio_median, LONGITUDINAL.ego_progress.progress_error_mean, LATERAL.heading_mae_deg, LATERAL.yaw_rate_mae_degps, LATERAL.cross_mae_m, LATERAL.cross_final_mae_m, LATERAL.last_pose_heading_err_deg, TACTICAL.lateral_decision.accuracy, TACTICAL.lateral_decision.kappa, TACTICAL.longitudinal_decision.accuracy, TACTICAL.longitudinal_decision.kappa, TACTICAL.maneuver_5way_collapsed.accuracy, TACTICAL.maneuver_5way_collapsed.kappa, TACTICAL.selection.regret, TACTICAL.selection.zeroed, TACTICAL.selection.pick
+ADOPT would not clear C1's own GUARD-FAIL (TM+C: transparent comfort, the longitudinal speed bias); those stay open on the lineage
