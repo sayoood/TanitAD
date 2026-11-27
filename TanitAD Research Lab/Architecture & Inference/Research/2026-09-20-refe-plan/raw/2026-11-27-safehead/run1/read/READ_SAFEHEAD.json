@@ -1,0 +1,264 @@
+{
+ "card": "PK/raw/2026-11-27-safehead/PREREG_SAFEHEAD.md",
+ "tier": "T1 (NAVSIM v1.1 PDM, LQR-tracked; the anchor table's per-proposal tracked scores)",
+ "estimator": "paired log-cluster bootstrap, p5c_read.Boot, 10,000 draws, seed 20260927, 95 % percentile, full_set means; it answers 'another draw of LOGS'",
+ "population": "12146 navtest tokens, 136 logs",
+ "controls": {
+  "CTRL-SHA": {
+   "pass": true,
+   "problems": [],
+   "table": {
+    "full_C1_s0of2.jsonl": "9d1239a250c021b89480b0079f2d66ac7b319a3eaee73c80a3deac208b89b42e",
+    "full_C1_s1of2.jsonl": "77588849ce5a3080e5ec941f71ba1b52f380fdc04d406849416e8c73c99a99d0"
+   },
+   "proposals": "b258e50a722101c090861c6f1f0c26d05b38de966fffeb84f0ea17c3dce95007",
+   "train_index": "f7426318271aebc71e9e256b3dc7f2edfa96dd57d57190342a30679e87434c03",
+   "navtest_index": "beb2ab3f0103530a58374fad25a26b43f35b4d15cd5ba445e75ea9f2a5123b8f",
+   "heads": {
+    "s0": "e14f97e5b90165d08a97342f731c4e36bfeddeb0ef0d4176fb7f83d77b3fa560",
+    "s1": "16d9bf5eb6cdfac7ae20cee97ddf37a89904c24fa38a685619c4c77b873a2963",
+    "red": "48f1ba60e0bdb29164b67ef985f95690cc643cb49ca81091784f689fb436fd69"
+   },
+   "boot_p5c_read": "766613a6ee46dd97e51df2a6e03b38ccfdf19d3688d9f15b42cc50e24046df91"
+  },
+  "CTRL-SET": {
+   "pass": true,
+   "n": 12146,
+   "n_logs": 136,
+   "missing_in_table": 0,
+   "table_pick_equals_dump": true
+  },
+  "CTRL-DET-NT": {
+   "pass": true,
+   "pick_agree": 12146,
+   "n": 12146,
+   "max_abs_logit": 0.0,
+   "bar": 0.0001
+  },
+  "CTRL-FEAT-NT": {
+   "pass": true,
+   "max_abs": 1.52587890625e-05,
+   "p99_abs": 5.7220458984375e-06,
+   "bars": [
+    0.0001,
+    0.0001
+   ]
+  },
+  "CTRL-ID": {
+   "pass": true,
+   "logits_bitexact": true,
+   "pick_agree": 12146,
+   "per_token_pdms_exact": true,
+   "pdms": 92.55477798611808,
+   "anchor_pdms": 92.55477798611808,
+   "registry_pdms": 92.55477798611808
+  },
+  "CTRL-LEAK": {
+   "pass": true,
+   "train_logs_in_navtest": 0,
+   "train_tokens_in_navtest": 0,
+   "heldout_not_sft": 0,
+   "train_in_sft_heldout": 0,
+   "train_heldout_overlap": 0,
+   "n_train_logs": 29,
+   "n_heldout_logs": 6
+  },
+  "CTRL-REACH": {
+   "pass": true,
+   "s0": {
+    "steps": 2000,
+    "min_grad": 0.06055267155170441,
+    "max_frozen_grad": 0.0
+   },
+   "s1": {
+    "steps": 2000,
+    "min_grad": 0.0749715119600296,
+    "max_frozen_grad": 0.0
+   },
+   "red": {
+    "steps": 2000,
+    "min_grad": 0.453989177942276,
+    "max_frozen_grad": 0.0
+   }
+  },
+  "CTRL-RED": {
+   "pass": true,
+   "final_step": 2000,
+   "auc_nc": [
+    0.9586010522655372,
+    0.6896499929699312
+   ],
+   "auc_dac": [
+    0.9635405864381434,
+    0.6900433034852882
+   ],
+   "auc_ttc": [
+    0.936795916788635,
+    0.7000560376291624
+   ],
+   "heldout_safety_miss_rate": [
+    0.042352941176470586,
+    0.06823529411764706
+   ],
+   "s0_step0_equals_red_step0": true
+  }
+ },
+ "M1_M3": {
+  "s0": {
+   "chosen_step": 0,
+   "pdms_point_abs": 92.55477798611808,
+   "pdms": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "sub": {
+    "nc": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "dac": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "ttc": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "ep": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "c": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "ddc": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    }
+   },
+   "switch_rate": 0.0,
+   "direct_form_pick_agree": 12146
+  },
+  "s1": {
+   "chosen_step": 0,
+   "pdms_point_abs": 92.55477798611808,
+   "pdms": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "sub": {
+    "nc": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "dac": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "ttc": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "ep": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "c": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "ddc": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    }
+   },
+   "switch_rate": 0.0,
+   "direct_form_pick_agree": 12146
+  }
+ },
+ "M5": {
+  "C1": {
+   "safety_fail_with_alternative": 743,
+   "pooled_auc_nc": 0.9397333868300554,
+   "pooled_auc_dac": 0.9597110129769741,
+   "pooled_auc_ttc": 0.9124556481504474,
+   "pooled_auc_ddc": 0.9758109435161668
+  },
+  "SH0": {
+   "safety_fail_with_alternative": 743,
+   "pooled_auc_nc": 0.9397333868300554,
+   "pooled_auc_dac": 0.9597110129769741,
+   "pooled_auc_ttc": 0.9124556481504474,
+   "pooled_auc_ddc": 0.9758109435161668,
+   "fixed": 0,
+   "created": 0
+  },
+  "SH1": {
+   "safety_fail_with_alternative": 743,
+   "pooled_auc_nc": 0.9397333868300554,
+   "pooled_auc_dac": 0.9597110129769741,
+   "pooled_auc_ttc": 0.9124556481504474,
+   "pooled_auc_ddc": 0.9758109435161668,
+   "fixed": 0,
+   "created": 0
+  }
+ },
+ "tactical_selection_quality": {
+  "SH0": {
+   "regret": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "top1": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "zeroed": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   }
+  },
+  "SH1": {
+   "regret": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "top1": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "zeroed": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   }
+  }
+ },
+ "outcome_provisional": {
+  "outcome": "NULL-HELDOUT",
+  "why": "the held-out rule chose step 0 for seed 0: SH_s0 IS C1, navtest is not read for a decision",
+  "next_arm": "SH-MLP (card 8.1)"
+ },
+ "pending": "CTRL-T2 and the four families (`confirm`)",
+ "evidence": "MEASURED (this read)"
+}
