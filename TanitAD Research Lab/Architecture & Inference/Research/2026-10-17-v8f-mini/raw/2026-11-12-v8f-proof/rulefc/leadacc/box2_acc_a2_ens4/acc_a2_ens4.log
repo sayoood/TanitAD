@@ -1,0 +1,363 @@
+D:\tanitad\leadacc\train_acc_box2.py:46: RuntimeWarning: overflow encountered in exp
+  P[e] = 1.0 / (1.0 + np.exp(-o[:, 0]))
+{
+ "card": "PREREG_V8F_PROOF_ADD153_AM2",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "arm": "K25D",
+ "sets": {
+  "ENS2": [
+   0,
+   1
+  ],
+  "ENS4": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "ENS5": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ]
+ },
+ "record": "ENS4",
+ "compare": "ENS2",
+ "controls": {
+  "e2_checkpoints": {
+   "heads": [
+    {
+     "ckpt": "D:/tanitad/leadacc/K25D/head_30000.pt",
+     "sha256_expected": "40433c9b4416dfe30cd34f3957f7ef785146f798839861c873c2ee5472910270",
+     "sha256_read": "40433c9b4416dfe30cd34f3957f7ef785146f798839861c873c2ee5472910270",
+     "equal": true
+    },
+    {
+     "ckpt": "D:/tanitad/leadacc/K25D_s149/head_30000.pt",
+     "sha256_expected": "f5dcc2f5af44d8382ac35b8336b78964f071bfd3e0115f596d34f1bd6012ab96",
+     "sha256_read": "f5dcc2f5af44d8382ac35b8336b78964f071bfd3e0115f596d34f1bd6012ab96",
+     "equal": true
+    },
+    {
+     "ckpt": "D:/tanitad/leadacc/K25DS/head_30000.pt",
+     "sha256_expected": "b762cde6e70239bb74b785de5ca302f382ef8e4fa4ba5016a68fabe1307cb93a",
+     "sha256_read": "b762cde6e70239bb74b785de5ca302f382ef8e4fa4ba5016a68fabe1307cb93a",
+     "equal": true
+    },
+    {
+     "ckpt": "D:/tanitad/leadacc/K25DS_s149/head_30000.pt",
+     "sha256_expected": "cd4ddcf1081484694ee7d9cc9df4ca378b35ff32b1c16c4e86e2f506ac82cf77",
+     "sha256_read": "cd4ddcf1081484694ee7d9cc9df4ca378b35ff32b1c16c4e86e2f506ac82cf77",
+     "equal": true
+    },
+    {
+     "ckpt": "D:/tanitad/leadacc/K25D_s150/head_30000.pt",
+     "sha256_expected": "81e87c842d0845cd095644e33c0a607532f6384c0ef2df99114c66d18ccb09a5",
+     "sha256_read": "81e87c842d0845cd095644e33c0a607532f6384c0ef2df99114c66d18ccb09a5",
+     "equal": true
+    }
+   ],
+   "PASS": true
+  },
+  "e1_compare_reproduces": {
+   "S": [
+    0.5285951766933853,
+    0.5285951766933853
+   ],
+   "A": [
+    0.3775255533138475,
+    0.3775255533138475
+   ],
+   "PASS": true
+  },
+  "e3_planted_read": {
+   "S": 1.0,
+   "A": 1.0,
+   "PASS": true
+  }
+ },
+ "sha256": {
+  "ens_read_n_box2.py": "6ed95f636d4e4fa5bbd07e24206d406eec685796d2352194d4c47719e22f14a3",
+  "leadacc.py": "d45dc5a5a17837f0b23e429ae9e04f26ea0165b5e2cd6dbd36324cf3befdec2f"
+ },
+ "split": {
+  "held_out": 443,
+  "eval": 141
+ },
+ "read_seconds": 113.5,
+ "ENS2": {
+  "held_out": {
+   "S": 0.5285951766933853,
+   "A": 0.3775255533138475,
+   "A_derived": 0.3182806877689144,
+   "A_floor": 0.2781551169158842,
+   "A_rel": 0.3665165954177802,
+   "A_lab2": 0.8103613153724467,
+   "n_S": 11623,
+   "n_A": 10325,
+   "n_A_lab2": 10325,
+   "gap_mae_m": 5.845576112521468,
+   "presence_auc": 0.9182865882261452
+  },
+  "eval141": {
+   "S": 0.47760727402854647,
+   "A": 0.2857329427386093,
+   "A_derived": 0.22269940081911105,
+   "A_floor": 0.2108976415313526,
+   "A_rel": 0.31055829559267234,
+   "A_lab2": 0.7536037785437384,
+   "n_S": 3430,
+   "n_A": 3035,
+   "n_A_lab2": 3035,
+   "gap_mae_m": 5.284275568820503,
+   "presence_auc": 0.9053100260248409
+  },
+  "dA_floor_held_out": {
+   "diff": 0.09937043639796334,
+   "ci95": [
+    0.06792452847175247,
+    0.13360991736220482
+   ],
+   "n_clips": 443,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "dA_floor_eval141": {
+   "diff": 0.07483530120725668,
+   "ci95": [
+    0.015177206362589294,
+    0.13989166458563693
+   ],
+   "n_clips": 141,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "held_out_halves": [
+   {
+    "S": 0.498616538091568,
+    "A": 0.37714482167938024,
+    "A_derived": 0.320497722374095,
+    "A_floor": 0.289391072470456,
+    "A_rel": 0.34624776956138686,
+    "A_lab2": 0.7914386767563883,
+    "n_S": 6122,
+    "n_A": 5468,
+    "n_A_lab2": 5468,
+    "gap_mae_m": 5.405294860539737,
+    "presence_auc": 0.9154563697884852
+   },
+   {
+    "S": 0.563554696634222,
+    "A": 0.3794142544717554,
+    "A_derived": 0.3164010852409159,
+    "A_floor": 0.26420740899578493,
+    "A_rel": 0.3930168116654775,
+    "A_lab2": 0.8359149538095382,
+    "n_S": 5501,
+    "n_A": 4857,
+    "n_A_lab2": 4857,
+    "gap_mae_m": 6.325793374794833,
+    "presence_auc": 0.9211882775430248
+   }
+  ],
+  "name": "ACCHIST10K-ENS2-CARRIED",
+  "eval141_name": "ACCHIST10K-ENS2-SPEED-ONLY"
+ },
+ "ENS4": {
+  "held_out": {
+   "S": 0.5617009318736492,
+   "A": 0.40137607406012094,
+   "A_derived": 0.34739869390558825,
+   "A_floor": 0.2781551169158842,
+   "A_rel": 0.39612791592200625,
+   "A_lab2": 0.8103613153724467,
+   "n_S": 11623,
+   "n_A": 10325,
+   "n_A_lab2": 10325,
+   "gap_mae_m": 5.476231010120953,
+   "presence_auc": 0.9302896769042217
+  },
+  "eval141": {
+   "S": 0.48140603108868274,
+   "A": 0.29948384312345067,
+   "A_derived": 0.23748095406554093,
+   "A_floor": 0.2108976415313526,
+   "A_rel": 0.3129633955576916,
+   "A_lab2": 0.7536037785437384,
+   "n_S": 3430,
+   "n_A": 3035,
+   "n_A_lab2": 3035,
+   "gap_mae_m": 4.908020785666446,
+   "presence_auc": 0.9135836201228364
+  },
+  "dA_floor_held_out": {
+   "diff": 0.12322095714423675,
+   "ci95": [
+    0.09380261925331199,
+    0.15525915624637784
+   ],
+   "n_clips": 443,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "dA_floor_eval141": {
+   "diff": 0.08858620159209807,
+   "ci95": [
+    0.04205970563904675,
+    0.1483300349273753
+   ],
+   "n_clips": 141,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "held_out_halves": [
+   {
+    "S": 0.5273695948444506,
+    "A": 0.4015963765376746,
+    "A_derived": 0.3460299920885929,
+    "A_floor": 0.289391072470456,
+    "A_rel": 0.3724746709827951,
+    "A_lab2": 0.7914386767563883,
+    "n_S": 6122,
+    "n_A": 5468,
+    "n_A_lab2": 5468,
+    "gap_mae_m": 4.965953385734576,
+    "presence_auc": 0.9275749447172337
+   },
+   {
+    "S": 0.6019385610703777,
+    "A": 0.40205624370205,
+    "A_derived": 0.3499932635583913,
+    "A_floor": 0.26420740899578493,
+    "A_rel": 0.4266050759280433,
+    "A_lab2": 0.8359149538095382,
+    "n_S": 5501,
+    "n_A": 4857,
+    "n_A_lab2": 4857,
+    "gap_mae_m": 6.032793713345821,
+    "presence_auc": 0.933047882687682
+   }
+  ],
+  "name": "ACCHIST10K-ENS4-CARRIED",
+  "eval141_name": "ACCHIST10K-ENS4-SPEED-ONLY"
+ },
+ "ENS5": {
+  "held_out": {
+   "S": 0.5703780374427717,
+   "A": 0.4018381782547757,
+   "A_derived": 0.353616258542003,
+   "A_floor": 0.2781551169158842,
+   "A_rel": 0.40387209379268163,
+   "A_lab2": 0.8103613153724467,
+   "n_S": 11623,
+   "n_A": 10325,
+   "n_A_lab2": 10325,
+   "gap_mae_m": 5.423254886528861,
+   "presence_auc": 0.9296149367920243
+  },
+  "eval141": {
+   "S": 0.484770317000994,
+   "A": 0.29672911792134354,
+   "A_derived": 0.23202705711528385,
+   "A_floor": 0.2108976415313526,
+   "A_rel": 0.3283653240688255,
+   "A_lab2": 0.7536037785437384,
+   "n_S": 3430,
+   "n_A": 3035,
+   "n_A_lab2": 3035,
+   "gap_mae_m": 4.8009813439814515,
+   "presence_auc": 0.916268500773429
+  },
+  "dA_floor_held_out": {
+   "diff": 0.12368306133889151,
+   "ci95": [
+    0.0946785906859459,
+    0.15461563656485544
+   ],
+   "n_clips": 443,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "dA_floor_eval141": {
+   "diff": 0.08583147638999095,
+   "ci95": [
+    0.04087920493875483,
+    0.14172342468109098
+   ],
+   "n_clips": 141,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "held_out_halves": [
+   {
+    "S": 0.5455202744347024,
+    "A": 0.40413133861199824,
+    "A_derived": 0.3582271827174492,
+    "A_floor": 0.289391072470456,
+    "A_rel": 0.3817875846150867,
+    "A_lab2": 0.7914386767563883,
+    "n_S": 6122,
+    "n_A": 5468,
+    "n_A_lab2": 5468,
+    "gap_mae_m": 4.899583238009404,
+    "presence_auc": 0.9288132616379093
+   },
+   {
+    "S": 0.6011214045718729,
+    "A": 0.39991730804308767,
+    "A_derived": 0.34892007888361,
+    "A_floor": 0.26420740899578493,
+    "A_rel": 0.43259463639192874,
+    "A_lab2": 0.8359149538095382,
+    "n_S": 5501,
+    "n_A": 4857,
+    "n_A_lab2": 4857,
+    "gap_mae_m": 5.994426527951892,
+    "presence_auc": 0.9303916003564476
+   }
+  ],
+  "name": "ACCHIST10K-ENS5-CARRIED",
+  "eval141_name": "ACCHIST10K-ENS5-SPEED-ONLY"
+ },
+ "record_vs_compare": {
+  "held_out": {
+   "A": {
+    "diff": 0.023850520746273418,
+    "ci95": [
+     0.009908732961255082,
+     0.03847541442877557
+    ],
+    "n_clips": 443,
+    "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 152; another draw of clips, one training run per arm"
+   },
+   "S": {
+    "diff": 0.033105755180263596,
+    "ci95": [
+     -0.006162414249522743,
+     0.074029690211129
+    ],
+    "n_clips": 443,
+    "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 152; another draw of clips, one training run per arm"
+   }
+  },
+  "eval141": {
+   "A": {
+    "diff": 0.013750900384841391,
+    "ci95": [
+     -0.016205416534344413,
+     0.0416260799231676
+    ],
+    "n_clips": 141,
+    "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 152; another draw of clips, one training run per arm"
+   },
+   "S": {
+    "diff": 0.003798757060136271,
+    "ci95": [
+     -0.04551564204251983,
+     0.053762280937816494
+    ],
+    "n_clips": 141,
+    "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 152; another draw of clips, one training run per arm"
+   }
+  }
+ },
+ "controls_all_pass": true,
+ "consequence": "SHORTFALL-NAMED: eval-141 A 0.2995 (dA_floor lower bound 0.0421); remaining levers blocked as named"
+}
+QUEUE-COMPLETE 2026-11-28T16:38:19
