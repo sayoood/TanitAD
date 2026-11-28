@@ -43,7 +43,8 @@ PYT="${R9_THOR_PYTEST_PATH:-/home/nvidia/refcv8_audit/pyt}"
 mkdir -p "$SW"
 say "launch_gate run --pinned-half thor (profile refcv9-full-d1, commit $C12, argv $ARGV)"
 t0=$(date +%s)
-PYTHONPATH="$PYT" PYTHONDONTWRITEBYTECODE=1 timeout "${R9_PINNED_TIMEOUT_S:-14400}" "$PY" "$T/stack/scripts/launch_gate.py" run \
+# TANITAD_PINNED_PYTEST_PATH is what reaches the pinned children: run_job's _child_env REPLACES PYTHONPATH (MEASURED 2026-11-28 08:36Z)
+TANITAD_PINNED_PYTEST_PATH="$PYT" PYTHONPATH="$PYT" PYTHONDONTWRITEBYTECODE=1 timeout "${R9_PINNED_TIMEOUT_S:-14400}" "$PY" "$T/stack/scripts/launch_gate.py" run \
   --profile refcv9-full-d1 --stage devbox --tree "$T" --commit "$C40" --git-dir "$GD" --argv-file "$ARGV" \
   --suite-work "$SW" --out-dir "$OUT" --cpu-only --pinned-half thor > "$W/gate.log" 2>&1 < /dev/null
 EV="$OUT/evidence/G-SUITE-PINNED-THOR-HALF.json"

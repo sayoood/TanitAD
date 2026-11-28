@@ -10543,6 +10543,14 @@ def safe_dir_env(env: dict, dest: Path) -> dict:
     return env
 
 
+#: refcv9 D1 (MM 4a3d05, 2026-11-28): the environment variable that names the test runner's side folder EXPLICITLY. It is needed
+#: because `run_job` starts every check through `_child_env`, which REPLACES PYTHONPATH with the tree's, so a side folder that
+#: reached the gate only on PYTHONPATH never reaches the `check` process. MEASURED 2026-11-28 08:36Z on Thor (D1 chain 9f9265f3):
+#: the Thor half failed all 53 pinned files in 108 s on "No module named pytest" although its script set PYTHONPATH to the side
+#: folder -- the keep below only ever saw the tree. An environment variable survives `_child_env` (it copies os.environ).
+PINNED_PYTEST_ENV = "TANITAD_PINNED_PYTEST_PATH"
+
+
 def pytest_side_entries(pythonpath: str) -> list[str]:
     """refcv9 D1 (MM 4a3d05, 2026-11-28): the CALLER's PYTHONPATH entries that hold the test runner itself
     (`pytest/__init__.py`) and no tree (`tanitad` / `taniteval`); `pinned_env` keeps them AFTER the archive's tree.
@@ -10568,8 +10576,9 @@ def pinned_env(dest: Path, o: dict, base: dict) -> dict:
     setdefault, and an MKL value overrides torch's count (MEASURED 2026-09-27: "the fixed order
     must yield 6 threads, got 4") -- and no regression-arm switch."""
     env = {k: v for k, v in base.items() if k not in _GIT_ENV and k != "MKL_NUM_THREADS"}
-    env["PYTHONPATH"] = os.pathsep.join([str(dest / "stack"), str(dest / "taniteval")]
-                                        + pytest_side_entries(str(base.get("PYTHONPATH", ""))))
+    side = pytest_side_entries(str(base.get("PYTHONPATH", "")))
+    side += [e for e in pytest_side_entries(str(base.get(PINNED_PYTEST_ENV, ""))) if e not in side]
+    env["PYTHONPATH"] = os.pathsep.join([str(dest / "stack"), str(dest / "taniteval")] + side)
     env.update(PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1",
                OMP_NUM_THREADS=str(o.get("omp", 4)),
                # the full tracked-tree credential scan RUNS here (it skips on ci_gate's 15 s budget)
@@ -11148,6 +11157,16 @@ def _pinned_split_env(ctx: Ctx, dest: Path, det: dict) -> tuple[dict | None, str
     if not os.path.normcase(probe.stdout.strip()).startswith(os.path.normcase(str(dest))):
         return None, (f"G-SUITE-PINNED: tanitad imports from {probe.stdout.strip() or probe.stderr[-200:]}, "
                       f"not {dest}")
+    # refcv9 D1 (MM 4a3d05, 2026-11-28): ONE structural refusal when the children cannot run pytest at all, instead of one
+    # "produced no junit" per pinned file (MEASURED 08:36Z: 53 of them, every one "No module named pytest")
+    det["child_pythonpath"] = env["PYTHONPATH"]
+    pp = subprocess.run([sys.executable, "-c", "import pytest; print(pytest.__file__)"], cwd=str(dest / "stack"), env=env,
+                        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    det["pytest_file"] = pp.stdout.strip()
+    if pp.returncode != 0 or not pp.stdout.strip():
+        last = (pp.stderr.strip().splitlines() or ["?"])[-1][:200]
+        return None, (f"G-SUITE-PINNED: the pinned children cannot import pytest ({last}); on Thor name the side folder "
+                      f"in {PINNED_PYTEST_ENV} (r9gate3_thor_pinned_half.sh does)")
     return env, None
 
 
