@@ -1,0 +1,154 @@
+# DATA-SCALE build test summary (MM 2026-11-28): the last 2 lines of every log in datascale/build/test_logs/ (agent runs, E: drive) and datascale/stack_check/ (MM re-run, NTFS tree on C:, build overlaid)
+# stack*/stack2*/stack3* logs on E: failed on git 'dubious ownership' (exFAT) and, in stack3, on E: at 0 bytes free; the C: re-run below is the admissible stack result.
+== test_logs/stack2_test_launch_gate.log
+FAILED tests/test_launch_gate.py::test_G_SUITE_PINNED_git_reads_go_to_a_THROWAWAY_repo_never_the_shared_one
+1 failed, 149 passed, 2 skipped in 88.82s (0:01:28)
+== test_logs/stack2_test_launch_gate_pinned_split.log
+ERROR tests/test_launch_gate_pinned_split.py::test_a_reused_reduced_archive_with_another_threshold_is_refused
+30 passed, 22 errors in 5.26s
+== test_logs/stack2_test_launch_gate_safe_directory.log
+FAILED tests/test_launch_gate_safe_directory.py::test_the_throwaway_repo_reaches_HEAD_where_git_sees_a_FOREIGN_owner
+1 failed, 1 passed in 2.69s
+== test_logs/stack3_test_launch_gate.log
+ERROR tests/test_launch_gate.py::test_A19_the_PASS_text_says_what_the_token_does_not_cover
+83 passed, 2 skipped, 67 errors in 21.67s
+== test_logs/stack3_test_launch_gate_pinned_split.log
+== test_logs/stack3_test_launch_gate_safe_directory.log
+== test_logs/stack_test_launch_gate.log
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 132 passed in 79.42s (0:01:19)
+== test_logs/stack_test_launch_gate_banded_live.log
+..............................................                           [100%]
+46 passed in 11.73s
+== test_logs/stack_test_launch_gate_banded_near_lift.log
+........................                                                 [100%]
+24 passed in 1.48s
+== test_logs/stack_test_launch_gate_e1rig.log
+...........................                                              [100%]
+99 passed in 15.43s
+== test_logs/stack_test_launch_gate_e1rig_e1rec2.log
+...........................................                              [100%]
+43 passed in 87.01s (0:01:27)
+== test_logs/stack_test_launch_gate_e1rig_e1rec3.log
+..........................................................               [100%]
+58 passed in 45.04s
+== test_logs/stack_test_launch_gate_e1rig_own_record.log
+............                                                             [100%]
+12 passed in 5.48s
+== test_logs/stack_test_launch_gate_e1rig_reuse.log
+.................................................                        [100%]
+49 passed in 95.22s (0:01:35)
+== test_logs/stack_test_launch_gate_e1rig_t1.log
+.........................................                                [100%]
+41 passed in 35.37s
+== test_logs/stack_test_launch_gate_geval_t1.log
+............                                                             [100%]
+12 passed in 7.52s
+== test_logs/stack_test_launch_gate_k2dc_cost.log
+...........                                                              [100%]
+11 passed in 0.57s
+== test_logs/stack_test_launch_gate_k2dc_final_gate.log
+...............                                                          [100%]
+15 passed in 0.54s
+== test_logs/stack_test_launch_gate_pinned_split.log
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 error in 3.24s
+== test_logs/stack_test_launch_gate_r9_wcost.log
+....................................................................     [100%]
+68 passed in 3.52s
+== test_logs/stack_test_launch_gate_r9f_photometric.log
+...                                                                      [100%]
+3 passed in 0.96s
+== test_logs/stack_test_launch_gate_r9f_t1h.log
+..........................                                               [100%]
+26 passed in 3.39s
+== test_logs/stack_test_launch_gate_refcv8.log
+...........................................................              [100%]
+59 passed in 7.61s
+== test_logs/stack_test_launch_gate_refcv9_full.log
+.................                                                        [100%]
+17 passed in 6.33s
+== test_logs/stack_test_launch_gate_reuse_finalize.log
+...........                                                              [100%]
+11 passed in 19.46s
+== test_logs/stack_test_launch_gate_rig_eval_probe.log
+....                                                                     [100%]
+4 passed in 0.58s
+== test_logs/stack_test_launch_gate_safe_directory.log
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1 passed in 2.38s
+== test_logs/stack_test_launch_gate_share_alarm_dose_arm.log
+..............                                                           [100%]
+14 passed in 0.57s
+== test_logs/stack_test_launch_gate_sharealarm_a.log
+.............                                                            [100%]
+13 passed in 2.98s
+== test_logs/stack_test_launch_gate_sharealarm_sg.log
+....................                                                     [100%]
+20 passed in 4.37s
+== test_logs/stack_test_launch_gate_stream_archive_drain.log
+..........                                                               [100%]
+10 passed in 66.26s (0:01:06)
+== test_logs/stack_test_launch_gate_v8f.log
+........................................................                 [100%]
+56 passed in 19.54s
+== test_logs/stack_test_launch_gate_wcost_replicate.log
+..........                                                               [100%]
+10 passed in 1.22s
+== test_logs/test_div_gate.log
+V8 ok (bash -n x3; div_pod.sh vs launch_gate vs scorer1p6_pod.sh; chain + pause structure; pod-script and launch_gate mutations RED)
+ZZTEST_PASS
+== test_logs/test_dose_gate.log
+D5 ok (bash -n x3; dose_pod.sh vs launch_gate vs s1z_pod.sh, both DOSE_EPOCHS 2.0; no calibrate mode; S1Z's lambda only; mutations RED incl. DOSE_EPOCHS None / pod DOSE_EPOCHS dropped)
+ZZTEST_PASS
+== test_logs/test_ds_read.log
+ok 04 _run_head: a cv5m head is not flagged for its select (the original would flag it); every other check of l2next_read still runs (smoke head refused, step 40)
+ZZDSREAD_PASS 4
+== test_logs/test_field_p7_profile.log
+  mutation RED as required: launch_gate.py [out.append(f"{name}: --out {ow} already holds ckpt_last.] -> fresh_out
+ZZFIELDP7PROF_PASS 528
+== test_logs/test_hnscreen_chain.log
+the trainer is not released-and-archived on a retry (stale scores stay)  C_resume_after_interruption
+ZZTEST_PASS 31  (1 unmutated suite of 14 checks + 30 RED mutations; the shared dev-box lock files untouched: ((103, 1795813630316992300), None))
+== test_logs/test_launch_gate_static.log
+  G-CLOCK   FAIL  profile refusal: scorer_finetune refuses this argv: --epo-con-* levers ['epo_con_temp'] are set but --epo-con is off: their weights would belong to a term that is OFF; profile refusal: refe_rls1e: R1o
+ZZLG_STATIC_PASS 1180
+== test_logs/test_rep_gate.log
+R5 ok
+ZZTEST_PASS
+== test_logs/test_s1zsm_gate.log
+G7 ok
+ZZTEST_PASS
+== test_logs/test_safehead_ds_full.log
+ok 20 [ds_ep] end to end: the gate mints PASS, verify MATCHes the argv and REFUSES a cv5 swap, the trainer refuses a mismatched token and trains (2,000 steps, cv5m) on a matching one
+ZZSHDS_PASS 20
+== test_logs/test_safehead_full.log
+ok 14 end to end: the gate mints PASS, verify MATCHes the argv and REFUSES a moved lever, the trainer refuses a mismatched token and trains on a matching one
+ZZSAFEHEAD_PASS 14
+== test_logs/test_safehead_next_full.log
+ok 17 [ephead] end to end: the gate mints PASS, verify MATCHes the argv and REFUSES a moved lever, the trainer refuses a mismatched token and trains (2,000 steps) on a matching one
+ZZSHNEXT_PASS 17
+== test_logs/test_scorer1p6_gate.log
+T7 ok
+ZZTEST_PASS
+== test_logs/test_scorerft_profile.log
+  mutation RED as required: gate_checks.py [live = (d_ < 0.0) if role[m] == 1 else (d_ > 0.0)] -> route_real
+ZZSCORERFTPROF_PASS 526
+== test_logs/test_vdac_gate.log
+V11 ok (G19: head grad None/0.0 vs ego and command, control non-zero, the ego-into-head regression RED; G20: >= 64 frames, real >= the bar (0.99, A4), the pod's 0.957/0.958 mutants refused, y-flip and one-frame-shift mutants RED; launch gate + chain wiring)
+ZZTEST_PASS
+== stack_check/build_test_launch_gate.log
+....s...                                                                 [100%]
+150 passed, 2 skipped in 31.63s
+== stack_check/build_test_launch_gate_pinned_split.log
+....................................................                     [100%]
+52 passed in 19.37s
+== stack_check/build_test_launch_gate_safe_directory.log
+..                                                                       [100%]
+2 passed in 2.40s
+== stack_check/SUMMARY.txt
+tree ready 02:33:52Z
+build test_launch_gate rc=0 150 passed, 2 skipped in 31.63s
+build test_launch_gate_pinned_split rc=0 52 passed in 19.37s
+build test_launch_gate_safe_directory rc=0 2 passed in 2.40s
+DONE 02:38:02Z
