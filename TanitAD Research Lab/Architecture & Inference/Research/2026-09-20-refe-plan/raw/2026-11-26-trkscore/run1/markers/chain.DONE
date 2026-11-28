@@ -1,0 +1,6 @@
+STOPPED BY PI DECISION 2026-11-28T07:31:11Z, NOT a completed chain.
+PI (AskUserQuestion, 2026-11-28): "Stop C0-TRK (Recommended)".
+C1 arm complete: C1.seam.DONE, C1.ctrl.DONE (all_pass), C1.score.DONE (harness CSV status PASS).
+C0 arm NOT run: the seam_C0 run (GPU lock taken 2026-11-28T04:59:40Z) was killed at about 07:30Z, about 2.5 h in (MM, PIDs 2712 28256 41332 57480 57456 57964); no C0 seam or dump was written.
+Reason: TRK and TRK-MIN are ADVERSE on the C1 arm alone (CI-hi < 0 / G fails), so the C0 replicate cannot change either verdict; stopping frees about 6 h of dev-box GPU for x150 (DATA-SCALE) and ENS.
+This file exists because ens_chain.sh gates on chain.DONE; it carries the stop, not a success.
