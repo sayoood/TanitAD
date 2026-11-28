@@ -27,7 +27,7 @@ import sh_lib as L  # noqa: E402
 import sh_merge as M  # noqa: E402
 
 assert os.path.abspath(L.W).replace("\\", "/").rstrip("/") != "F:/safehead_cache", "x150 chain must run with SH_WORK=F:/safehead_cache/x150"
-F_FLOOR_GB = 8.0
+F_FLOOR_GB = float(os.environ.get("SH_F_FLOOR_GB", "8.0"))          # MM 2026-11-28: env-set (x150 runs 5.0: F: sat at 4.4 GB, the programme's sweep line is 5 GB)
 LOGF = L.wp("CHAIN.log")
 MK = L.wp("markers")
 
@@ -105,6 +105,10 @@ def fetcher(plan, ready, failed, passive=False):
             else:
                 failed.update(a["logs"])
                 say(f"FETCH {a['name']} not available (passive wait ended)")
+            continue
+        if os.path.exists(L.wp("markers", f"fetch_{a['name']}.DONE")):   # MM 2026-11-28 DEADLOCK FIX: an archive already extracted
+            ready.update(a["logs"])                                       # must never wait behind the disk floor -- its logs are what
+            say(f"FETCHED {a['name']} (already extracted)")              # frees the disk (2026-11-28 07:59Z: 51 such logs sat idle)
             continue
         est = a.get("n_need_frames", 0) * 0.22 / 1024                       # GB of extracted frames
         tw = time.time()
