@@ -1,0 +1,124 @@
+{
+ "binding": {
+  "argv": [
+   "--cache-index",
+   "E:/Projects/TanitAD-artifacts/l2next/run1/index_sealed.csv",
+   "--init-from",
+   "F:/safehead_cache/ckpt/C1/model_final.pt",
+   "--heldout-logs",
+   "E:/Projects/TanitAD-artifacts/l2next/run1/sft_heldout_logs.txt",
+   "--navtest-logs",
+   "E:/Projects/TanitAD-artifacts/l2next/run1/navtest_logs.txt",
+   "--steps",
+   "2000",
+   "--lr",
+   "0.0003",
+   "--batch",
+   "32",
+   "--gamma",
+   "2.0",
+   "--save-steps",
+   "0,250,500,1000,2000",
+   "--rows",
+   "2",
+   "--select",
+   "cv5",
+   "--out",
+   "E:/Projects/TanitAD-artifacts/l2next/run1/eph_s1",
+   "--seed",
+   "1"
+  ],
+  "argv_sha256": "d767b289f7b9788aab2f1d6bdfd0d3a636300ef307ff60c963a849fb9cb2f922",
+  "commit": "fb686b3aeac40d2bc712618dd492b72c5d0a62fe",
+  "data": {
+   "--cache-index": {
+    "bytes": 437102,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "E:/Projects/TanitAD-artifacts/l2next/run1/index_sealed.csv",
+    "sha256": "f7426318271aebc71e9e256b3dc7f2edfa96dd57d57190342a30679e87434c03"
+   },
+   "--heldout-logs": {
+    "bytes": 936,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "E:/Projects/TanitAD-artifacts/l2next/run1/sft_heldout_logs.txt",
+    "sha256": "b814998deeb40a9d7839cce2807f8f282ede76c7f2c5ccce97adc064b27f4902"
+   },
+   "--init-from": {
+    "bytes": 1288515000,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "F:/safehead_cache/ckpt/C1/model_final.pt",
+    "sha256": "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"
+   },
+   "--navtest-logs": {
+    "bytes": 5440,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "E:/Projects/TanitAD-artifacts/l2next/run1/navtest_logs.txt",
+    "sha256": "b52ac6866933b570cd319564232715560860653338f117b0183d645052092cc5"
+   }
+  },
+  "data_sha256": "73acf65e43ee958d4d6eae6b000b174b0480238ac8e939f4172f295f7601f446",
+  "gate_inputs": {},
+  "profile": "refe_ephead_s1",
+  "trainer": "refe/safehead_train.py",
+  "tree_sha256": "959bcaaea0682e82adb1ce8429e62dcc1dabd9859a87594894a4ac794bf50489"
+ },
+ "checks": {
+  "G-CKPT": {
+   "evidence_sha256": "de1ec9e66f67f3a221b76511dcbdbca5ec1929d9279c4e72b95603f1d5359cc6",
+   "finished_utc": "2026-11-27T23:22:16Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-CLOCK": {
+   "evidence_sha256": "e152a3a374d2f0c9478f85a952e1fb65eca3b35c85aef659d77d09d1cac724f5",
+   "finished_utc": "2026-11-27T23:27:54Z",
+   "na_reason": "the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock",
+   "reasons": [
+    "the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock"
+   ],
+   "status": "PASS"
+  },
+  "G-DVB": {
+   "evidence_sha256": "106a7209a69a45733698bc5db8ec3e307fbb1388c84ca4c2966a02a8a087bce0",
+   "finished_utc": "2026-11-27T23:21:48Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EVAL": {
+   "evidence_sha256": "448ec2de6d6b97928349110a48d7c39afb54034f0c3ad4476bd12da09d7e4da0",
+   "finished_utc": "2026-11-27T23:21:55Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-HYG": {
+   "evidence_sha256": "4b82f26f766d7fac50aeb4803117e9977b45c80e29366b0f28c5283b00e987ac",
+   "finished_utc": "2026-11-27T23:21:41Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE": {
+   "evidence_sha256": "11cf99811e1e335554e7881823054bbff4cef0fbe66b9a8f4e1e92b5006d5832",
+   "finished_utc": "2026-11-27T23:21:55Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-SUITE": {
+   "evidence_sha256": "5239f5c80298b7ac81e8ef6ce3320c4ddefe9c609ad8b6571237a59830e41788",
+   "finished_utc": "2026-11-27T23:27:54Z",
+   "reasons": [],
+   "status": "PASS"
+  }
+ },
+ "created_utc": "2026-11-27T23:27:56Z",
+ "gate_sha256": "3a1df19491bc8d0f03d4d509cadd02060985f1795b42bec249c679f07e2e3c22",
+ "hmac_sha256": "56a6cc0b0268ed4b06997c627a26ef4e434d60cc767de6fd24262872cbd83609",
+ "key_id": "6b36c01410e73017",
+ "kind": "launch-gate-token",
+ "reasons": [],
+ "schema": "tanitad.launch_gate/1",
+ "verdict": "PASS"
+}
